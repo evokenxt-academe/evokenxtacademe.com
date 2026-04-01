@@ -1,4 +1,6 @@
+import User from "@/components/user";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -25,12 +27,12 @@ export default function Home() {
               Templates
             </a>{" "}
             or the{" "}
-            <a
+            <Link
               href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
               className="font-medium text-zinc-950 dark:text-zinc-50"
             >
               Learning
-            </a>{" "}
+            </Link>{" "}
             center.
           </p>
         </div>
@@ -59,6 +61,7 @@ export default function Home() {
             Documentation
           </a>
         </div>
+        <User />
       </main>
     </div>
   );
