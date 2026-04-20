@@ -6,8 +6,8 @@ interface User {
     avatar: string;
     name: string;
     email: string;
-    phone_no: string;
-    role: "user" | "admin";
+    phone: string;
+    role: "student" | "admin" | "instructor";
 }
 
 interface UserSessionStore {
@@ -36,22 +36,21 @@ export const useUserSession = create<UserSessionStore>((set) => ({
             const { data: profile, error: profileError } = await supabase
                 .from('users')
                 .select('*')
-                .eq('email', user.email)
-                .single()
+                .eq('id', user.id)
+                .maybeSingle()
 
 
             if (profileError) {
                 console.log("Error fetching user profile:", profileError.message);
             }
-            console.log(profile)
 
             userProfile = {
                 id: profile?.id,
                 avatar: profile?.avatar || user.user_metadata?.avatar_url || '',
                 name: profile?.name || user.user_metadata?.full_name || '',
                 email: profile?.email || user.email || '',
-                phone_no: profile?.phone_no || user.phone || '',
-                role: profile?.role || 'user'
+                phone: profile?.phone || user.phone || '',
+                role: (profile?.role as User["role"] | undefined) || 'student'
             };
         }
 

@@ -8,8 +8,15 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      if (data.session?.provider_refresh_token) {
+        await supabase.auth.updateUser({
+          data: {
+            youtube_refresh_token: data.session.provider_refresh_token
+          }
+        })
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
