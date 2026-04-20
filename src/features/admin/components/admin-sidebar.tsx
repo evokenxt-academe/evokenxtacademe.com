@@ -1,0 +1,168 @@
+"use client";
+import Image from "next/image";
+import {
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import {
+  IconArrowBackUp,
+  IconBook,
+  IconCertificate,
+  IconClipboardList,
+  IconCreditCard,
+  IconLayoutDashboard,
+  IconMessage2,
+  IconSchool,
+  IconUsers,
+  IconVideo,
+} from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+
+const ADMIN_SIDEBAR_SECTIONS = [
+  {
+    label: "Overview",
+    items: [
+      {
+        title: "Dashboard",
+        href: "/admin",
+        icon: IconLayoutDashboard,
+      },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      {
+        title: "Users",
+        href: "/admin/total-user",
+        icon: IconUsers,
+      },
+      {
+        title: "Instructors",
+        href: "/admin/instructor",
+        icon: IconSchool,
+      },
+      {
+        title: "Enrollments",
+        href: "/admin/enrollments",
+        icon: IconCertificate,
+      },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      {
+        title: "Courses",
+        href: "/admin/course",
+        icon: IconBook,
+      },
+      {
+        title: "Quizzes",
+        href: "/admin/quizzes",
+        icon: IconClipboardList,
+      },
+      {
+        title: "Live Streams",
+        href: "/admin/live-streams",
+        icon: IconVideo,
+      },
+      {
+        title: "Live Chat",
+        href: "/admin/live-chat",
+        icon: IconMessage2,
+      },
+    ],
+  },
+  {
+    label: "Commerce",
+    items: [
+      {
+        title: "Payments",
+        href: "/admin/payments",
+        icon: IconCreditCard,
+      },
+      {
+        title: "Reviews",
+        href: "/admin/reviews",
+        icon: IconClipboardList,
+      },
+    ],
+  },
+];
+export function AdminSidebar() {
+  const path = usePathname();
+
+  return (
+    <Sidebar>
+      <SidebarHeader className="gap-3 px-4 py-4">
+        <div className="rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl shadow-sm">
+              <Image
+                src="/logo.jpg"
+                alt="Evoke LMS"
+                width={40}
+                height={40}
+                className="size-full object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-sidebar-foreground">
+                Evoke LMS Admin
+              </p>
+              <p className="truncate text-xs text-sidebar-foreground/70">
+                Operations control center
+              </p>
+            </div>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        {ADMIN_SIDEBAR_SECTIONS.map((section) => (
+          <SidebarGroup key={section.label}>
+            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={
+                        path === item.href || path.startsWith(`${item.href}/`)
+                      }
+                    >
+                      <Link href={item.href}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      <SidebarFooter className="px-4 pb-4">
+        <Button variant={"outline"} className="w-full" asChild>
+          <Link href="/">
+            <IconArrowBackUp />
+            <span>Back to Site</span>
+          </Link>
+        </Button>
+      </SidebarFooter>
+    </Sidebar>
+  );
+}

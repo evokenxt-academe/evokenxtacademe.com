@@ -26,6 +26,11 @@ export function LoginCard() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "email profile https://www.googleapis.com/auth/youtube.upload",
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
       },
     });
 
