@@ -71,7 +71,7 @@ export default function ReviewsPage() {
 
       return matchesQuery && matchesCourse;
     });
-  }, [search, courseFilter]);
+  }, [reviews, search, courseFilter]);
 
   const columns = React.useMemo<ColumnDef<AdminReview>[]>(
     () => [

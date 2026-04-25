@@ -13,25 +13,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { UserDropdown } from "@/components/user-dropdown";
 import { Fragment } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { AdminThemeToggle } from "@/components/admin-theme-toggle";
-import {
-  IconAlertCircle,
-  IconBell,
-  IconCircleDashed,
-  IconCommand,
-  IconSearch,
-  IconSparkles,
-} from "@tabler/icons-react";
 
 export function AdminHeader() {
   const pathname = usePathname();
@@ -80,45 +62,6 @@ export function AdminHeader() {
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2 md:gap-3">
-        <div className="relative hidden w-full max-w-xl min-w-0 lg:block">
-          <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-10 rounded-xl border-border/80 bg-background/80 pl-9 pr-20 shadow-sm"
-            placeholder="Search users, courses, payments..."
-          />
-          <div className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground md:flex">
-            <IconCommand className="size-3.5" />K
-          </div>
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-10 rounded-xl"
-            >
-              <IconBell />
-              <span className="sr-only">Notifications</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <IconSparkles />
-              New course published successfully.
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <IconAlertCircle />3 payments are still pending review.
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <IconCircleDashed />
-              12 enrollments expire this week.
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <AdminThemeToggle />
         <UserDropdown />
       </div>

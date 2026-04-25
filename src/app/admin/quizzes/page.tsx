@@ -84,7 +84,7 @@ export default function QuizzesPage() {
         quiz.title.toLowerCase().includes(query) ||
         quiz.section.toLowerCase().includes(query),
     );
-  }, [search]);
+  }, [quizzes, search]);
 
   const columns = React.useMemo<ColumnDef<AdminQuiz>[]>(
     () => [

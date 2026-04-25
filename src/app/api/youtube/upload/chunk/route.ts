@@ -58,21 +58,43 @@ export async function POST(request: NextRequest) {
             const videoId = data.id
 
             let durationSec = 0
-            if (accessToken && videoId) {
-                const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY
+            if (videoId) {
+                let dbAccessToken = accessToken
 
-                // Retry up to 3 times with delay — freshly uploaded videos
-                // may not have contentDetails immediately available
-                for (let attempt = 0; attempt < 3; attempt++) {
-                    try {
-                        if (attempt > 0) {
-                            await new Promise(resolve => setTimeout(resolve, 2000))
-                        }
+                // Fetch fresh token from youtube_tokens table
+                try {
+                    const { data: tokenRow } = await auth.supabase
+                        .from('youtube_tokens')
+                        .select('access_token')
+                        .eq('user_id', auth.userId)
+                        .maybeSingle()
+                    
+                    if (tokenRow?.access_token) {
+                        dbAccessToken = tokenRow.access_token
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch token from DB:", err)
+                }
 
-                        const detailsResponse = await fetch(
-                            `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY || accessToken}`,
-                            { headers: { Authorization: `Bearer ${accessToken}` } }
-                        )
+                if (dbAccessToken) {
+                    const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY
+
+                    // Retry up to 3 times with delay — freshly uploaded videos
+                    // may not have contentDetails immediately available
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        try {
+                            if (attempt > 0) {
+                                await new Promise(resolve => setTimeout(resolve, 2000))
+                            }
+
+                            let fetchUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoId}`
+                            if (YOUTUBE_API_KEY) {
+                                fetchUrl += `&key=${YOUTUBE_API_KEY}`
+                            }
+                            const detailsResponse = await fetch(
+                                fetchUrl,
+                                { headers: { Authorization: `Bearer ${dbAccessToken}` } }
+                            )
                         const detailsData = await detailsResponse.json()
 
                         if (detailsData.items?.[0]?.contentDetails?.duration) {
@@ -96,6 +118,7 @@ export async function POST(request: NextRequest) {
                 if (durationSec === 0) {
                     console.warn(`Could not fetch duration for video ${videoId} after retries — video may still be processing`)
                 }
+                } // End of if (dbAccessToken)
             }
 
             return NextResponse.json({

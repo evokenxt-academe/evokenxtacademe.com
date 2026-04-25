@@ -71,7 +71,7 @@ export default function PaymentsPage() {
 
       return matchesQuery && matchesStatus;
     });
-  }, [search, statusFilter]);
+  }, [payments, search, statusFilter]);
 
   const totalRevenue = React.useMemo(
     () =>

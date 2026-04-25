@@ -118,10 +118,13 @@ export function normalizeEnrollment(
     courseName = "Unknown course",
 ): AdminEnrollment {
     return {
-        id: pickNumber(row, ["id", "enrollment_id"], 0),
+        id: pickString(row, ["id", "enrollment_id"], ""),
+        userId: pickString(row, ["user_id", "userId"], ""),
+        courseId: pickString(row, ["course_id", "courseId"], ""),
         user: pickString(row, ["user_name", "user"], userName),
         course: pickString(row, ["course_name", "course"], courseName),
         status: pickString(row, ["status"], "active") as AdminEnrollment["status"],
+        enrolledAt: pickDate(row, ["enrolledAt", "enrolled_at", "created_at"]),
         expiresAt: pickDate(row, ["expiresAt", "expires_at", "valid_until"]),
     };
 }

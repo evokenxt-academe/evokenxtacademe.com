@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/features/admin/lib/admin-route"
 import { createClient } from "@/utils/supabase/server"
+import { createAdminClient } from "@/utils/supabase/adminClient"
 
 export const runtime = "nodejs"
 
@@ -9,6 +10,13 @@ export const runtime = "nodejs"
  *
  * Initiates a resumable upload session with YouTube and returns the upload URL.
  * The client sends the file chunks to /api/youtube/upload/chunk.
+ *
+ * Token resolution order:
+ *  1. Client-supplied accessToken (from recent OAuth)
+ *  2. session.provider_token (if still fresh)
+ *  3. Refresh from youtube_tokens table (persistent DB storage — fixes the token bug)
+ *  4. Refresh from user_metadata.youtube_refresh_token (legacy)
+ *  5. Refresh from env YOUTUBE_REFRESH_TOKEN (global fallback)
  */
 export async function POST(request: NextRequest) {
     try {
@@ -45,58 +53,94 @@ export async function POST(request: NextRequest) {
         }
 
         let accessToken = clientAccessToken || session.provider_token || ""
-        
-        // Retrieve persistent user refresh token we stored upon oauth callback
-        const userRefreshToken = session.user?.user_metadata?.youtube_refresh_token
 
-        if (!accessToken && (session.provider_refresh_token || userRefreshToken)) {
+        // Helper to refresh using a given refresh_token
+        async function refreshAccessToken(refreshToken: string): Promise<string | null> {
             const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams({
-                    client_id: YOUTUBE_CLIENT_ID,
-                    client_secret: YOUTUBE_CLIENT_SECRET,
-                    refresh_token: session.provider_refresh_token || userRefreshToken,
+                    client_id: YOUTUBE_CLIENT_ID!,
+                    client_secret: YOUTUBE_CLIENT_SECRET!,
+                    refresh_token: refreshToken,
                     grant_type: "refresh_token",
                 }),
             })
 
             const tokenData = await tokenResponse.json()
             if (!tokenData.access_token) {
-                console.error("YouTube provider token refresh failed:", tokenData)
-                return NextResponse.json(
-                    { error: "Failed to authenticate with Google for YouTube upload" },
-                    { status: 500 }
-                )
+                console.error("Token refresh failed:", tokenData)
+                return null
             }
 
-            accessToken = tokenData.access_token
+            // Update the cached access_token in DB
+            try {
+                const adminClient = createAdminClient()
+                await adminClient
+                    .from("youtube_tokens")
+                    .upsert(
+                        {
+                            user_id: session!.user.id,
+                            refresh_token: refreshToken,
+                            access_token: tokenData.access_token,
+                            expires_at: tokenData.expires_in
+                                ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
+                                : null,
+                            updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: "user_id" }
+                    )
+            } catch {
+                // Non-blocking
+            }
+
+            return tokenData.access_token
         }
 
-        const YOUTUBE_REFRESH_TOKEN = process.env.YOUTUBE_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN
+        // Strategy 1: Try youtube_tokens table (most reliable)
+        if (!accessToken) {
+            try {
+                const adminClient = createAdminClient()
+                const { data: tokenRow } = await adminClient
+                    .from("youtube_tokens")
+                    .select("refresh_token, access_token, expires_at")
+                    .eq("user_id", session.user.id)
+                    .maybeSingle()
 
-        if (!accessToken && YOUTUBE_REFRESH_TOKEN) {
-            const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: new URLSearchParams({
-                    client_id: YOUTUBE_CLIENT_ID,
-                    client_secret: YOUTUBE_CLIENT_SECRET,
-                    refresh_token: YOUTUBE_REFRESH_TOKEN,
-                    grant_type: "refresh_token",
-                }),
-            })
+                if (tokenRow) {
+                    // Check if cached access_token is still valid
+                    if (tokenRow.access_token && tokenRow.expires_at) {
+                        const expiresAt = new Date(tokenRow.expires_at)
+                        if (expiresAt.getTime() > Date.now() + 60_000) {
+                            accessToken = tokenRow.access_token
+                        }
+                    }
 
-            const tokenData = await tokenResponse.json()
-            if (!tokenData.access_token) {
-                console.error("YouTube env token refresh failed:", tokenData)
-                return NextResponse.json(
-                    { error: "Failed to authenticate with YouTube" },
-                    { status: 500 }
-                )
+                    // If still no access_token, refresh using stored refresh_token
+                    if (!accessToken && tokenRow.refresh_token) {
+                        accessToken = (await refreshAccessToken(tokenRow.refresh_token)) ?? ""
+                    }
+                }
+            } catch (err) {
+                console.error("Error reading youtube_tokens:", err)
             }
+        }
 
-            accessToken = tokenData.access_token
+        // Strategy 2: Refresh from session.provider_refresh_token or user_metadata
+        if (!accessToken) {
+            const refreshToken = session.provider_refresh_token
+                || session.user?.user_metadata?.youtube_refresh_token
+            if (refreshToken) {
+                accessToken = (await refreshAccessToken(refreshToken)) ?? ""
+            }
+        }
+
+        // Strategy 3: Env-level fallback
+        if (!accessToken) {
+            const YOUTUBE_REFRESH_TOKEN = process.env.YOUTUBE_REFRESH_TOKEN || process.env.GOOGLE_REFRESH_TOKEN
+            if (YOUTUBE_REFRESH_TOKEN) {
+                accessToken = (await refreshAccessToken(YOUTUBE_REFRESH_TOKEN)) ?? ""
+            }
         }
 
         if (!accessToken) {

@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
                 price: body.price || 0,
                 discount_price: body.discountPrice || null,
                 status: body.status || "draft",
-                total_duration_sec: body.totalDurationSec || 0,
             })
             .select("id")
             .single()
@@ -75,17 +74,15 @@ export async function POST(request: NextRequest) {
                 .single()
 
             if (sectionError || !insertedSection) {
-                console.error("Section insert error:", sectionError)
-                if (isIntegerIdTypeError(sectionError)) {
-                    return NextResponse.json(
-                        {
-                            error:
-                                "Supabase still has an integer id/foreign-key column. sections.id and sections.course_id must be uuid.",
-                        },
-                        { status: 500 }
-                    )
-                }
-                continue
+                console.error(`Section insert error for course ${courseId}:`, sectionError)
+                return NextResponse.json(
+                    {
+                        error: isIntegerIdTypeError(sectionError)
+                            ? "Supabase still has an integer id/foreign-key column. sections.id and sections.course_id must be uuid."
+                            : `${sectionError?.message || "Failed to insert section"} (Course ID: ${courseId})`
+                    },
+                    { status: 500 }
+                )
             }
 
             for (const lecture of section.lectures || []) {
@@ -106,16 +103,14 @@ export async function POST(request: NextRequest) {
 
                 if (lectureError || !insertedLecture) {
                     console.error("Lecture insert error:", lectureError)
-                    if (isIntegerIdTypeError(lectureError)) {
-                        return NextResponse.json(
-                            {
-                                error:
-                                    "Supabase still has an integer id/foreign-key column. lectures.id and lectures.section_id must be uuid.",
-                            },
-                            { status: 500 }
-                        )
-                    }
-                    continue
+                    return NextResponse.json(
+                        {
+                            error: isIntegerIdTypeError(lectureError) 
+                                ? "Supabase still has an integer id/foreign-key column. lectures.id and lectures.section_id must be uuid."
+                                : lectureError?.message || "Failed to insert lecture"
+                        },
+                        { status: 500 }
+                    )
                 }
 
                 for (const resource of lecture.resources || []) {

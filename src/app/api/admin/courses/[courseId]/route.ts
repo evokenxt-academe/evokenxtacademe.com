@@ -87,28 +87,49 @@ function toCourseId(value: string) {
 
 async function resolveCourseRecord(supabase: any, identifier: string) {
     const courseIdentifier = identifier.trim();
-    const lookupColumns = toCourseId(courseIdentifier) ? ["id", "slug"] : ["slug", "id"];
+    const isUuid = toCourseId(courseIdentifier) !== null;
 
-    for (const column of lookupColumns) {
+    if (isUuid) {
+        // Try ID first, then slug (rare but possible to have a slug that looks like a UUID)
+        const columns = ["id", "slug"];
+        for (const column of columns) {
+            const result = await supabase
+                .from("courses")
+                .select("*")
+                .eq(column, courseIdentifier)
+                .maybeSingle();
+
+            if (result.error) {
+                // Ignore UUID syntax errors if we're trying to fallback to slug
+                if (column === "id" && result.error.message.includes("invalid input syntax for type uuid")) {
+                    continue;
+                }
+                return { error: result.error.message } as const;
+            }
+
+            if (result.data) {
+                return { data: result.data as Row } as const;
+            }
+        }
+    } else {
+        // Only try slug
         const result = await supabase
             .from("courses")
             .select("*")
-            .eq(column, courseIdentifier)
+            .eq("slug", courseIdentifier)
             .maybeSingle();
 
         if (result.error) {
             return { error: result.error.message } as const;
         }
 
-        if (result.data) {
-            return { data: result.data as Row } as const;
-        }
+        return { data: result.data as Row } as const;
     }
 
     return { data: null } as const;
 }
 
-async function deleteCourseTree(supabase: any, courseId: string) {
+async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRecord = true) {
     const sectionIdsResult = await supabase
         .from("sections")
         .select("id")
@@ -162,13 +183,15 @@ async function deleteCourseTree(supabase: any, courseId: string) {
         }
     }
 
-    const { error: courseDeleteError } = await supabase
-        .from("courses")
-        .delete()
-        .eq("id", courseId);
+    if (deleteCourseRecord) {
+        const { error: courseDeleteError } = await supabase
+            .from("courses")
+            .delete()
+            .eq("id", courseId);
 
-    if (courseDeleteError) {
-        return { error: courseDeleteError.message } as const;
+        if (courseDeleteError) {
+            return { error: courseDeleteError.message } as const;
+        }
     }
 
     return { success: true } as const;
@@ -444,7 +467,6 @@ export async function PUT(
             price: body.price || 0,
             discount_price: body.discountPrice || null,
             status: body.status || "draft",
-            total_duration_sec: body.totalDurationSec || 0,
         })
         .eq("id", courseId);
 
@@ -461,16 +483,46 @@ export async function PUT(
         return NextResponse.json({ error: courseError.message }, { status: 500 });
     }
 
-    const deleteExistingResult = await deleteCourseTree(supabase, courseId);
-    if ("error" in deleteExistingResult) {
-        return NextResponse.json({ error: deleteExistingResult.error }, { status: 500 });
+    const incomingSectionIds = (body.sections ?? []).map((s: any) => s.id).filter(Boolean);
+    const incomingLectureIds = (body.sections ?? []).flatMap((s: any) => (s.lectures ?? []).map((l: any) => l.id)).filter(Boolean);
+    const incomingResourceIds = (body.sections ?? []).flatMap((s: any) => (s.lectures ?? []).flatMap((l: any) => (l.resources ?? []).map((r: any) => r.id))).filter(Boolean);
+
+    // Fetch existing hierarchy to delete orphaned records safely
+    const { data: existingSections } = await supabase.from('sections').select('id').eq('course_id', courseId);
+    const existingSectionIds = (existingSections || []).map((s: any) => s.id);
+    
+    if (existingSectionIds.length > 0) {
+        const { data: existingLectures } = await supabase.from('lectures').select('id').in('section_id', existingSectionIds);
+        const existingLectureIds = (existingLectures || []).map((l: any) => l.id);
+        
+        if (existingLectureIds.length > 0) {
+            const { data: existingResources } = await supabase.from('resources').select('id').in('lecture_id', existingLectureIds);
+            const existingResourceIds = (existingResources || []).map((r: any) => r.id);
+            
+            const resourcesToDelete = existingResourceIds.filter((id: string) => !incomingResourceIds.includes(id));
+            if (resourcesToDelete.length > 0) {
+                await supabase.from('resources').delete().in('id', resourcesToDelete);
+            }
+        }
+        
+        const lecturesToDelete = existingLectureIds.filter((id: string) => !incomingLectureIds.includes(id));
+        if (lecturesToDelete.length > 0) {
+            await supabase.from('lectures').delete().in('id', lecturesToDelete);
+        }
+    }
+    
+    const sectionsToDelete = existingSectionIds.filter((id: string) => !incomingSectionIds.includes(id));
+    if (sectionsToDelete.length > 0) {
+        await supabase.from('sections').delete().in('id', sectionsToDelete);
     }
 
+    // Upsert remaining hierarchy
     for (const section of body.sections ?? []) {
-        const { data: insertedSection, error: sectionError } = await supabase
+        const sectionId = section.id || crypto.randomUUID();
+        const { data: upsertedSection, error: sectionError } = await supabase
             .from("sections")
-            .insert({
-                id: crypto.randomUUID(),
+            .upsert({
+                id: sectionId,
                 course_id: courseId,
                 title: section.title,
                 position: section.position,
@@ -478,7 +530,8 @@ export async function PUT(
             .select("id")
             .single();
 
-        if (sectionError || !insertedSection) {
+        if (sectionError || !upsertedSection) {
+            console.error(`Section upsert error for course ${courseId}:`, sectionError);
             if (isIntegerIdTypeError(sectionError)) {
                 return NextResponse.json(
                     {
@@ -489,17 +542,18 @@ export async function PUT(
                 );
             }
             return NextResponse.json(
-                { error: sectionError?.message || "Failed to update sections" },
+                { error: `${sectionError?.message || "Failed to update sections"} (Course ID: ${courseId})` },
                 { status: 500 },
             );
         }
 
         for (const lecture of section.lectures ?? []) {
-            const { data: insertedLecture, error: lectureError } = await supabase
+            const lectureId = lecture.id || crypto.randomUUID();
+            const { data: upsertedLecture, error: lectureError } = await supabase
                 .from("lectures")
-                .insert({
-                    id: crypto.randomUUID(),
-                    section_id: insertedSection.id,
+                .upsert({
+                    id: lectureId,
+                    section_id: upsertedSection.id,
                     title: lecture.title,
                     video_url: lecture.videoUrl || null,
                     description: lecture.description || null,
@@ -510,7 +564,7 @@ export async function PUT(
                 .select("id")
                 .single();
 
-            if (lectureError || !insertedLecture) {
+            if (lectureError || !upsertedLecture) {
                 if (isIntegerIdTypeError(lectureError)) {
                     return NextResponse.json(
                         {
@@ -531,11 +585,12 @@ export async function PUT(
                     continue;
                 }
 
+                const resourceId = resource.id || crypto.randomUUID();
                 const { error: resourceError } = await supabase
                     .from("resources")
-                    .insert({
-                        id: crypto.randomUUID(),
-                        lecture_id: insertedLecture.id,
+                    .upsert({
+                        id: resourceId,
+                        lecture_id: upsertedLecture.id,
                         title: resource.title || "Untitled",
                         file_url: resource.fileUrl,
                     });
