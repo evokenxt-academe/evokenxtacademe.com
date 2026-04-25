@@ -1,14 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { name: "Capabilities", href: "#features" },
-  { name: "Process", href: "#how-it-works" },
-  { name: "Infra", href: "#infra" },
-  { name: "Integrations", href: "#integrations" },
+  { name: "Home", href: "/" },
+  { name: "About", href: "/about" },
+  { name: "Qualifications", href: "/qualifications" },
+  { name: "Demo", href: "/demo" },
   { name: "Security", href: "#security" },
 ];
 
@@ -42,22 +44,27 @@ export function Navigation() {
             }`}
         >
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2 group">
-            <span className={`font-display tracking-tight transition-all duration-500 ${isScrolled ? "text-xl text-foreground" : "text-2xl text-white"}`}>COMPUTE</span>
-            <span className={`font-mono transition-all duration-500 ${isScrolled ? "text-[10px] mt-0.5 text-muted-foreground" : "text-xs mt-1 text-white/60"}`}>TM</span>
-          </a>
+          <Link href="/" className="flex items-center gap-2 group">
+              <div className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500",
+                isScrolled ? "bg-indigo-600 shadow-lg shadow-indigo-200" : "bg-white/10 backdrop-blur-md border border-white/20"
+              )}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isScrolled ? "text-white" : "text-white"}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              </div>
+            <span className={`font-display font-[800] tracking-tight transition-all duration-500 ${isScrolled ? "text-xl text-slate-900" : "text-2xl text-white"}`}>Evoke EduGlobal</span>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-12">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
                 href={link.href}
                 className={`text-sm transition-colors duration-300 relative group ${isScrolled ? "text-foreground/70 hover:text-foreground" : "text-white/70 hover:text-white"}`}
               >
                 {link.name}
                 <span className={`absolute -bottom-1 left-0 w-0 h-px transition-all duration-300 group-hover:w-full ${isScrolled ? "bg-foreground" : "bg-white"}`} />
-              </a>
+              </Link>
             ))}
           </div>
 
@@ -102,7 +109,7 @@ export function Navigation() {
           {/* Navigation Links */}
           <div className="flex-1 flex flex-col justify-center gap-8">
             {navLinks.map((link, i) => (
-              <a
+              <Link
                 key={link.name}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -113,7 +120,7 @@ export function Navigation() {
                 style={{ transitionDelay: isMobileMenuOpen ? `${i * 75}ms` : "0ms" }}
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
           </div>
 

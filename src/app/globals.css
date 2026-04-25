@@ -128,3 +128,25 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+  .bg-lms-gradient {
+    background: linear-gradient(95deg, #4F46E5 0%, #4F5DF2 38%, #5C6CFA 70%, #4F46E5 100%);
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

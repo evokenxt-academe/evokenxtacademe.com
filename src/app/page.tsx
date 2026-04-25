@@ -1,34 +1,38 @@
-import { CtaSection } from "@/components/cta-section";
-import { DevelopersSection } from "@/components/developers-section";
-import { FeaturesSection } from "@/components/feature-section";
-import { FooterSection } from "@/components/footer-section";
+import { StorySection } from "@/components/story-section";
 import { HeroSection } from "@/components/hero-section";
+import { HowProcessSection } from "@/components/how-process-section";
 import { HowItWorksSection } from "@/components/how-it-works-section";
-import { InfrastructureSection } from "@/components/infrastructure-section";
-import { IntegrationsSection } from "@/components/integrations-section";
-import { MetricsSection } from "@/components/metrics-section";
-import { Navigation } from "@/components/navigation";
-import { PricingSection } from "@/components/pricing-section";
-import { SecuritySection } from "@/components/security-section";
 import { TestimonialsSection } from "@/components/testimonials-section";
+import { FaqSection } from "@/components/faq-section";
+import { LmsClassesStripSection } from "@/components/lms-classes-strip-section";
+import { TeacherCoursesSection } from "@/components/teacher-courses-section";
+import { CourseSection } from "@/components/course-section";
+
 
 export default function Home() {
+  const bodyTheme = {
+    backgroundColor: "#F8FAFC",
+    backgroundImage: `
+      radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(251, 146, 60, 0.12) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(255, 255, 255, 0.8) 0px, transparent 50%)
+    `,
+  } as const;
+
   return (
     <main className="relative min-h-screen overflow-x-hidden">
-      <Navigation />
       <HeroSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <InfrastructureSection />
-      {/* <MetricsSection /> */}
-      {/* <IntegrationsSection /> */}
-      <SecuritySection />
-      <DevelopersSection />
-      <TestimonialsSection />
-      <PricingSection />
-      {/* <CtaSection /> */}
-      <FooterSection />
+      <div style={bodyTheme}>
+        <StorySection />
+        <CourseSection />
+        <TestimonialsSection />
+        <FaqSection />
+        <LmsClassesStripSection />
+        <HowProcessSection />
+      </div>
     </main>
   );
 }
+
 

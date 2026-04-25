@@ -1,829 +1,281 @@
 "use client";
+import { useRef } from "react";
 
-import { useEffect, useRef, useState } from "react";
-
-/* ──────────────── data ──────────────── */
-
-const instructors = [
-    {
-        img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
-        name: "Alex",
-    },
-    {
-        img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face",
-        name: "James",
-    },
-    {
-        img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face",
-        name: "Sarah",
-    },
-    {
-        img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&crop=face",
-        name: "Michael",
-        bg: "#e8daf5",
-    },
-    {
-        img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
-        name: "David",
-    },
-    {
-        img: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=200&h=200&fit=crop&crop=face",
-        name: "Tom",
-    },
-];
-
-const roles = [
-    "Logo designers",
-    "Web developers",
-    "SEO experts",
-    "UX designers",
-    "Data analysts",
-    "Content writers",
-];
-
-const categories = [
-    { label: "UI/UX", count: "12 courses", type: "palette" },
-    { label: "Development", count: "23 courses", type: "code" },
-    { label: "Marketing", count: "08 courses", type: "briefcase" },
-    { label: "Development", count: "15 courses", type: "code" },
-    { label: "Data Analytics", count: "04 courses", type: "chart" },
-    { label: "Cyber Security", count: "03 courses", type: "monitor" },
-];
-
-/* ──────── category icon SVGs ──────── */
-
-function CategoryIcon({ type }: { type: string }) {
-    const iconStyle = {
-        width: 18,
-        height: 18,
-        strokeWidth: 1.5,
-        stroke: "currentColor",
-        fill: "none",
-    };
-
-    switch (type) {
-        case "palette":
-            return (
-                <svg {...iconStyle} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2a10 10 0 0 1 0 20c-1.5 0-3-.5-4-1.5a3 3 0 0 1 0-4.5 2 2 0 0 0-2-3.5A10 10 0 0 1 12 2z" />
-                    <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none" />
-                    <circle cx="13" cy="6" r="1.5" fill="currentColor" stroke="none" />
-                    <circle cx="17" cy="10" r="1.5" fill="currentColor" stroke="none" />
-                </svg>
-            );
-        case "code":
-            return (
-                <svg {...iconStyle} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="16 18 22 12 16 6" />
-                    <polyline points="8 6 2 12 8 18" />
-                </svg>
-            );
-        case "briefcase":
-            return (
-                <svg {...iconStyle} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                </svg>
-            );
-        case "chart":
-            return (
-                <svg {...iconStyle} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <path d="M7 17V13" />
-                    <path d="M12 17V9" />
-                    <path d="M17 17V11" />
-                </svg>
-            );
-        case "monitor":
-            return (
-                <svg {...iconStyle} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
-            );
-        default:
-            return null;
-    }
+interface Feature {
+    id: number;
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    tag: string;
 }
 
-/* ──────── dotted globe canvas ──────── */
+const IconLiveClasses = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+        <circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+);
 
-function DottedGlobe() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const frameRef = useRef(0);
+const IconCoursePlanner = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeWidth="2.4" />
+    </svg>
+);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
+const IconVirtualClass = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+        <path d="M9 10l2 2 4-4" />
+    </svg>
+);
 
-        const resize = () => {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-        };
-        resize();
-        window.addEventListener("resize", resize);
+const IconPerformance = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 20h18M5 20V14M9 20V8M13 20v-5M17 20V4" />
+        <path d="M17 4l-4 5-4-3-4 4" />
+    </svg>
+);
 
-        let rotation = 0;
+const IconLibrary = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+        <path d="M9 7h7M9 11h5" />
+    </svg>
+);
 
-        const draw = () => {
-            const rect = canvas.getBoundingClientRect();
-            const w = rect.width;
-            const h = rect.height;
-            ctx.clearRect(0, 0, w, h);
+const IconCertificate = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="9" r="4" />
+        <path d="M9.5 13.5L7 22l5-2 5 2-2.5-8.5" />
+        <path d="M10.5 9l1 1L14 7.5" />
+    </svg>
+);
 
-            const cx = w * 0.52;
-            const cy = h * 0.48;
-            const R = Math.min(w, h) * 0.42;
-            const dotSpacing = 7;
-            const cols = Math.floor(w / dotSpacing);
-            const rows = Math.floor(h / dotSpacing);
+const IconDoubt = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        <path d="M12 8c0-1 .667-1.5 1-1.5a1.5 1.5 0 010 3c-.5 0-1 .448-1 1v.5" strokeWidth="1.7" />
+        <circle cx="12" cy="14" r=".6" fill="currentColor" stroke="none" />
+    </svg>
+);
 
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const x = c * dotSpacing + dotSpacing / 2;
-                    const y = r * dotSpacing + dotSpacing / 2;
+const IconPace = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3.5 3.5" />
+    </svg>
+);
 
-                    const dx = x - cx;
-                    const dy = y - cy;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+const features: Feature[] = [
+    { id: 1, icon: <IconLiveClasses />, title: "Live Classes", description: "Interactive sessions with real-time doubt resolution and expert-led instruction.", tag: "Live" },
+    { id: 2, icon: <IconCoursePlanner />, title: "Course Planner", description: "Smart scheduling tools to keep your learning structured and entirely stress-free.", tag: "Organised" },
+    { id: 3, icon: <IconVirtualClass />, title: "Virtual Classrooms", description: "Immersive digital environments built for focused, high-quality collaborative learning.", tag: "Immersive" },
+    { id: 4, icon: <IconPerformance />, title: "Performance Tracking", description: "Granular analytics to surface strengths, pinpoint gaps, and drive measurable progress.", tag: "Analytics" },
+    { id: 5, icon: <IconLibrary />, title: "Resource Library", description: "Curated notes, references, and materials available on-demand at any time.", tag: "On-demand" },
+    { id: 6, icon: <IconCertificate />, title: "Certifications", description: "Industry-recognised credentials issued automatically upon successful completion.", tag: "Verified" },
+    { id: 7, icon: <IconDoubt />, title: "Doubt Support", description: "Round-the-clock mentor access to resolve queries without breaking your momentum.", tag: "24 / 7" },
+    { id: 8, icon: <IconPace />, title: "Self-Paced Learning", description: "Lifetime access to all recorded sessions so you learn entirely on your own terms.", tag: "Flexible" },
+];
 
-                    if (dist > R + 15) continue;
-
-                    const normalDist = dist / R;
-                    const depthFade =
-                        normalDist < 1
-                            ? Math.sqrt(1 - normalDist * normalDist)
-                            : 0;
-
-                    const angle = Math.atan2(dy, dx) + rotation;
-                    const lonMod = Math.sin(angle * 3) * 0.3 + 0.7;
-                    const latMod =
-                        Math.cos((dy / R) * Math.PI) * 0.3 + 0.7;
-
-                    const continentNoise =
-                        Math.sin(x * 0.04 + rotation * 30 + y * 0.03) *
-                        Math.cos(y * 0.05 - x * 0.02) *
-                        lonMod *
-                        latMod;
-
-                    const isContinentDot =
-                        continentNoise > 0.1 && normalDist < 1;
-
-                    if (normalDist < 1) {
-                        const alpha = isContinentDot
-                            ? 0.18 + depthFade * 0.28
-                            : 0.03 + depthFade * 0.04;
-                        const radius = isContinentDot ? 1.2 : 0.7;
-
-                        ctx.beginPath();
-                        ctx.arc(x, y, radius, 0, Math.PI * 2);
-                        ctx.fillStyle = `rgba(150, 150, 150, ${alpha})`;
-                        ctx.fill();
-                    }
-                }
-            }
-
-            /* Orange highlighted markers */
-            const markers = [
-                { lat: 0.15, lon: 0.5 },
-                { lat: -0.25, lon: 0.35 },
-                { lat: 0.35, lon: -0.12 },
-            ];
-
-            markers.forEach((m) => {
-                const mx = cx + m.lon * R;
-                const my = cy + m.lat * R;
-                const mDist =
-                    Math.sqrt((mx - cx) ** 2 + (my - cy) ** 2) / R;
-                if (mDist < 0.95) {
-                    // Outer glow
-                    ctx.beginPath();
-                    ctx.arc(mx, my, 12, 0, Math.PI * 2);
-                    ctx.fillStyle = "rgba(255, 130, 40, 0.10)";
-                    ctx.fill();
-
-                    // Mid ring
-                    ctx.beginPath();
-                    ctx.arc(mx, my, 6, 0, Math.PI * 2);
-                    ctx.fillStyle = "rgba(255, 120, 30, 0.55)";
-                    ctx.fill();
-
-                    // Core dot
-                    ctx.beginPath();
-                    ctx.arc(mx, my, 3, 0, Math.PI * 2);
-                    ctx.fillStyle = "rgba(255, 100, 0, 1)";
-                    ctx.fill();
-                }
-            });
-
-            rotation += 0.0006;
-            frameRef.current = requestAnimationFrame(draw);
-        };
-
-        draw();
-
-        return () => {
-            window.removeEventListener("resize", resize);
-            cancelAnimationFrame(frameRef.current);
-        };
-    }, []);
+const FeatureCard = ({ feature }: { feature: Feature }) => {
+    const cardRef = useRef<HTMLDivElement>(null);
 
     return (
-        <canvas
-            ref={canvasRef}
-            className="w-full h-full"
-            style={{ width: "100%", height: "100%" }}
-        />
-    );
-}
+        <div
+            ref={cardRef}
+            style={{
+                minWidth: "280px",
+                maxWidth: "280px",
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                borderRadius: "4px",
+                padding: "32px 28px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "24px",
+                transition: "all 0.25s ease",
+                cursor: "default",
+                flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.borderColor = "#94A3B8";
+                el.style.boxShadow = "0 10px 30px -10px rgba(0,0,0,0.05)";
+                el.style.transform = "translateY(-4px)";
+            }}
+            onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.borderColor = "#E2E8F0";
+                el.style.boxShadow = "none";
+                el.style.transform = "translateY(0)";
+            }}
+        >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#0F172A",
+                        flexShrink: 0,
+                    }}
+                >
+                    {feature.icon}
+                </div>
+                <span
+                    style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "#64748B",
+                    }}
+                >
+                    {feature.tag}
+                </span>
+            </div>
 
-/* ──────── scrolling role tags ──────── */
-
-function RoleTicker() {
-    return (
-        <div className="features-ticker-wrap">
-            {/* Fade edges */}
-            <div className="features-ticker-fade features-ticker-fade--left" />
-            <div className="features-ticker-fade features-ticker-fade--right" />
-
-            <div className="features-ticker-track">
-                {[...roles, ...roles].map((role, i) => (
-                    <span key={`${role}-${i}`} className="features-role-badge">
-                        {role}
-                    </span>
-                ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <h3
+                    style={{
+                        margin: 0,
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.4,
+                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                    }}
+                >
+                    {feature.title}
+                </h3>
+                <p
+                    style={{
+                        margin: 0,
+                        fontSize: "13.5px",
+                        color: "#475569",
+                        lineHeight: 1.6,
+                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                    }}
+                >
+                    {feature.description}
+                </p>
             </div>
         </div>
     );
-}
-
-/* ──────── rocket illustration ──────── */
-
-function RocketIllustration() {
-    return (
-        <div className="features-rocket-wrap">
-            {/* Decorative dots / lines */}
-            <svg
-                className="features-rocket-deco"
-                viewBox="0 0 200 60"
-                fill="none"
-            >
-                {/* dotted arc line */}
-                <path
-                    d="M20 50 C60 10, 140 10, 180 50"
-                    stroke="#d0d5dd"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                    fill="none"
-                />
-                {/* small circles along the arc */}
-                <circle cx="40" cy="28" r="2" fill="#d0d5dd" />
-                <circle cx="100" cy="12" r="2.5" fill="#c0c5d0" />
-                <circle cx="160" cy="28" r="2" fill="#d0d5dd" />
-            </svg>
-            {/* Rocket emoji */}
-            <span className="features-rocket-emoji">🚀</span>
-        </div>
-    );
-}
-
-/* ──────── main section ──────── */
+};
 
 export function FeaturesSection() {
-    const [isVisible, setIsVisible] = useState(false);
-    const sectionRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) setIsVisible(true);
-            },
-            { threshold: 0.08 }
-        );
-        if (sectionRef.current) observer.observe(sectionRef.current);
-        return () => observer.disconnect();
-    }, []);
+    const trackRef = useRef<HTMLDivElement>(null);
+    const duplicated = [...features, ...features];
 
     return (
         <section
-            id="features"
-            ref={sectionRef}
-            className="features-section"
+            style={{
+                width: "100%",
+                backgroundColor: "transparent",
+                padding: "80px 0 96px",
+                overflow: "hidden",
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                borderTop: "1px solid #E2E8F0",
+                borderBottom: "1px solid #E2E8F0",
+            }}
         >
-            <div className="features-container">
-                {/* ── Section header ── */}
+            <div style={{ textAlign: "center", marginBottom: "64px", padding: "0 24px" }}>
                 <div
-                    className={`features-header ${
-                        isVisible ? "features-visible" : "features-hidden"
-                    }`}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        marginBottom: "24px",
+                    }}
                 >
-                    <span className="features-label">Benefits</span>
-                    <h2 className="features-title">
-                        How Our Learning Platform
-                        <br />
-                        Helps You
-                    </h2>
-                    <p className="features-subtitle">
-                        It&apos;s designed to make learning simple, structured,
-                        and effective so you can focus on progress, not
-                        complexity.
-                    </p>
+                    <span style={{ width: "24px", height: "1px", background: "#0F172A", display: "inline-block" }} />
+                    <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748B" }}>
+                        Platform Capabilities
+                    </span>
+                    <span style={{ width: "24px", height: "1px", background: "#0F172A", display: "inline-block" }} />
                 </div>
 
-                {/* ── Bento grid — 3 columns ── */}
-                <div className="features-grid">
-                    {/* ━━━ Column 1: Trusted Instructors ━━━ */}
-                    <div
-                        className={`features-card features-card--instructors ${
-                            isVisible ? "features-visible" : "features-hidden"
-                        }`}
-                    >
-                        <h3 className="features-card-title">
-                            Learn from Trusted Instructors
-                        </h3>
-                        <p className="features-card-desc">
-                            Access courses created by experienced professionals
-                            and educators, ensuring structured content and
-                            practical learning.
-                        </p>
+                <h2
+                    style={{
+                        margin: "0 0 16px",
+                        fontSize: "clamp(28px, 4vw, 42px)",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1.15,
+                    }}
+                >
+                    Everything you need to learn smarter.
+                </h2>
+                <p
+                    style={{
+                        margin: "0 auto",
+                        maxWidth: "540px",
+                        fontSize: "15px",
+                        color: "#475569",
+                        lineHeight: 1.6,
+                    }}
+                >
+                    A complete, enterprise-grade learning platform built for serious educators and high-performing students.
+                </p>
+            </div>
 
-                        {/* Avatar grid 3×2 */}
-                        <div className="features-avatar-grid">
-                            {instructors.map((inst, i) => (
-                                <div
-                                    key={i}
-                                    className="features-avatar-cell"
-                                    style={
-                                        inst.bg
-                                            ? { backgroundColor: inst.bg }
-                                            : undefined
-                                    }
-                                >
-                                    {inst.img ? (
-                                        <img
-                                            src={inst.img}
-                                            alt={inst.name}
-                                            className="features-avatar-img"
-                                            loading="lazy"
-                                        />
-                                    ) : null}
-                                </div>
-                            ))}
-                        </div>
+            <div style={{ position: "relative" }}>
+                <div
+                    style={{
+                        pointerEvents: "none",
+                        position: "absolute",
+                        top: 0, bottom: 0, left: 0,
+                        width: "180px",
+                        background: "linear-gradient(to right, #F8FAFC 0%, transparent 100%)",
+                        zIndex: 10,
+                    }}
+                />
+                <div
+                    style={{
+                        pointerEvents: "none",
+                        position: "absolute",
+                        top: 0, bottom: 0, right: 0,
+                        width: "180px",
+                        background: "linear-gradient(to left, #F8FAFC 0%, transparent 100%)",
+                        zIndex: 10,
+                    }}
+                />
 
-                        {/* Role ticker */}
-                        <RoleTicker />
-                    </div>
-
-                    {/* ━━━ Column 2: Middle column ━━━ */}
-                    <div className="features-col-middle">
-                        {/* Rocket card */}
-                        <div
-                            className={`features-card features-card--rocket ${
-                                isVisible
-                                    ? "features-visible features-delay-1"
-                                    : "features-hidden"
-                            }`}
-                        >
-                            <RocketIllustration />
-                            <h3 className="features-card-title">
-                                Learn Faster, Stay Consistent
-                            </h3>
-                            <p className="features-card-desc">
-                                Follow a guided learning flow with bite sized
-                                lessons, clear objectives, and progress driven
-                                content that helps you stay motivated.
-                            </p>
-                        </div>
-
-                        {/* Categories card */}
-                        <div
-                            className={`features-card features-card--categories ${
-                                isVisible
-                                    ? "features-visible features-delay-2"
-                                    : "features-hidden"
-                            }`}
-                        >
-                            <div className="features-categories-grid">
-                                {categories.map((cat, i) => (
-                                    <div
-                                        key={`${cat.label}-${i}`}
-                                        className="features-category-pill"
-                                    >
-                                        <span className="features-category-icon">
-                                            <CategoryIcon type={cat.type} />
-                                        </span>
-                                        <div className="features-category-text">
-                                            <span className="features-category-label">
-                                                {cat.label}
-                                            </span>
-                                            <span className="features-category-count">
-                                                {cat.count}
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Learning Progress card */}
-                        <div
-                            className={`features-card features-card--progress ${
-                                isVisible
-                                    ? "features-visible features-delay-3"
-                                    : "features-hidden"
-                            }`}
-                        >
-                            <h3 className="features-card-title">
-                                Learning Progress
-                            </h3>
-                            <p className="features-card-desc">
-                                Enhance productivity through task-based
-                                learning, enabling you to learn in a structured
-                                way and reach your full potential effectively.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* ━━━ Column 3: Learn Anywhere + Globe ━━━ */}
-                    <div
-                        className={`features-card features-card--globe ${
-                            isVisible
-                                ? "features-visible features-delay-2"
-                                : "features-hidden"
-                        }`}
-                    >
-                        <h3 className="features-card-title">
-                            Learn Anytime, Anywhere
-                        </h3>
-                        <p className="features-card-desc">
-                            Study at your own pace with flexible access to
-                            courses from any device, wherever you are in the
-                            world.
-                        </p>
-                        <div className="features-globe-area">
-                            <DottedGlobe />
-                        </div>
-                    </div>
+                <div
+                    ref={trackRef}
+                    style={{
+                        display: "flex",
+                        gap: "24px",
+                        width: "max-content",
+                        paddingLeft: "24px",
+                        animation: "lms-scroll 50s linear infinite",
+                    }}
+                    onMouseEnter={() => {
+                        if (trackRef.current) trackRef.current.style.animationPlayState = "paused";
+                    }}
+                    onMouseLeave={() => {
+                        if (trackRef.current) trackRef.current.style.animationPlayState = "running";
+                    }}
+                >
+                    {duplicated.map((f, i) => (
+                        <FeatureCard key={`${f.id}-${i}`} feature={f} />
+                    ))}
                 </div>
             </div>
 
-            {/* ── Scoped styles ── */}
-            <style jsx>{`
-                /* ── Section ── */
-                .features-section {
-                    position: relative;
-                    padding: 6rem 0 7rem;
-                    overflow: hidden;
-                    background: #f7f8fa;
-                }
-
-                .features-container {
-                    max-width: 1320px;
-                    margin: 0 auto;
-                    padding: 0 1.5rem;
-                }
-
-                /* ── Header ── */
-                .features-header {
-                    max-width: 640px;
-                    margin-bottom: 3.5rem;
-                    transition: all 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-                }
-
-                .features-label {
-                    display: inline-block;
-                    font-size: 0.7rem;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.2em;
-                    color: #888;
-                    margin-bottom: 1rem;
-                    font-family: var(--font-mono, monospace);
-                }
-
-                .features-title {
-                    font-size: clamp(1.75rem, 4vw, 2.75rem);
-                    font-weight: 600;
-                    line-height: 1.15;
-                    letter-spacing: -0.02em;
-                    margin: 0 0 1rem;
-                    color: #111;
-                }
-
-                .features-subtitle {
-                    font-size: 1rem;
-                    color: #666;
-                    line-height: 1.65;
-                    margin: 0;
-                }
-
-                /* ── Grid ── */
-                .features-grid {
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    gap: 1rem;
-                }
-
-                @media (min-width: 1024px) {
-                    .features-grid {
-                        grid-template-columns: 1fr 1fr 1fr;
-                        gap: 1.1rem;
-                    }
-                }
-
-                /* ── Cards ── */
-                .features-card {
-                    background: #fff;
-                    border-radius: 1rem;
-                    padding: 1.75rem;
-                    transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-                    border: 1px solid rgba(0, 0, 0, 0.04);
-                }
-
-                .features-card-title {
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    letter-spacing: -0.01em;
-                    color: #111;
-                    margin: 0 0 0.5rem;
-                    line-height: 1.35;
-                }
-
-                .features-card-desc {
-                    font-size: 0.875rem;
-                    color: #777;
-                    line-height: 1.65;
-                    margin: 0 0 1.25rem;
-                }
-
-                /* ── Visibility animation ── */
-                .features-visible {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-
-                .features-hidden {
-                    opacity: 0;
-                    transform: translateY(24px);
-                }
-
-                .features-delay-1 {
-                    transition-delay: 0.1s;
-                }
-                .features-delay-2 {
-                    transition-delay: 0.2s;
-                }
-                .features-delay-3 {
-                    transition-delay: 0.3s;
-                }
-
-                /* ── Instructors card ── */
-                .features-card--instructors {
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .features-avatar-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 0.6rem;
-                    margin-bottom: 1.25rem;
-                    flex: 1;
-                }
-
-                .features-avatar-cell {
-                    aspect-ratio: 1;
-                    border-radius: 0.75rem;
-                    overflow: hidden;
-                    background: #f0f0f0;
-                }
-
-                .features-avatar-img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    display: block;
-                    filter: grayscale(20%);
-                    transition: filter 0.3s ease;
-                }
-
-                .features-avatar-cell:hover .features-avatar-img {
-                    filter: grayscale(0%);
-                }
-
-                /* ── Role ticker ── */
-                .features-ticker-wrap {
-                    position: relative;
-                    overflow: hidden;
-                    padding: 0.25rem 0;
-                }
-
-                .features-ticker-fade {
-                    position: absolute;
-                    top: 0;
-                    bottom: 0;
-                    width: 2.5rem;
-                    z-index: 2;
-                    pointer-events: none;
-                }
-
-                .features-ticker-fade--left {
-                    left: 0;
-                    background: linear-gradient(
-                        to right,
-                        #fff,
-                        transparent
-                    );
-                }
-
-                .features-ticker-fade--right {
-                    right: 0;
-                    background: linear-gradient(
-                        to left,
-                        #fff,
-                        transparent
-                    );
-                }
-
-                .features-ticker-track {
-                    display: flex;
-                    gap: 0.5rem;
-                    animation: ticker-scroll 18s linear infinite;
-                }
-
-                .features-role-badge {
-                    flex-shrink: 0;
-                    padding: 0.35rem 0.85rem;
-                    border-radius: 999px;
-                    border: 1px solid #e2e5ea;
-                    font-size: 0.78rem;
-                    color: #666;
-                    white-space: nowrap;
-                    background: #fff;
-                }
-
-                @keyframes ticker-scroll {
-                    from {
-                        transform: translateX(0);
-                    }
-                    to {
-                        transform: translateX(-50%);
-                    }
-                }
-
-                /* ── Middle column ── */
-                .features-col-middle {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1.1rem;
-                }
-
-                /* ── Rocket illustration ── */
-                .features-card--rocket {
-                    text-align: left;
-                }
-
-                .features-rocket-wrap {
-                    position: relative;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    margin-bottom: 1rem;
-                    height: 70px;
-                }
-
-                .features-rocket-deco {
-                    width: 160px;
-                    height: 50px;
-                    position: absolute;
-                    top: 0;
-                    left: 50%;
-                    transform: translateX(-50%);
-                }
-
-                .features-rocket-emoji {
-                    font-size: 2.2rem;
-                    position: absolute;
-                    bottom: 0;
-                    left: 50%;
-                    transform: translateX(-50%) rotate(-25deg);
-                }
-
-                /* ── Categories ── */
-                .features-card--categories {
-                    padding: 1.25rem;
-                }
-
-                .features-categories-grid {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 0.5rem;
-                }
-
-                .features-category-pill {
-                    display: flex;
-                    align-items: center;
-                    gap: 0.5rem;
-                    padding: 0.6rem 0.75rem;
-                    border-radius: 0.6rem;
-                    border: 1px solid #eaedf2;
-                    background: #fff;
-                    cursor: default;
-                    transition: background 0.2s ease;
-                }
-
-                .features-category-pill:hover {
-                    background: #f5f6f8;
-                }
-
-                .features-category-icon {
-                    color: #888;
-                    flex-shrink: 0;
-                    display: flex;
-                    align-items: center;
-                }
-
-                .features-category-text {
-                    display: flex;
-                    flex-direction: column;
-                    min-width: 0;
-                }
-
-                .features-category-label {
-                    font-size: 0.8rem;
-                    font-weight: 500;
-                    color: #333;
-                    line-height: 1.2;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-
-                .features-category-count {
-                    font-size: 0.7rem;
-                    color: #999;
-                    line-height: 1.3;
-                }
-
-                /* ── Learning Progress ── */
-                .features-card--progress .features-card-desc {
-                    margin-bottom: 0;
-                }
-
-                /* ── Globe card ── */
-                .features-card--globe {
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .features-globe-area {
-                    flex: 1;
-                    min-height: 250px;
-                    position: relative;
-                    border-radius: 0.75rem;
-                    overflow: hidden;
-                }
-
-                /* ── Responsive ── */
-                @media (max-width: 767px) {
-                    .features-section {
-                        padding: 3.5rem 0 4rem;
-                    }
-
-                    .features-header {
-                        margin-bottom: 2rem;
-                    }
-
-                    .features-card {
-                        padding: 1.5rem;
-                    }
-
-                    .features-categories-grid {
-                        grid-template-columns: repeat(2, 1fr);
-                    }
-
-                    .features-globe-area {
-                        min-height: 220px;
-                    }
-                }
-
-                @media (min-width: 768px) and (max-width: 1023px) {
-                    .features-grid {
-                        grid-template-columns: 1fr 1fr;
-                    }
-
-                    .features-card--globe {
-                        grid-column: 1 / -1;
-                    }
-                }
-            `}</style>
+            <style>{`
+        @keyframes lms-scroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
         </section>
     );
 }
