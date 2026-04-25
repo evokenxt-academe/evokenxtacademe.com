@@ -144,7 +144,9 @@ export function AddCourse({ courseId }: { courseId?: string }) {
     setSubmitError("");
 
     try {
-      const result = await submitCourse(form.formData, courseId);
+      // Use the actual UUID if available from the loaded data, otherwise fallback to the URL param
+      const actualCourseId = editData?.course?.id || courseId;
+      const result = await submitCourse(form.formData, actualCourseId);
 
       if (result.success) {
         router.push("/admin/course");
@@ -157,7 +159,7 @@ export function AddCourse({ courseId }: { courseId?: string }) {
     } finally {
       form.setIsSubmitting(false);
     }
-  }, [courseId, form, router]);
+  }, [courseId, editData?.course?.id, form, router]);
 
   const handleSaveDraft = useCallback(async () => {
     form.updateField("status", "draft");
@@ -165,9 +167,10 @@ export function AddCourse({ courseId }: { courseId?: string }) {
     setSubmitError("");
 
     try {
+      const actualCourseId = editData?.course?.id || courseId;
       const result = await submitCourse(
         { ...form.formData, status: "draft" },
-        courseId,
+        actualCourseId,
       );
 
       if (result.success) {
@@ -181,7 +184,7 @@ export function AddCourse({ courseId }: { courseId?: string }) {
     } finally {
       form.setIsSubmitting(false);
     }
-  }, [courseId, form, router]);
+  }, [courseId, editData?.course?.id, form, router]);
 
   const isLastStep = form.currentStepIndex === STEPS.length - 1;
   const isFirstStep = form.currentStepIndex === 0;

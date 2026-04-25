@@ -28,11 +28,14 @@ export type AdminPayment = {
 }
 
 export type AdminEnrollment = {
-    id: number
-    user: string
-    course: string
-    status: "active" | "expired" | "refunded"
-    expiresAt: string
+    id: string;
+    userId: string;
+    courseId: string;
+    user: string;
+    course: string;
+    status: "active" | "expired" | "refunded";
+    enrolledAt: string;
+    expiresAt: string;
 }
 
 export type AdminReview = {
@@ -239,31 +242,43 @@ export const payments = [
 
 export const enrollments = [
     {
-        id: 301,
+        id: "301",
+        userId: "u-1",
+        courseId: "11111111-1111-4111-8111-111111111101",
         user: "Aman Verma",
         course: "Strategic Business Leader",
         status: "active" as const,
+        enrolledAt: "2026-04-02T10:20:00Z",
         expiresAt: "2027-04-10T00:00:00Z",
     },
     {
-        id: 302,
+        id: "302",
+        userId: "u-4",
+        courseId: "11111111-1111-4111-8111-111111111103",
         user: "Sara Khan",
         course: "Audit & Assurance Masterclass",
         status: "active" as const,
+        enrolledAt: "2026-02-09T12:10:00Z",
         expiresAt: "2027-01-21T00:00:00Z",
     },
     {
-        id: 303,
+        id: "303",
+        userId: "u-2",
+        courseId: "11111111-1111-4111-8111-111111111104",
         user: "Priya Shah",
         course: "Corporate Reporting Crash Course",
         status: "expired" as const,
+        enrolledAt: "2025-11-21T16:40:00Z",
         expiresAt: "2025-12-31T00:00:00Z",
     },
     {
-        id: 304,
+        id: "304",
+        userId: "u-5",
+        courseId: "11111111-1111-4111-8111-111111111102",
         user: "Ritik Jain",
         course: "Advanced Financial Management",
         status: "refunded" as const,
+        enrolledAt: "2026-03-02T13:15:00Z",
         expiresAt: "2026-07-10T00:00:00Z",
     },
 ]

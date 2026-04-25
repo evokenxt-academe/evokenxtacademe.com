@@ -1,11 +1,6 @@
-import { createClient } from "@/utils/supabase/server";
+import { headers } from "next/headers";
 import { Header } from "@/components/header";
-import {
-  IconBook2,
-  IconClock,
-  IconSearch,
-  IconSparkles,
-} from "@tabler/icons-react";
+import { IconBook2, IconSearch, IconFilter, IconUser } from "@tabler/icons-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +23,8 @@ import {
 } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 
+import { createClient } from "@/utils/supabase/server";
+
 type CatalogCourse = {
   id: string;
   slug: string;
@@ -35,7 +32,6 @@ type CatalogCourse = {
   level: string | null;
   name: string;
   description: string | null;
-  total_duration_sec: number;
   discount_price: number | null;
   price: number;
   instructor?: {
@@ -47,67 +43,59 @@ type CatalogCourse = {
 export default async function CoursesCatalogPage() {
   const supabase = await createClient();
 
-  const { data: courses } = await supabase
+  const { data: rawCourses, error } = await supabase
     .from("courses")
     .select(
-      `
-      *,
-      instructor:users!instructor_id(name, avatar)
-    `,
+      "id, slug, thumbnail_url, level, name, description, discount_price, price, instructor:users!instructor_id(name, avatar)",
     )
     .eq("status", "published")
     .order("created_at", { ascending: false });
 
-  const courseList = (courses ?? []) as CatalogCourse[];
+  if (error) {
+    console.error("Error fetching courses:", error.message);
+  }
+
+  // Typecast to handle the nested instructor join safely
+  const courseList = (rawCourses || []) as unknown as CatalogCourse[];
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-24 pt-28 md:px-6">
-        <section className="flex flex-col gap-4">
-          <Badge variant="secondary" className="w-fit">
-            Professional training
-          </Badge>
-          <div className="flex flex-col gap-2">
-            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
-              Master your learning journey
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-24 pt-32 md:px-6 lg:pt-40">
+        <section className="flex flex-col gap-4 text-center md:text-left">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Course Catalog
             </h1>
-            <p className="max-w-2xl text-muted-foreground">
-              Browse the catalog and move courses into your cart when you are
-              ready to enroll.
+            <p className="text-muted-foreground">
+              Browse professional courses designed to accelerate your career.
             </p>
           </div>
         </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Find a course</CardTitle>
-            <CardDescription>
-              Search, filter, and compare courses with a simple catalog layout.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4 md:flex-row">
-              <div className="relative flex-1">
-                <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input
-                  placeholder="What do you want to learn today?"
-                  className="pl-9"
-                />
-              </div>
-              <Button variant="outline">Category</Button>
-              <Button>Search</Button>
-            </div>
-          </CardContent>
-        </Card>
+        <section className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search courses..."
+              className="pl-9"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1 sm:flex-none">
+              <IconFilter className="mr-2 h-4 w-4" />
+              Filter
+            </Button>
+          </div>
+        </section>
 
-        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {courseList.length ? (
             courseList.map((course) => (
-              <Link href={`/courses/${course.slug}`} key={course.id}>
-                <Card className="h-full">
-                  <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
+              <Link href={`/courses/${course.slug}`} key={course.id} className="outline-none">
+                <Card className="flex h-full flex-col overflow-hidden transition-colors hover:bg-muted/50">
+                  <div className="relative aspect-video w-full overflow-hidden bg-muted border-b">
                     {course.thumbnail_url ? (
                       <div
                         className="h-full w-full bg-cover bg-center"
@@ -118,70 +106,74 @@ export default async function CoursesCatalogPage() {
                         role="img"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <IconBook2 />
+                      <div className="flex h-full items-center justify-center text-muted-foreground">
+                        <IconBook2 className="h-10 w-10 opacity-20" />
                       </div>
                     )}
+                    <Badge variant="secondary" className="absolute left-3 top-3">
+                      {course.level || "Professional"}
+                    </Badge>
                   </div>
-                  <CardHeader>
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline">
-                        {course.level || "professional"}
-                      </Badge>
-                      <Badge variant="secondary">Bestseller</Badge>
-                    </div>
-                    <CardTitle className="line-clamp-2">
+                  
+                  <CardHeader className="p-5 pb-3">
+                    <CardTitle className="line-clamp-2 text-lg">
                       {course.name}
                     </CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {course.description ||
-                        "Comprehensive preparation with structured learning paths."}
+                    <CardDescription className="line-clamp-2 mt-2">
+                      {course.description || "Comprehensive preparation with structured learning paths."}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  
+                  <CardContent className="p-5 py-0 flex-1">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <IconSparkles />
+                      <IconUser className="h-4 w-4" />
                       {course.instructor?.name || "Expert Faculty"}
                     </div>
                   </CardContent>
-                  <CardFooter className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <IconClock />
-                      {Math.floor(course.total_duration_sec / 3600)}h{" "}
-                      {Math.floor((course.total_duration_sec % 3600) / 60)}m
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold">
-                        ₹{course.discount_price || course.price}
-                      </div>
+                  
+                  <CardFooter className="p-5 pt-4 mt-auto border-t flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                       {course.discount_price ? (
-                        <div className="text-sm text-muted-foreground line-through">
-                          ₹{course.price}
-                        </div>
-                      ) : null}
+                        <>
+                          <span className="font-semibold">
+                            ₹{course.discount_price.toLocaleString()}
+                          </span>
+                          <span className="text-sm text-muted-foreground line-through">
+                            ₹{course.price.toLocaleString()}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="font-semibold">
+                          ₹{course.price.toLocaleString()}
+                        </span>
+                      )}
                     </div>
+                    <Button variant="secondary" size="sm">
+                      View details
+                    </Button>
                   </CardFooter>
                 </Card>
               </Link>
             ))
           ) : (
-            <Empty className="rounded-lg border md:col-span-2 xl:col-span-3">
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <IconBook2 />
-                </EmptyMedia>
-                <EmptyTitle>No courses found</EmptyTitle>
-                <EmptyDescription>
-                  Try another search or come back when more courses are
-                  published.
-                </EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent>
-                <Button asChild variant="outline">
-                  <Link href="/dashboard">Go to dashboard</Link>
-                </Button>
-              </EmptyContent>
-            </Empty>
+            <div className="col-span-full py-12">
+              <Empty className="rounded-lg border bg-card">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <IconBook2 />
+                  </EmptyMedia>
+                  <EmptyTitle>No courses found</EmptyTitle>
+                  <EmptyDescription>
+                    Try adjusting your search filters or check back later.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button asChild variant="outline">
+                    <Link href="/dashboard">Go to dashboard</Link>
+                  </Button>
+                </EmptyContent>
+              </Empty>
+            </div>
           )}
         </section>
       </main>

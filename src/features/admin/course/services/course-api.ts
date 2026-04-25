@@ -369,9 +369,11 @@ export async function submitCourse(
                 status: formData.status,
                 totalDurationSec,
                 sections: formData.sections.map((s) => ({
+                    id: s.id,
                     title: s.title,
                     position: s.position,
                     lectures: s.lectures.map((l) => ({
+                        id: l.id,
                         title: l.title,
                         videoUrl: l.videoUrl,
                         description: l.description,
@@ -379,6 +381,7 @@ export async function submitCourse(
                         position: l.position,
                         isPreview: l.isPreview,
                         resources: l.resources.map((r) => ({
+                            id: r.id,
                             title: r.title,
                             fileUrl: r.fileUrl,
                         })),

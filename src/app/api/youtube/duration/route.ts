@@ -35,10 +35,34 @@ export async function POST(request: NextRequest) {
 
         const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY
         if (!YOUTUBE_API_KEY) {
-            return NextResponse.json(
-                { error: "YouTube API key not configured" },
-                { status: 500 }
-            )
+            try {
+                // Try to get at least title and thumbnail via oEmbed (no API key needed)
+                const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
+                if (oembedRes.ok) {
+                    const oembed = await oembedRes.json()
+                    return NextResponse.json({
+                        success: true,
+                        videoId,
+                        videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+                        durationSec: 0,
+                        title: oembed.title || "YouTube Video",
+                        thumbnailUrl: oembed.thumbnail_url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                        note: "Duration auto-detection requires a YouTube API Key. Please configure YOUTUBE_API_KEY in your .env file."
+                    })
+                }
+            } catch (e) {
+                console.error("oEmbed fallback failed:", e)
+            }
+
+            return NextResponse.json({
+                success: true,
+                videoId,
+                videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+                durationSec: 0,
+                title: "YouTube Video (No API Key)",
+                thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                note: "Duration auto-detection requires a YouTube API Key. Please configure YOUTUBE_API_KEY in your .env file."
+            })
         }
 
         // Try to fetch duration with retry (for freshly uploaded videos)

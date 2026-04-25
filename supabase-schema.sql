@@ -235,3 +235,37 @@ SELECT
   CASE WHEN au.email = 'amarbiradar147@gmail.com' THEN 'admin'::user_role ELSE 'student'::user_role END
 FROM auth.users au
 WHERE NOT EXISTS (SELECT 1 FROM public.users pu WHERE pu.id = au.id);
+- -   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+ - -   Y o u T u b e   O A u t h   T o k e n s   t a b l e  
+ - -   S t o r e s   G o o g l e / Y o u T u b e   r e f r e s h   t o k e n s   p e r s i s t e n t l y   p e r   u s e r  
+ - -   T h i s   f i x e s   t h e   b u g   w h e r e   p r o v i d e r _ t o k e n   i s   l o s t   a f t e r   s e s s i o n   e x p i r y  
+ - -   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  
+  
+ C R E A T E   T A B L E   I F   N O T   E X I S T S   p u b l i c . y o u t u b e _ t o k e n s   (  
+     u s e r _ i d               U U I D   P R I M A R Y   K E Y   R E F E R E N C E S   p u b l i c . u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
+     r e f r e s h _ t o k e n   T E X T   N O T   N U L L ,  
+     a c c e s s _ t o k e n     T E X T ,                         - -   c a c h e d ;   m a y   e x p i r e  
+     e x p i r e s _ a t         T I M E S T A M P T Z ,           - -   w h e n   a c c e s s _ t o k e n   e x p i r e s  
+     s c o p e s                 T E X T ,                         - -   g r a n t e d   s c o p e s  
+     u p d a t e d _ a t         T I M E S T A M P T Z   N O T   N U L L   D E F A U L T   N O W ( )  
+ ) ;  
+  
+ - -   R L S :   o n l y   t h e   u s e r   t h e m s e l v e s   o r   s e r v i c e   r o l e   c a n   a c c e s s  
+ A L T E R   T A B L E   p u b l i c . y o u t u b e _ t o k e n s   E N A B L E   R O W   L E V E L   S E C U R I T Y ;  
+  
+ C R E A T E   P O L I C Y   " U s e r s   c a n   v i e w   t h e i r   o w n   y o u t u b e   t o k e n s "  
+     O N   p u b l i c . y o u t u b e _ t o k e n s   F O R   S E L E C T  
+     U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ;  
+  
+ C R E A T E   P O L I C Y   " U s e r s   c a n   i n s e r t   t h e i r   o w n   y o u t u b e   t o k e n s "  
+     O N   p u b l i c . y o u t u b e _ t o k e n s   F O R   I N S E R T  
+     W I T H   C H E C K   ( a u t h . u i d ( )   =   u s e r _ i d ) ;  
+  
+ C R E A T E   P O L I C Y   " U s e r s   c a n   u p d a t e   t h e i r   o w n   y o u t u b e   t o k e n s "  
+     O N   p u b l i c . y o u t u b e _ t o k e n s   F O R   U P D A T E  
+     U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ;  
+  
+ C R E A T E   P O L I C Y   " U s e r s   c a n   d e l e t e   t h e i r   o w n   y o u t u b e   t o k e n s "  
+     O N   p u b l i c . y o u t u b e _ t o k e n s   F O R   D E L E T E  
+     U S I N G   ( a u t h . u i d ( )   =   u s e r _ i d ) ;  
+ 

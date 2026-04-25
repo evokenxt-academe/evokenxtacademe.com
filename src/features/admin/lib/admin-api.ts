@@ -53,6 +53,11 @@ export const adminApi = {
     getDashboard: () =>
         adminFetch<AdminDashboardApiResponse>("/api/admin/dashboard"),
     getUsers: () => adminFetch<{ users: AdminUser[] }>("/api/admin/list-users"),
+    updateUserRole: (userId: string, role: string) =>
+        adminFetch<{ success: boolean; role: string }>(`/api/admin/users/${userId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ role }),
+        }),
     getCourses: () => adminFetch<{ courses: AdminCourse[] }>("/api/admin/courses"),
     getCoursePreview: (courseId: string) =>
         adminFetch<{ course: AdminCoursePreview }>(`/api/admin/courses/${courseId}`),
@@ -111,7 +116,20 @@ export const adminApi = {
     getPayments: () =>
         adminFetch<{ payments: AdminPayment[] }>("/api/admin/payments"),
     getEnrollments: () =>
-        adminFetch<{ enrollments: AdminEnrollment[] }>("/api/admin/enrollments"),
+        adminFetch<{ 
+            enrollments: AdminEnrollment[];
+            users: AdminUser[];
+            courses: AdminCourse[];
+        }>("/api/admin/enrollments"),
+    createEnrollment: (payload: { email: string; courseId: string; expiresAt?: string }) =>
+        adminFetch<{ success: boolean }>("/api/admin/enrollments", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        }),
+    revokeEnrollment: (enrollmentId: string) =>
+        adminFetch<{ success: boolean }>(`/api/admin/enrollments/${enrollmentId}`, {
+            method: "DELETE",
+        }),
     getReviews: () => adminFetch<{ reviews: AdminReview[] }>("/api/admin/reviews"),
     getLiveStreams: () =>
         adminFetch<{ liveStreams: AdminLiveStream[] }>("/api/admin/live-streams"),

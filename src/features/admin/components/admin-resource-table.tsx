@@ -203,15 +203,15 @@ export function AdminResourceTable<TData>({
           </TableBody>
         </Table>
 
-        <div className="flex flex-col gap-3 border-t border-border/70 px-4 py-3 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 px-3 py-2 md:px-4">
+          <div className="text-xs text-muted-foreground md:text-sm">
             {selectedCount} of {table.getFilteredRowModel().rows.length} row(s)
             selected
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground md:text-sm">
                 Rows per page
               </span>
               <Select
@@ -233,7 +233,7 @@ export function AdminResourceTable<TData>({
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="icon"
@@ -254,7 +254,7 @@ export function AdminResourceTable<TData>({
                 <IconChevronLeft />
                 <span className="sr-only">Previous page</span>
               </Button>
-              <div className="flex h-8 min-w-60 items-center justify-center rounded-lg border border-border px-3 text-sm text-muted-foreground">
+              <div className="flex h-8 min-w-44 items-center justify-center rounded-lg border border-border px-2.5 text-xs text-muted-foreground md:min-w-52 md:text-sm">
                 {pageCount === 0
                   ? "0 of 0"
                   : `Page ${table.getState().pagination.pageIndex + 1} of ${pageCount}`}

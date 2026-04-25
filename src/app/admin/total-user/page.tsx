@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import {
@@ -80,6 +80,19 @@ function UsersPageContent() {
   const [viewUser, setViewUser] = React.useState<AdminUser | null>(null);
   const [deleteUser, setDeleteUser] = React.useState<AdminUser | null>(null);
 
+  const queryClient = useQueryClient();
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
+      adminApi.updateUserRole(userId, role),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success(`User role updated to ${variables.role}`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update user role");
+    },
+  });
+
   const filteredUsers = React.useMemo(() => {
     const query = search.trim().toLowerCase();
 
@@ -93,7 +106,7 @@ function UsersPageContent() {
 
       return matchesQuery && matchesRole;
     });
-  }, [search, roleFilter]);
+  }, [users, search, roleFilter]);
 
   const columns = React.useMemo<ColumnDef<AdminUser>[]>(
     () => [
@@ -172,7 +185,7 @@ function UsersPageContent() {
                 {user.role !== "student" ? (
                   <DropdownMenuItem
                     onClick={() =>
-                      toast.success(`${user.name} changed to student`)
+                      updateRoleMutation.mutate({ userId: user.id, role: "student" })
                     }
                   >
                     <IconUser />
@@ -182,7 +195,7 @@ function UsersPageContent() {
                 {user.role !== "instructor" ? (
                   <DropdownMenuItem
                     onClick={() =>
-                      toast.success(`${user.name} changed to instructor`)
+                      updateRoleMutation.mutate({ userId: user.id, role: "instructor" })
                     }
                   >
                     <IconUserPlus />
@@ -191,7 +204,7 @@ function UsersPageContent() {
                 ) : null}
                 <DropdownMenuItem
                   onClick={() =>
-                    toast.success(`${user.name} marked for admin review`)
+                    updateRoleMutation.mutate({ userId: user.id, role: "admin" })
                   }
                 >
                   <IconUserShield />
@@ -211,7 +224,7 @@ function UsersPageContent() {
         },
       },
     ],
-    [],
+    [updateRoleMutation],
   );
 
   return (

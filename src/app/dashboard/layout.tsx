@@ -1,15 +1,47 @@
+import { redirect } from "next/navigation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { DashboardNavbar } from "@/components/dashboard-navbar";
+import { createClient } from "@/utils/supabase/server";
+import { fetchStudentShellProfile } from "@/features/student/lib/student-shell";
 
-export default function DashboardRouteLayout({
+export default async function DashboardRouteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  const profile = await fetchStudentShellProfile(supabase, user.id);
+
+  const sidebarUser = profile ?? {
+    id: user.id,
+    name: user.user_metadata?.full_name ?? null,
+    email: user.email ?? "",
+    avatar: user.user_metadata?.avatar_url ?? null,
+    role: null,
+  };
+
+  const navbarUser = {
+    name: sidebarUser.name,
+    email: sidebarUser.email,
+    avatar: sidebarUser.avatar,
+  };
+
   return (
     <SidebarProvider>
-      <DashboardSidebar />
-      <SidebarInset className="bg-background">{children}</SidebarInset>
+      <DashboardSidebar user={sidebarUser} />
+      <SidebarInset className="bg-background">
+        <DashboardNavbar user={navbarUser} />
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }
