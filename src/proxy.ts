@@ -5,8 +5,6 @@ export async function proxy(req: NextRequest) {
     const { supabase, supabaseResponse } = createClient(req);
 
     const { data: { user } } = await supabase.auth.getUser();
-    console.log("Server side user:", user);
-
     return supabaseResponse;
 }
 

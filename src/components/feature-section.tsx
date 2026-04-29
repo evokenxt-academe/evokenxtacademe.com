@@ -1,224 +1,281 @@
 "use client";
+import { useRef } from "react";
 
-import { useEffect, useRef, useState } from "react";
-
-const features = [
-    {
-        number: "01",
-        title: "Expert-Led ACCA Courses",
-        description: "Learn from qualified ACCA tutors who simplify complex topics. Our structured video lectures and study materials help you master every paper with confidence.",
-        stats: { value: "95%", label: "exam pass rate" },
-    },
-    {
-        number: "02",
-        title: "Flexible Online Learning",
-        description: "Study from anywhere, at any time. Our platform is designed for working professionals and students who need the freedom to learn at their own pace.",
-        stats: { value: "24/7", label: "access anytime" },
-    },
-    {
-        number: "03",
-        title: "Comprehensive Study Resources",
-        description: "Access revision kits, mock exams, past papers, and downloadable study notes. Everything you need to prepare thoroughly for each ACCA paper.",
-        stats: { value: "500+", label: "practice questions" },
-    },
-    {
-        number: "04",
-        title: "Career Support & Guidance",
-        description: "Get career advice, placement support, and guidance on practical experience requirements to complete your ACCA journey successfully.",
-        stats: { value: "180+", label: "countries recognised" },
-    },
-];
-
-// Floating dot particles visualization
-function ParticleVisualization() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const frameRef = useRef(0);
-    const mouseRef = useRef({ x: 0.5, y: 0.5 });
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const resize = () => {
-            const rect = canvas.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-        };
-        resize();
-        window.addEventListener("resize", resize);
-
-        const handleMouseMove = (e: MouseEvent) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseRef.current = {
-                x: (e.clientX - rect.left) / rect.width,
-                y: (e.clientY - rect.top) / rect.height,
-            };
-        };
-        canvas.addEventListener("mousemove", handleMouseMove);
-
-        // Generate stable particle positions
-        const COUNT = 70;
-        const particles = Array.from({ length: COUNT }, (_, i) => {
-            const seed = i * 1.618;
-            return {
-                bx: ((seed * 127.1) % 1),
-                by: ((seed * 311.7) % 1),
-                phase: seed * Math.PI * 2,
-                speed: 0.4 + (seed % 0.4),
-                radius: 1.2 + (seed % 2.2),
-            };
-        });
-
-        let time = 0;
-        const render = () => {
-            const rect = canvas.getBoundingClientRect();
-            const w = rect.width;
-            const h = rect.height;
-
-            ctx.clearRect(0, 0, w, h);
-
-            const mx = mouseRef.current.x;
-            const my = mouseRef.current.y;
-
-            particles.forEach((p) => {
-                const flowX = Math.sin(time * p.speed * 0.4 + p.phase) * 38;
-                const flowY = Math.cos(time * p.speed * 0.3 + p.phase * 0.7) * 24;
-
-                const bx = p.bx * w;
-                const by = p.by * h;
-                const dx = p.bx - mx;
-                const dy = p.by - my;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const influence = Math.max(0, 1 - dist * 2.8);
-
-                const x = bx + flowX + influence * Math.cos(time + p.phase) * 36;
-                const y = by + flowY + influence * Math.sin(time + p.phase) * 36;
-
-                const pulse = Math.sin(time * p.speed + p.phase) * 0.5 + 0.5;
-                const alpha = 0.08 + pulse * 0.18 + influence * 0.3;
-
-                ctx.beginPath();
-                ctx.arc(x, y, p.radius + pulse * 0.8, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-                ctx.fill();
-            });
-
-            time += 0.016;
-            frameRef.current = requestAnimationFrame(render);
-        };
-        render();
-
-        return () => {
-            window.removeEventListener("resize", resize);
-            canvas.removeEventListener("mousemove", handleMouseMove);
-            cancelAnimationFrame(frameRef.current);
-        };
-    }, []);
-
-    return (
-        <canvas
-            ref={canvasRef}
-            className="absolute inset-0 pointer-events-auto"
-            style={{ width: "100%", height: "100%" }}
-        />
-    );
+interface Feature {
+    id: number;
+    icon: React.ReactNode;
+    title: string;
+    description: string;
+    tag: string;
 }
 
+const IconLiveClasses = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+        <circle cx="9" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+);
+
+const IconCoursePlanner = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" strokeWidth="2.4" />
+    </svg>
+);
+
+const IconVirtualClass = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+        <path d="M9 10l2 2 4-4" />
+    </svg>
+);
+
+const IconPerformance = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 20h18M5 20V14M9 20V8M13 20v-5M17 20V4" />
+        <path d="M17 4l-4 5-4-3-4 4" />
+    </svg>
+);
+
+const IconLibrary = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+        <path d="M9 7h7M9 11h5" />
+    </svg>
+);
+
+const IconCertificate = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="9" r="4" />
+        <path d="M9.5 13.5L7 22l5-2 5 2-2.5-8.5" />
+        <path d="M10.5 9l1 1L14 7.5" />
+    </svg>
+);
+
+const IconDoubt = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        <path d="M12 8c0-1 .667-1.5 1-1.5a1.5 1.5 0 010 3c-.5 0-1 .448-1 1v.5" strokeWidth="1.7" />
+        <circle cx="12" cy="14" r=".6" fill="currentColor" stroke="none" />
+    </svg>
+);
+
+const IconPace = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3.5 3.5" />
+    </svg>
+);
+
+const features: Feature[] = [
+    { id: 1, icon: <IconLiveClasses />, title: "Live Classes", description: "Interactive sessions with real-time doubt resolution and expert-led instruction.", tag: "Live" },
+    { id: 2, icon: <IconCoursePlanner />, title: "Course Planner", description: "Smart scheduling tools to keep your learning structured and entirely stress-free.", tag: "Organised" },
+    { id: 3, icon: <IconVirtualClass />, title: "Virtual Classrooms", description: "Immersive digital environments built for focused, high-quality collaborative learning.", tag: "Immersive" },
+    { id: 4, icon: <IconPerformance />, title: "Performance Tracking", description: "Granular analytics to surface strengths, pinpoint gaps, and drive measurable progress.", tag: "Analytics" },
+    { id: 5, icon: <IconLibrary />, title: "Resource Library", description: "Curated notes, references, and materials available on-demand at any time.", tag: "On-demand" },
+    { id: 6, icon: <IconCertificate />, title: "Certifications", description: "Industry-recognised credentials issued automatically upon successful completion.", tag: "Verified" },
+    { id: 7, icon: <IconDoubt />, title: "Doubt Support", description: "Round-the-clock mentor access to resolve queries without breaking your momentum.", tag: "24 / 7" },
+    { id: 8, icon: <IconPace />, title: "Self-Paced Learning", description: "Lifetime access to all recorded sessions so you learn entirely on your own terms.", tag: "Flexible" },
+];
+
+const FeatureCard = ({ feature }: { feature: Feature }) => {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    return (
+        <div
+            ref={cardRef}
+            style={{
+                minWidth: "280px",
+                maxWidth: "280px",
+                background: "#FFFFFF",
+                border: "1px solid #E2E8F0",
+                borderRadius: "4px",
+                padding: "32px 28px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "24px",
+                transition: "all 0.25s ease",
+                cursor: "default",
+                flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.borderColor = "#94A3B8";
+                el.style.boxShadow = "0 10px 30px -10px rgba(0,0,0,0.05)";
+                el.style.transform = "translateY(-4px)";
+            }}
+            onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLDivElement;
+                el.style.borderColor = "#E2E8F0";
+                el.style.boxShadow = "none";
+                el.style.transform = "translateY(0)";
+            }}
+        >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#0F172A",
+                        flexShrink: 0,
+                    }}
+                >
+                    {feature.icon}
+                </div>
+                <span
+                    style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: "#64748B",
+                    }}
+                >
+                    {feature.tag}
+                </span>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <h3
+                    style={{
+                        margin: 0,
+                        fontSize: "15px",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.4,
+                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                    }}
+                >
+                    {feature.title}
+                </h3>
+                <p
+                    style={{
+                        margin: 0,
+                        fontSize: "13.5px",
+                        color: "#475569",
+                        lineHeight: 1.6,
+                        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                    }}
+                >
+                    {feature.description}
+                </p>
+            </div>
+        </div>
+    );
+};
+
 export function FeaturesSection() {
-    const [isVisible, setIsVisible] = useState(false);
-    const [activeFeature, setActiveFeature] = useState(0);
-    const sectionRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) setIsVisible(true);
-            },
-            { threshold: 0.1 }
-        );
-
-        if (sectionRef.current) observer.observe(sectionRef.current);
-        return () => observer.disconnect();
-    }, []);
+    const trackRef = useRef<HTMLDivElement>(null);
+    const duplicated = [...features, ...features];
 
     return (
         <section
-            id="features"
-            ref={sectionRef}
-            className="relative py-24 lg:py-32 overflow-hidden"
+            style={{
+                width: "100%",
+                backgroundColor: "transparent",
+                padding: "80px 0 96px",
+                overflow: "hidden",
+                fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+                borderTop: "1px solid #E2E8F0",
+                borderBottom: "1px solid #E2E8F0",
+            }}
         >
-            <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
-                {/* Header - Full width with diagonal layout */}
-                <div className="relative mb-24 lg:mb-32">
-                    <div className="grid lg:grid-cols-12 gap-8 items-end">
-                        <div className="lg:col-span-7">
-                            <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
-                                <span className="w-12 h-px bg-foreground/30" />
-                                Courses
-                            </span>
-                            <h2
-                                className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-                                    }`}
-                            >
-                                World-class
-                                <br />
-                                <span className="text-muted-foreground">ACCA training.</span>
-                            </h2>
-                        </div>
-                        <div className="lg:col-span-5 lg:pb-4">
-                            <p className={`text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                                }`}>
-                                Comprehensive ACCA courses designed to help you pass every paper. Expert tutors, structured content, and proven results.
-                            </p>
-                        </div>
-                    </div>
+            <div style={{ textAlign: "center", marginBottom: "64px", padding: "0 24px" }}>
+                <div
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        marginBottom: "24px",
+                    }}
+                >
+                    <span style={{ width: "24px", height: "1px", background: "#0F172A", display: "inline-block" }} />
+                    <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#64748B" }}>
+                        Platform Capabilities
+                    </span>
+                    <span style={{ width: "24px", height: "1px", background: "#0F172A", display: "inline-block" }} />
                 </div>
 
-                {/* Bento Grid Layout */}
-                <div className="grid lg:grid-cols-12 gap-4 lg:gap-6">
-                    {/* Large feature card */}
-                    <div
-                        className={`lg:col-span-12 relative bg-black border border-foreground/10 min-h-[500px] overflow-hidden group transition-all duration-700 flex ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-                            }`}
-                        onMouseEnter={() => setActiveFeature(0)}
-                    >
-                        {/* Left: text content */}
-                        <div className="relative flex-1 p-8 lg:p-12 bg-black">
-                            <ParticleVisualization />
-                            <div className="relative z-10">
-                                <span className="font-mono text-sm text-muted-foreground">{features[0].number}</span>
-                                <h3 className="text-3xl lg:text-4xl font-display mt-4 mb-6 group-hover:translate-x-2 transition-transform duration-500">
-                                    {features[0].title}
-                                </h3>
-                                <p className="text-lg text-muted-foreground leading-relaxed max-w-md mb-8">
-                                    {features[0].description}
-                                </p>
-                                <div>
-                                    <span className="text-5xl lg:text-6xl font-display">{features[0].stats.value}</span>
-                                    <span className="block text-sm text-muted-foreground font-mono mt-2">{features[0].stats.label}</span>
-                                </div>
-                            </div>
-                        </div>
+                <h2
+                    style={{
+                        margin: "0 0 16px",
+                        fontSize: "clamp(28px, 4vw, 42px)",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1.15,
+                    }}
+                >
+                    Everything you need to learn smarter.
+                </h2>
+                <p
+                    style={{
+                        margin: "0 auto",
+                        maxWidth: "540px",
+                        fontSize: "15px",
+                        color: "#475569",
+                        lineHeight: 1.6,
+                    }}
+                >
+                    A complete, enterprise-grade learning platform built for serious educators and high-performing students.
+                </p>
+            </div>
 
-                        {/* Right: mirrored image, full height */}
-                        <div className="hidden lg:block relative w-[42%] shrink-0 overflow-hidden">
-                            <img
-                                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Upscaled%20Image%20%2812%29-ng3RrNnsPMJ5CrtOjcPTmhHg01W11q.png"
-                                alt=""
-                                aria-hidden="true"
-                                className="absolute inset-0 w-full h-full object-cover object-center"
-                                style={{ transform: "scaleX(-1)" }}
-                            />
-                            {/* Fade left edge into black */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent" />
-                        </div>
-                    </div>
+            <div style={{ position: "relative" }}>
+                <div
+                    style={{
+                        pointerEvents: "none",
+                        position: "absolute",
+                        top: 0, bottom: 0, left: 0,
+                        width: "180px",
+                        background: "linear-gradient(to right, #F8FAFC 0%, transparent 100%)",
+                        zIndex: 10,
+                    }}
+                />
+                <div
+                    style={{
+                        pointerEvents: "none",
+                        position: "absolute",
+                        top: 0, bottom: 0, right: 0,
+                        width: "180px",
+                        background: "linear-gradient(to left, #F8FAFC 0%, transparent 100%)",
+                        zIndex: 10,
+                    }}
+                />
+
+                <div
+                    ref={trackRef}
+                    style={{
+                        display: "flex",
+                        gap: "24px",
+                        width: "max-content",
+                        paddingLeft: "24px",
+                        animation: "lms-scroll 50s linear infinite",
+                    }}
+                    onMouseEnter={() => {
+                        if (trackRef.current) trackRef.current.style.animationPlayState = "paused";
+                    }}
+                    onMouseLeave={() => {
+                        if (trackRef.current) trackRef.current.style.animationPlayState = "running";
+                    }}
+                >
+                    {duplicated.map((f, i) => (
+                        <FeatureCard key={`${f.id}-${i}`} feature={f} />
+                    ))}
                 </div>
             </div>
+
+            <style>{`
+        @keyframes lms-scroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
         </section>
     );
 }

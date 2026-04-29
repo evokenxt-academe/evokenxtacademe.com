@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ArrowRight, Play } from "lucide-react";
 
 const words = ["succeed", "excel", "qualify", "grow"];
+
 
 function BlurWord({ word, trigger }: { word: string; trigger: number }) {
   const letters = word.split("");
@@ -120,7 +126,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center items-start overflow-hidden bg-black">
+    <section className="relative flex min-h-[80vh] flex-col justify-center overflow-hidden bg-zinc-950">
       {/* Background video */}
       <div className="absolute inset-0 z-0">
         <video
@@ -129,39 +135,11 @@ export function HeroSection() {
           loop
           playsInline
           aria-hidden="true"
-          className="w-full h-full object-cover object-center opacity-80"
+          className="size-full object-cover opacity-30"
         >
-          <source src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bg-hero-0BnFGdr81Ifnj3WbBZoNt1KE4D5DMT.mp4" type="video/mp4" />
+          <source src="/hero-video.mp4" type="video/mp4" />
         </video>
-        {/* Subtle overlay to ensure text readability on the left */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
-      </div>
-
-      {/* Subtle grid lines */}
-      <div className="absolute inset-0 z-[2] overflow-hidden pointer-events-none opacity-20">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={`h-${i}`}
-            className="absolute h-px bg-white/10"
-            style={{
-              top: `${12.5 * (i + 1)}%`,
-              left: 0,
-              right: 0,
-            }}
-          />
-        ))}
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={`v-${i}`}
-            className="absolute w-px bg-white/10"
-            style={{
-              left: `${8.33 * (i + 1)}%`,
-              top: 0,
-              bottom: 0,
-            }}
-          />
-        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/70 via-zinc-950/50 to-zinc-950" />
       </div>
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12 py-32 lg:py-40">
@@ -178,7 +156,7 @@ export function HeroSection() {
           </div>
 
           {/* Main headline */}
-          <div className="mb-12">
+          <div className="mb-10">
             <h1
               className={`text-left text-[clamp(2rem,6vw,7rem)] font-display leading-[0.92] tracking-tight text-white transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
@@ -192,32 +170,64 @@ export function HeroSection() {
               </span>
             </h1>
           </div>
+
+          {/* Subtext and CTAs */}
+          <div
+            className={`transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}
+          >
+            <p className="mb-10 max-w-xl text-lg text-white/70 leading-relaxed font-medium">
+              Expert-led ACCA courses with structured learning, dynamic mock exams, and personalized mentor support to guarantee your success.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button size="lg" className="rounded-none h-12 px-8 text-base font-semibold" asChild>
+                <Link href="/courses">
+                  Explore Courses
+                  <ArrowRight className="ml-2 size-5" />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="rounded-none h-12 px-8 text-base font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
+              >
+                <Play className="mr-2 size-5 fill-current" />
+                Watch Demo
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Stats — 3 metrics static, no auto-scroll */}
+      {/* Stats row */}
       <div
-        className={`absolute bottom-12 left-0 right-0 px-6 lg:px-12 transition-all duration-700 delay-500 ${isVisible ? "opacity-100" : "opacity-0"
+        className={`relative z-10 border-t border-white/10 transition-all duration-700 delay-300 ${isVisible ? "opacity-100" : "opacity-0"
           }`}
       >
-        <div className="max-w-[1400px] mx-auto flex items-start gap-10 lg:gap-20">
-          {[
-            { value: "12,000+", label: "students enrolled worldwide" },
-            { value: "95%", label: "exam pass rate" },
-            { value: "13", label: "ACCA papers covered" },
-          ].map((stat) => (
-            <div key={stat.label} className="flex flex-col gap-2">
-              <span className="text-3xl lg:text-4xl font-display text-white">{stat.value}</span>
-              <span className="text-xs text-white/50 leading-tight">
-                {stat.label}
-              </span>
-            </div>
-          ))}
+        <div className="mx-auto max-w-6xl px-4 py-5 md:px-6 lg:px-8">
+          <div className="flex items-center gap-8 lg:gap-12">
+            {[
+              { value: "12,000+", label: "Students enrolled" },
+              { value: "95%", label: "Exam pass rate" },
+              { value: "13", label: "ACCA papers covered" },
+            ].map((stat, i) => (
+              <div key={stat.label} className="flex items-center gap-8 lg:gap-12">
+                {i > 0 && (
+                  <Separator orientation="vertical" className="h-8 bg-white/10" />
+                )}
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xl font-semibold tracking-tight text-white lg:text-2xl">
+                    {stat.value}
+                  </span>
+                  <span className="text-xs font-medium text-zinc-500">
+                    {stat.label}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-
-      {/* Scroll indicator */}
-
     </section>
   );
 }

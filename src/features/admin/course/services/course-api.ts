@@ -36,6 +36,14 @@ export interface ResourceUploadResult {
     error?: string
 }
 
+export interface ThumbnailUploadResult {
+    success: boolean
+    thumbnailUrl: string
+    fileName: string
+    fileSize: number
+    error?: string
+}
+
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
@@ -258,6 +266,73 @@ export function uploadResourceFile(
         })
 
         xhr.open("POST", "/api/admin/courses/upload-resource")
+        xhr.send(formData)
+    })
+}
+
+export function uploadThumbnailFile(
+    file: File,
+    title: string,
+    onProgress: (progress: UploadProgress) => void
+): Promise<ThumbnailUploadResult> {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("title", title)
+
+        const startTime = Date.now()
+
+        xhr.upload.addEventListener("progress", (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100)
+                const elapsedMs = Date.now() - startTime
+                const elapsedSec = elapsedMs / 1000
+                const speed = elapsedSec > 0 ? e.loaded / elapsedSec : 0
+                const remaining = e.total - e.loaded
+                const eta = speed > 0 ? remaining / speed : 0
+
+                onProgress({
+                    percent,
+                    loaded: e.loaded,
+                    total: e.total,
+                    speed,
+                    speedLabel: formatSpeed(speed),
+                    eta: Math.ceil(eta),
+                })
+            }
+        })
+
+        xhr.addEventListener("load", () => {
+            try {
+                const result = JSON.parse(xhr.responseText)
+                if (xhr.status >= 200 && xhr.status < 300 && result.success) {
+                    resolve(result as ThumbnailUploadResult)
+                } else {
+                    resolve({
+                        success: false,
+                        thumbnailUrl: "",
+                        fileName: file.name,
+                        fileSize: file.size,
+                        error: result.error || "Thumbnail upload failed",
+                    })
+                }
+            } catch {
+                resolve({
+                    success: false,
+                    thumbnailUrl: "",
+                    fileName: file.name,
+                    fileSize: file.size,
+                    error: "Invalid server response",
+                })
+            }
+        })
+
+        xhr.addEventListener("error", () => {
+            reject(new Error("Network error during thumbnail upload"))
+        })
+
+        xhr.open("POST", "/api/admin/courses/upload-thumbnail")
         xhr.send(formData)
     })
 }

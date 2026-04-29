@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
+import { GlobalLayoutWrapper } from "@/components/global-layout-wrapper";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
@@ -41,7 +42,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
-          {children}
+          <GlobalLayoutWrapper>{children}</GlobalLayoutWrapper>
         </Providers>
         <Toaster />
       </body>

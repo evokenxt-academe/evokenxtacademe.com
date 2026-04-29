@@ -38,7 +38,7 @@ export const useUserSession = create<UserSessionStore>((set) => ({
                 .select('*')
                 .eq('id', user.id)
                 .maybeSingle()
-
+            
 
             if (profileError) {
                 console.log("Error fetching user profile:", profileError.message);

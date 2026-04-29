@@ -1,17 +1,17 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
     IconInfoCircle,
     IconPhoto,
-    IconUpload,
     IconX,
 } from "@tabler/icons-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { FileUploader } from "@/components/file-uploader"
 import {
     Select,
     SelectContent,
@@ -51,7 +51,6 @@ export function BasicInfoStep({
     const [thumbnailPreview, setThumbnailPreview] = useState<string>(
         formData.thumbnailUrl || ""
     )
-    const fileInputRef = useRef<HTMLInputElement>(null)
     const { data: usersData } = useQuery({
         queryKey: ["admin-users-for-course-form"],
         queryFn: adminApi.getUsers,
@@ -60,24 +59,10 @@ export function BasicInfoStep({
         user.role === "instructor" || user.role === "admin",
     )
 
-    const handleThumbnailChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0]
-            if (file) {
-                updateField("thumbnailFile", file)
-                const url = URL.createObjectURL(file)
-                setThumbnailPreview(url)
-                updateField("thumbnailUrl", url)
-            }
-        },
-        [updateField]
-    )
-
     const removeThumbnail = useCallback(() => {
         setThumbnailPreview("")
         updateField("thumbnailFile", null)
         updateField("thumbnailUrl", "")
-        if (fileInputRef.current) fileInputRef.current.value = ""
     }, [updateField])
 
     return (
@@ -250,24 +235,18 @@ export function BasicInfoStep({
                         </div>
 
                         {/* Upload Button */}
-                        <div className="flex flex-col gap-2">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleThumbnailChange}
+                        <div className="flex w-full max-w-sm flex-col gap-2">
+                            <FileUploader
+                                accept="image/jpeg,image/png,image/webp"
+                                maxSizeMB={10}
+                                folder="course-thumbnails"
+                                onUploadComplete={(url) => {
+                                    setThumbnailPreview(url)
+                                    updateField("thumbnailUrl", url)
+                                }}
                             />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <IconUpload data-icon="inline-start" />
-                                Upload Image
-                            </Button>
                             <p className="text-xs text-muted-foreground">
-                                JPG, PNG or WebP. Max 2MB.
+                                JPG, PNG or WebP. Max 10MB.
                             </p>
                         </div>
                     </div>
