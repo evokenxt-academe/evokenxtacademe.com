@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+
+import { extractYoutubeVideoId } from "@/features/live-stream/lib"
 import { requireAdmin } from "@/features/admin/lib/admin-route"
 
 export const runtime = "nodejs"
@@ -6,8 +8,8 @@ export const runtime = "nodejs"
 /**
  * POST /api/admin/live-streams/manage
  *
- * Create, update status, or delete a live stream.
- * Body: { action: "create" | "update-status" | "delete", ...payload }
+ * Create, start, end, update, or delete a live stream.
+ * Body: { action: "create" | "start" | "end" | "update-status" | "delete", ...payload }
  */
 export async function POST(request: NextRequest) {
     const auth = await requireAdmin(["admin", "instructor"])
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
         const { action } = body
 
         if (action === "create") {
-            const { title, courseId, ytVideoId, scheduledAt } = body
+            const { title, courseId, ytVideoId, videoSource } = body
 
             if (!title || !courseId) {
                 return NextResponse.json(
@@ -29,14 +31,22 @@ export async function POST(request: NextRequest) {
                 )
             }
 
+            const resolvedVideoId =
+                typeof ytVideoId === "string" && ytVideoId.trim()
+                    ? ytVideoId.trim()
+                    : typeof videoSource === "string"
+                        ? extractYoutubeVideoId(videoSource)
+                        : ""
+
             const { data, error } = await supabase
                 .from("live_streams")
                 .insert({
                     title,
                     course_id: courseId,
-                    yt_video_id: ytVideoId || null,
-                    status: "scheduled",
-                    scheduled_at: scheduledAt || new Date().toISOString(),
+                    yt_video_id: resolvedVideoId || null,
+                    status: "ended",
+                    started_at: null,
+                    ended_at: null,
                 })
                 .select("id")
                 .single()
@@ -48,31 +58,53 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, streamId: data.id })
         }
 
-        if (action === "update-status") {
-            const { streamId, status, ytVideoId } = body
+        if (action === "start" || action === "update-status") {
+            const { streamId, ytVideoId } = body
 
-            if (!streamId || !status) {
+            if (!streamId) {
                 return NextResponse.json(
-                    { error: "Stream ID and status are required." },
+                    { error: "Stream ID is required." },
                     { status: 400 }
                 )
             }
 
-            const updateData: Record<string, unknown> = { status }
+            const updateData: Record<string, unknown> = {
+                status: "live",
+                started_at: new Date().toISOString(),
+            }
 
-            if (status === "live") {
-                updateData.started_at = new Date().toISOString()
-            }
-            if (status === "ended") {
-                updateData.ended_at = new Date().toISOString()
-            }
-            if (ytVideoId !== undefined) {
-                updateData.yt_video_id = ytVideoId
+            if (typeof ytVideoId === "string" && ytVideoId.trim()) {
+                updateData.yt_video_id = ytVideoId.trim()
             }
 
             const { error } = await supabase
                 .from("live_streams")
                 .update(updateData)
+                .eq("id", streamId)
+
+            if (error) {
+                return NextResponse.json({ error: error.message }, { status: 500 })
+            }
+
+            return NextResponse.json({ success: true })
+        }
+
+        if (action === "end") {
+            const { streamId } = body
+
+            if (!streamId) {
+                return NextResponse.json(
+                    { error: "Stream ID is required." },
+                    { status: 400 }
+                )
+            }
+
+            const { error } = await supabase
+                .from("live_streams")
+                .update({
+                    status: "ended",
+                    ended_at: new Date().toISOString(),
+                })
                 .eq("id", streamId)
 
             if (error) {

@@ -1,0 +1,93 @@
+"use client"
+
+import * as React from "react"
+
+import { createClient } from "@/utils/supabase/client"
+import type { LiveChatMessage } from "@/features/live-stream/types"
+
+type UserProfile = {
+    name: string | null
+    avatar: string | null
+}
+
+function mapChatMessage(payload: Record<string, unknown>, profile: UserProfile | null): LiveChatMessage | null {
+    const id = String(payload.id ?? "")
+    const liveStreamId = String(payload.live_stream_id ?? "")
+    const userId = String(payload.user_id ?? "")
+    const message = String(payload.message ?? "")
+    const createdAt = String(payload.created_at ?? "")
+
+    if (!id || !liveStreamId || !userId || !message || !createdAt) {
+        return null
+    }
+
+    return {
+        id,
+        liveStreamId,
+        userId,
+        userName: profile?.name?.trim() || "Anonymous",
+        userAvatar: profile?.avatar ?? null,
+        message,
+        createdAt,
+    }
+}
+
+export function useChatMessages(
+    streamId: string | null,
+    initialMessages: LiveChatMessage[] = [],
+) {
+    const [messages, setMessages] = React.useState<LiveChatMessage[]>(initialMessages)
+
+    React.useEffect(() => {
+        setMessages(initialMessages)
+    }, [streamId, initialMessages])
+
+    React.useEffect(() => {
+        if (!streamId) {
+            return
+        }
+
+        const supabase = createClient()
+        const channel = supabase
+            .channel(`live-chat-${streamId}`)
+            .on(
+                "postgres_changes",
+                {
+                    event: "INSERT",
+                    schema: "public",
+                    table: "chat_messages",
+                    filter: `live_stream_id=eq.${streamId}`,
+                },
+                async (payload) => {
+                    const nextMessage = payload.new as Record<string, unknown>
+                    const userId = String(nextMessage.user_id ?? "")
+
+                    const { data: profile } = await supabase
+                        .from("users")
+                        .select("name, avatar")
+                        .eq("id", userId)
+                        .maybeSingle()
+
+                    const chatMessage = mapChatMessage(nextMessage, profile ?? null)
+                    if (!chatMessage) {
+                        return
+                    }
+
+                    setMessages((current) => {
+                        if (current.some((message) => message.id === chatMessage.id)) {
+                            return current
+                        }
+
+                        return [...current, chatMessage]
+                    })
+                },
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [streamId])
+
+    return { messages, setMessages }
+}

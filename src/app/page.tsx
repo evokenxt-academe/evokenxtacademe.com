@@ -1,27 +1,27 @@
-"use client";
-import * as React from "react";
-import { useUserSession } from "@/features/auth/store/use-user-session";
-import { Header } from "@/components/header";
-
+import { StorySection } from "@/components/story-section";
 import { HeroSection } from "@/components/hero-section";
-import Link from "next/link";
+import { HowProcessSection } from "@/components/how-process-section";
+import { FooterSection } from "@/components/footer-section";
+import { FaqSection } from "@/components/faq-section";
+import { Navigation } from "@/components/navigation";
+import { LmsClassesStripSection } from "@/components/lms-classes-strip-section";
+import { CourseSection } from "@/components/course-section";
+import { Separator } from "@/components/ui/separator";
+import { Testimonials01 } from "@/components/testimonials-01";
 
-export default function Page() {
-  const { user, isLoading, getSession } = useUserSession();
-
-  React.useEffect(() => {
-    getSession();
-  }, []);
-
+export default function Home() {
   return (
-    <main className="min-h-screen bg-black">
-      <Header />
+    <main className="relative min-h-screen bg-background">
       <HeroSection />
-      {/* Adding extra space to allow scrolling to test header states */}
-      <div className="h-screen bg-zinc-950 flex items-center justify-center text-white/50">
-        Scroll down to see the header transition
-      </div>
-      <Link href="/admin">Admin</Link>
+      <StorySection />
+      <Separator />
+      <CourseSection />
+      <Separator />
+      <Testimonials01 />
+      <Separator />
+      <FaqSection />
+      <LmsClassesStripSection />
+      <HowProcessSection />
     </main>
-  )
+  );
 }

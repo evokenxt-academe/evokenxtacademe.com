@@ -138,7 +138,9 @@ export default async function CoursePlayerPage({ params }: Props) {
                   <div className="space-y-1">
                     {section.lectures.map((lecture) => {
                       const isActive = lecture.id === currentLecture.id;
-                      const lectureProgress = playerData.lectureProgressMap.get(lecture.id);
+                      const lectureProgress = playerData.lectureProgressMap.get(
+                        lecture.id,
+                      );
                       const isCompleted = lectureProgress?.isCompleted === true;
 
                       return (
@@ -205,7 +207,9 @@ export default async function CoursePlayerPage({ params }: Props) {
             <div className="w-full aspect-video bg-zinc-950 flex items-center justify-center">
               <div className="text-center px-6">
                 <IconPlayerPlay className="size-10 text-zinc-700 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-zinc-400">No valid video URL for this lecture</p>
+                <p className="text-sm font-semibold text-zinc-400">
+                  No valid video URL for this lecture
+                </p>
               </div>
             </div>
           )}
@@ -233,7 +237,10 @@ export default async function CoursePlayerPage({ params }: Props) {
                 />
                 {playerData.previousLectureId ? (
                   <Link href={`/learn/${slug}/${playerData.previousLectureId}`}>
-                    <Button variant="outline" className="h-12 rounded-xl border-white/10">
+                    <Button
+                      variant="outline"
+                      className="h-12 rounded-xl border-white/10"
+                    >
                       <IconChevronLeft className="size-4 mr-1" />
                       Previous
                     </Button>
@@ -241,7 +248,10 @@ export default async function CoursePlayerPage({ params }: Props) {
                 ) : null}
                 {playerData.nextLectureId ? (
                   <Link href={`/learn/${slug}/${playerData.nextLectureId}`}>
-                    <Button variant="outline" className="h-12 rounded-xl border-white/10">
+                    <Button
+                      variant="outline"
+                      className="h-12 rounded-xl border-white/10"
+                    >
                       Next
                       <IconChevronRight className="size-4 ml-1" />
                     </Button>
@@ -268,15 +278,21 @@ export default async function CoursePlayerPage({ params }: Props) {
                         className="flex items-center justify-between rounded-xl border border-white/5 bg-black/30 p-3 hover:border-primary/30 transition-colors"
                       >
                         <div>
-                          <p className="text-sm font-semibold text-white">{resource.title}</p>
-                          <p className="text-[11px] text-zinc-500">Open resource</p>
+                          <p className="text-sm font-semibold text-white">
+                            {resource.title}
+                          </p>
+                          <p className="text-[11px] text-zinc-500">
+                            Open resource
+                          </p>
                         </div>
                         <IconChevronRight className="size-4 text-zinc-500" />
                       </a>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-500">No resources uploaded for this lecture yet.</p>
+                  <p className="text-sm text-zinc-500">
+                    No resources uploaded for this lecture yet.
+                  </p>
                 )}
               </div>
 
@@ -288,23 +304,31 @@ export default async function CoursePlayerPage({ params }: Props) {
                 <div className="space-y-2 text-sm text-zinc-400">
                   <div className="flex items-center justify-between">
                     <span>Progress</span>
-                    <span className="font-bold text-white">{playerData.courseProgress.progressPercent}%</span>
+                    <span className="font-bold text-white">
+                      {playerData.courseProgress.progressPercent}%
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Completed Lessons</span>
                     <span className="font-bold text-white">
-                      {playerData.courseProgress.completedLectures}/{playerData.courseProgress.totalLectures}
+                      {playerData.courseProgress.completedLectures}/
+                      {playerData.courseProgress.totalLectures}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span>Total Duration</span>
                     <span className="font-bold text-white">
-                      {formatDurationCompact(playerData.courseProgress.totalDurationSec)}
+                      {formatDurationCompact(
+                        playerData.courseProgress.totalDurationSec,
+                      )}
                     </span>
                   </div>
                 </div>
 
-                <Progress value={playerData.courseProgress.progressPercent} className="h-2 bg-zinc-800" />
+                <Progress
+                  value={playerData.courseProgress.progressPercent}
+                  className="h-2 bg-zinc-800"
+                />
               </div>
             </div>
 
@@ -318,26 +342,43 @@ export default async function CoursePlayerPage({ params }: Props) {
                 {playerData.relatedLiveStreams.length > 0 ? (
                   <div className="space-y-2">
                     {playerData.relatedLiveStreams.map((stream) => (
-                      <div key={stream.id} className="rounded-xl border border-white/5 bg-black/30 p-3">
+                      <div
+                        key={stream.id}
+                        className="rounded-xl border border-white/5 bg-black/30 p-3"
+                      >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-white truncate">{stream.title}</p>
-                          <Badge variant="outline" className="text-[10px] uppercase tracking-widest border-white/10 text-zinc-300">
+                          <p className="text-sm font-semibold text-white truncate">
+                            {stream.title}
+                          </p>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] uppercase tracking-widest border-white/10 text-zinc-300"
+                          >
                             {stream.status}
                           </Badge>
                         </div>
                         <p className="text-[11px] text-zinc-500 mt-1">
-                          {stream.scheduledAt
-                            ? new Date(stream.scheduledAt).toLocaleString("en-IN", {
+                          {stream.startedAt ||
+                          stream.endedAt ||
+                          stream.scheduledAt
+                            ? new Date(
+                                stream.startedAt ||
+                                  stream.endedAt ||
+                                  stream.scheduledAt ||
+                                  "",
+                              ).toLocaleString("en-IN", {
                                 dateStyle: "medium",
                                 timeStyle: "short",
                               })
-                            : "Timing to be announced"}
+                            : "Awaiting broadcast"}
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-500">No upcoming live sessions for this course.</p>
+                  <p className="text-sm text-zinc-500">
+                    No live sessions for this course.
+                  </p>
                 )}
               </div>
 
@@ -350,13 +391,20 @@ export default async function CoursePlayerPage({ params }: Props) {
                 {playerData.quizAttempts.length > 0 ? (
                   <div className="space-y-2">
                     {playerData.quizAttempts.map((attempt) => (
-                      <div key={`${attempt.quizId}-${attempt.submittedAt || "latest"}`} className="rounded-xl border border-white/5 bg-black/30 p-3">
+                      <div
+                        key={`${attempt.quizId}-${attempt.submittedAt || "latest"}`}
+                        className="rounded-xl border border-white/5 bg-black/30 p-3"
+                      >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-white truncate">{attempt.quizTitle}</p>
+                          <p className="text-sm font-semibold text-white truncate">
+                            {attempt.quizTitle}
+                          </p>
                           <Badge
                             variant="outline"
                             className={`text-[10px] uppercase tracking-widest border-white/10 ${
-                              attempt.passed ? "text-emerald-300" : "text-amber-300"
+                              attempt.passed
+                                ? "text-emerald-300"
+                                : "text-amber-300"
                             }`}
                           >
                             {attempt.passed ? "Passed" : "Pending"}
@@ -369,7 +417,9 @@ export default async function CoursePlayerPage({ params }: Props) {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-zinc-500">No quiz attempts recorded yet.</p>
+                  <p className="text-sm text-zinc-500">
+                    No quiz attempts recorded yet.
+                  </p>
                 )}
               </div>
             </div>

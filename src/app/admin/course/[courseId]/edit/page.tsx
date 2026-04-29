@@ -1,4 +1,4 @@
-import { AddCourse } from "@/features/admin/course/components/add-course";
+import { EnterpriseCourseEditor } from "@/features/admin/course/components/enterprise-course-editor";
 
 export default async function EditCoursePage({
   params,
@@ -7,5 +7,5 @@ export default async function EditCoursePage({
 }) {
   const { courseId } = await params;
 
-  return <AddCourse courseId={courseId} />;
+  return <EnterpriseCourseEditor courseId={courseId} />;
 }

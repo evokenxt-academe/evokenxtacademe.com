@@ -1,6 +1,6 @@
 "use client";
 
-import { LiveStreamPlayer } from "@/features/student/components/live-stream-player";
+import { LiveStreamRoom } from "@/features/live-stream/components/live-stream-room";
 
 export function LiveStreamPageClient({
   courseId,
@@ -11,7 +11,7 @@ export function LiveStreamPageClient({
 }) {
   return (
     <div className="flex-1 w-full h-[calc(100vh-4rem)]">
-      <LiveStreamPlayer courseId={courseId} courseName={courseName} />
+      <LiveStreamRoom courseId={courseId} courseName={courseName} />
     </div>
   );
 }

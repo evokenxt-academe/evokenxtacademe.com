@@ -503,12 +503,12 @@ export async function fetchStudentLearningOverview(
   const profileRecord = profileResult.data as RowRecord | null;
   const profile: StudentProfile | null = profileRecord
     ? {
-        id: toStringValue(profileRecord.id),
-        name: toNullableString(profileRecord.name),
-        email: toStringValue(profileRecord.email),
-        avatar: toNullableString(profileRecord.avatar),
-        role: toNullableString(profileRecord.role),
-      }
+      id: toStringValue(profileRecord.id),
+      name: toNullableString(profileRecord.name),
+      email: toStringValue(profileRecord.email),
+      avatar: toNullableString(profileRecord.avatar),
+      role: toNullableString(profileRecord.role),
+    }
     : null;
 
   const enrollmentRows = Array.isArray(enrollmentResult.data)
@@ -665,10 +665,10 @@ export async function fetchStudentDashboardData(
   if (overview.courseIds.length > 0) {
     const { data: streamData, error: streamError } = await supabase
       .from("live_streams")
-      .select("id, title, course_id, status, scheduled_at, started_at, ended_at, yt_video_id")
+      .select("id, title, course_id, status, started_at, ended_at, yt_video_id")
       .in("course_id", overview.courseIds)
-      .in("status", ["scheduled", "live"])
-      .order("scheduled_at", { ascending: true })
+      .in("status", ["live", "ended"])
+      .order("started_at", { ascending: false })
       .limit(8);
 
     logSupabaseError("fetch live streams", streamError);
@@ -689,7 +689,7 @@ export async function fetchStudentDashboardData(
           courseId,
           courseName: courseNameById.get(courseId) ?? "Course",
           status: toStringValue(row.status),
-          scheduledAt: toNullableString(row.scheduled_at),
+          scheduledAt: toNullableString(row.started_at) ?? toNullableString(row.ended_at),
           startedAt: toNullableString(row.started_at),
           endedAt: toNullableString(row.ended_at),
           ytVideoId: toNullableString(row.yt_video_id),
@@ -874,17 +874,17 @@ export async function fetchStudentCoursePlayerData(
   const [resourcesResult, streamsResult] = await Promise.all([
     currentLecture
       ? supabase
-          .from("resources")
-          .select("id, title, file_url")
-          .eq("lecture_id", currentLecture.id)
-          .order("title", { ascending: true })
+        .from("resources")
+        .select("id, title, file_url")
+        .eq("lecture_id", currentLecture.id)
+        .order("title", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
     supabase
       .from("live_streams")
-      .select("id, title, course_id, status, scheduled_at, started_at, ended_at, yt_video_id")
+      .select("id, title, course_id, status, started_at, ended_at, yt_video_id")
       .eq("course_id", course.id)
-      .in("status", ["scheduled", "live"])
-      .order("scheduled_at", { ascending: true })
+      .in("status", ["live", "ended"])
+      .order("started_at", { ascending: false })
       .limit(3),
   ]);
 
@@ -933,7 +933,7 @@ export async function fetchStudentCoursePlayerData(
         courseId,
         courseName: course.name,
         status: toStringValue(row.status),
-        scheduledAt: toNullableString(row.scheduled_at),
+        scheduledAt: toNullableString(row.started_at) ?? toNullableString(row.ended_at),
         startedAt: toNullableString(row.started_at),
         endedAt: toNullableString(row.ended_at),
         ytVideoId: toNullableString(row.yt_video_id),
@@ -1037,11 +1037,11 @@ export async function fetchStudentCoursePlayerData(
     course,
     enrollment: enrollmentRecord
       ? {
-          id: toStringValue(enrollmentRecord.id),
-          status: toStringValue(enrollmentRecord.status),
-          enrolledAt: toNullableString(enrollmentRecord.enrolled_at),
-          expiresAt: toNullableString(enrollmentRecord.expires_at),
-        }
+        id: toStringValue(enrollmentRecord.id),
+        status: toStringValue(enrollmentRecord.status),
+        enrolledAt: toNullableString(enrollmentRecord.enrolled_at),
+        expiresAt: toNullableString(enrollmentRecord.expires_at),
+      }
       : null,
     sections,
     orderedLectures,
