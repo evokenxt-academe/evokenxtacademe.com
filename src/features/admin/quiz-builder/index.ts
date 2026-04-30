@@ -9,6 +9,13 @@ export { QuestionCard } from "./question-card"
 export { TypeBadge, DifficultyBadge } from "./question-badges"
 export { QuestionFormDialog } from "./components/question-form"
 
+// New refactored components
+export { CourseQuizSelector } from "./components/course-quiz-selector"
+export { TabManual } from "./components/tab-manual"
+export { TabPaste } from "./components/tab-paste"
+export { TabImportPdf } from "./components/tab-import-pdf"
+export { QuestionPreviewList } from "./components/question-preview-list"
+
 export * from "./types"
 export * from "./hooks/use-quiz-builder"
 export { quizBuilderApi } from "./services/quiz-builder-api"

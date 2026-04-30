@@ -14,7 +14,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const { supabase } = auth
 
     const { error } = await supabase
-        .from("quiz_questions")
+        .from("questions")
         .delete()
         .eq("id", questionId)
         .eq("quiz_id", quizId)
@@ -25,7 +25,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
 
     // Re-normalize positions
     const { data: remaining } = await supabase
-        .from("quiz_questions")
+        .from("questions")
         .select("id")
         .eq("quiz_id", quizId)
         .order("position", { ascending: true })
@@ -33,23 +33,19 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     if (remaining) {
         for (let i = 0; i < remaining.length; i++) {
             await supabase
-                .from("quiz_questions")
+                .from("questions")
                 .update({ position: i })
                 .eq("id", remaining[i].id)
         }
     }
 
     // Recalculate total marks
-    const { data: allQQ } = await supabase
-        .from("quiz_questions")
-        .select("marks_override, question_bank(marks)")
+    const { data: allQ } = await supabase
+        .from("questions")
+        .select("marks")
         .eq("quiz_id", quizId)
 
-    const totalMarks = (allQQ ?? []).reduce((sum, qq) => {
-        const qb = qq.question_bank as unknown as { marks: number } | null
-        const marks = qq.marks_override ?? qb?.marks ?? 1
-        return sum + marks
-    }, 0)
+    const totalMarks = (allQ ?? []).reduce((sum, q) => sum + (q.marks ?? 1), 0)
 
     await supabase
         .from("quizzes")

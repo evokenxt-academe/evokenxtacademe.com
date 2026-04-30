@@ -1,47 +1,37 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { requireAdmin } from "@/features/admin/lib/admin-route"
-import type { CreateQuestionPayload, QuestionBankItem } from "@/features/admin/quiz-builder/types"
-
-function toQuestionItem(
-    row: Record<string, unknown>,
-    optionRows: Array<Record<string, unknown>>
-): QuestionBankItem {
-    return {
-        id: row.id as string,
-        question: row.question as string,
-        type: row.type as QuestionBankItem["type"],
-        explanation: (row.explanation as string | null) ?? undefined,
-        difficulty: row.difficulty as QuestionBankItem["difficulty"],
-        tags: (row.tags as string[]) ?? [],
-        marks: row.marks as number,
-        createdBy: row.created_by as string | null,
-        createdAt: row.created_at as string,
-        updatedAt: row.updated_at as string,
-        options: optionRows
-            .sort((a, b) => (a.position as number) - (b.position as number))
-            .map((opt) => ({
-                id: opt.id as string,
-                text: opt.text as string,
-                isCorrect: opt.is_correct as boolean,
-                position: opt.position as number,
-            })),
-    }
-}
+import type { CreateQuestionPayload } from "@/features/admin/quiz-builder/types"
 
 export async function POST(request: NextRequest) {
     const auth = await requireAdmin(["admin", "instructor"])
     if ("error" in auth) return auth.error
 
-    const { supabase, userId } = auth
-    const body = (await request.json()) as { questions?: CreateQuestionPayload[] }
+    const { supabase } = auth
+    const body = (await request.json()) as { questions?: CreateQuestionPayload[]; quizId?: string }
     const questions = Array.isArray(body.questions) ? body.questions : []
+    const quizId = body.quizId
 
     if (questions.length === 0) {
         return NextResponse.json({ error: "questions are required" }, { status: 400 })
     }
 
-    const createdQuestions: QuestionBankItem[] = []
+    if (!quizId) {
+        return NextResponse.json({ error: "quizId is required" }, { status: 400 })
+    }
+
+    // Get current max position
+    const { data: maxRow } = await supabase
+        .from("questions")
+        .select("position")
+        .eq("quiz_id", quizId)
+        .order("position", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    let nextPosition = (maxRow?.position ?? -1) + 1
+
+    const createdQuestions: Array<Record<string, unknown>> = []
 
     for (const [index, payload] of questions.entries()) {
         if (!payload?.question?.trim()) {
@@ -52,24 +42,20 @@ export async function POST(request: NextRequest) {
         }
 
         const { data: questionRow, error: questionError } = await supabase
-            .from("question_bank")
+            .from("questions")
             .insert({
+                quiz_id: quizId,
                 question: payload.question.trim(),
-                type: payload.type,
-                explanation: payload.explanation ?? null,
-                difficulty: payload.difficulty,
-                tags: payload.tags ?? [],
+                source: payload.explanation ?? null,
                 marks: payload.marks ?? 1,
-                created_by: userId,
+                position: nextPosition++,
             })
             .select()
             .single()
 
         if (questionError || !questionRow) {
             return NextResponse.json(
-                {
-                    error: questionError?.message || `Failed to create question ${index + 1}`,
-                },
+                { error: questionError?.message || `Failed to create question ${index + 1}` },
                 { status: 500 }
             )
         }
@@ -77,22 +63,19 @@ export async function POST(request: NextRequest) {
         let optionRows: Array<Record<string, unknown>> = []
         if (payload.options?.length) {
             const { data: insertedOptions, error: optionError } = await supabase
-                .from("question_bank_options")
+                .from("options")
                 .insert(
-                    payload.options.map((option, optionIndex) => ({
+                    payload.options.map((option) => ({
                         question_id: questionRow.id,
                         text: option.text,
                         is_correct: option.isCorrect ?? false,
-                        position: option.position ?? optionIndex,
                     }))
                 )
                 .select()
 
             if (optionError) {
                 return NextResponse.json(
-                    {
-                        error: optionError.message || `Failed to create options for question ${index + 1}`,
-                    },
+                    { error: optionError.message || `Failed to create options for question ${index + 1}` },
                     { status: 500 }
                 )
             }
@@ -100,8 +83,37 @@ export async function POST(request: NextRequest) {
             optionRows = insertedOptions ?? []
         }
 
-        createdQuestions.push(toQuestionItem(questionRow as Record<string, unknown>, optionRows))
+        createdQuestions.push({
+            id: questionRow.id,
+            question: questionRow.question,
+            imageUrl: null,
+            type: "mcq",
+            explanation: questionRow.source,
+            explanationImageUrl: null,
+            difficulty: "medium",
+            tags: [],
+            marks: questionRow.marks,
+            createdBy: null,
+            createdAt: questionRow.id,
+            updatedAt: questionRow.id,
+            options: optionRows.map((opt, idx) => ({
+                id: opt.id,
+                questionId: questionRow.id,
+                text: opt.text,
+                isCorrect: opt.is_correct,
+                position: idx,
+            })),
+        })
     }
+
+    // Recalculate total marks
+    const { data: allQ } = await supabase
+        .from("questions")
+        .select("marks")
+        .eq("quiz_id", quizId)
+
+    const totalMarks = (allQ ?? []).reduce((sum, q) => sum + (q.marks ?? 1), 0)
+    await supabase.from("quizzes").update({ total_marks: totalMarks }).eq("id", quizId)
 
     return NextResponse.json({ questions: createdQuestions, created: createdQuestions.length })
 }

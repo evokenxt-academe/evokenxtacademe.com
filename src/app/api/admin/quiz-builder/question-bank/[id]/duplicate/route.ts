@@ -11,12 +11,12 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     if ("error" in auth) return auth.error
 
     const { id } = await params
-    const { supabase, userId } = auth
+    const { supabase } = auth
 
     // Fetch original question with options
     const { data: original, error: fetchError } = await supabase
-        .from("question_bank")
-        .select("*, question_bank_options(*)")
+        .from("questions")
+        .select("*, options(*)")
         .eq("id", id)
         .single()
 
@@ -27,17 +27,26 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
         )
     }
 
+    // Get current max position in quiz
+    const { data: maxRow } = await supabase
+        .from("questions")
+        .select("position")
+        .eq("quiz_id", original.quiz_id)
+        .order("position", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+    const nextPosition = (maxRow?.position ?? -1) + 1
+
     // Create duplicate
     const { data: duplicate, error: dupError } = await supabase
-        .from("question_bank")
+        .from("questions")
         .insert({
+            quiz_id: original.quiz_id,
             question: `${original.question} (copy)`,
-            type: original.type,
-            explanation: original.explanation,
-            difficulty: original.difficulty,
-            tags: original.tags,
+            source: original.source,
             marks: original.marks,
-            created_by: userId,
+            position: nextPosition,
         })
         .select()
         .single()
@@ -50,18 +59,17 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     }
 
     // Duplicate options
-    const originalOptions = (original.question_bank_options as Array<Record<string, unknown>>) ?? []
+    const originalOptions = (original.options as Array<Record<string, unknown>>) ?? []
     let optionRows: Array<Record<string, unknown>> = []
 
     if (originalOptions.length > 0) {
         const { data: opts, error: oError } = await supabase
-            .from("question_bank_options")
+            .from("options")
             .insert(
                 originalOptions.map((opt) => ({
                     question_id: duplicate.id,
                     text: opt.text as string,
                     is_correct: opt.is_correct as boolean,
-                    position: opt.position as number,
                 }))
             )
             .select()
@@ -75,20 +83,22 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
         question: {
             id: duplicate.id,
             question: duplicate.question,
-            type: duplicate.type,
-            explanation: duplicate.explanation,
-            difficulty: duplicate.difficulty,
-            tags: duplicate.tags,
+            imageUrl: null,
+            type: "mcq",
+            explanation: duplicate.source,
+            explanationImageUrl: null,
+            difficulty: "medium",
+            tags: [],
             marks: duplicate.marks,
-            createdBy: duplicate.created_by,
-            createdAt: duplicate.created_at,
-            updatedAt: duplicate.updated_at,
-            options: optionRows.map((opt) => ({
+            createdBy: null,
+            createdAt: duplicate.id,
+            updatedAt: duplicate.id,
+            options: optionRows.map((opt, idx) => ({
                 id: opt.id,
-                questionId: opt.question_id,
+                questionId: duplicate.id,
                 text: opt.text,
                 isCorrect: opt.is_correct,
-                position: opt.position,
+                position: idx,
             })),
         },
     })
