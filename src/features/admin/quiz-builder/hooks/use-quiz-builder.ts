@@ -62,6 +62,9 @@ export function useCreateQuestion() {
             queryClient.invalidateQueries({
                 queryKey: [...quizBuilderKeys.all, "question-bank"],
             })
+            queryClient.invalidateQueries({
+                queryKey: [...quizBuilderKeys.all, "quiz-questions"],
+            })
             toast.success("Question created")
         },
         onError: (error: Error) => {
@@ -122,6 +125,9 @@ export function useDuplicateQuestion() {
             queryClient.invalidateQueries({
                 queryKey: [...quizBuilderKeys.all, "question-bank"],
             })
+            queryClient.invalidateQueries({
+                queryKey: [...quizBuilderKeys.all, "quiz-questions"],
+            })
             toast.success("Question duplicated")
         },
         onError: (error: Error) => {
@@ -139,6 +145,9 @@ export function useBulkCreateQuestions() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({
                 queryKey: [...quizBuilderKeys.all, "question-bank"],
+            })
+            queryClient.invalidateQueries({
+                queryKey: [...quizBuilderKeys.all, "quiz-questions"],
             })
             toast.success(
                 data.created === 1
@@ -186,7 +195,13 @@ export function useCreateQuiz() {
     return useMutation({
         mutationFn: (payload: CreateQuizPayload) =>
             quizBuilderApi.createQuiz(payload),
-        onSuccess: (_data, variables) => {
+        onSuccess: (data, variables) => {
+            // Immediately set the quiz data so the UI updates instantly
+            queryClient.setQueryData(
+                quizBuilderKeys.quiz(variables.sectionId),
+                data
+            )
+            // Also invalidate for a background refetch to ensure freshness
             queryClient.invalidateQueries({
                 queryKey: quizBuilderKeys.quiz(variables.sectionId),
             })

@@ -170,7 +170,7 @@ export function QuestionBankPanel({
       )}
 
       {/* Question List */}
-      <ScrollArea className="flex-1 -mx-1">
+      <ScrollArea className="flex-1 min-h-0 -mx-1">
         <div className="flex flex-col gap-2 px-1 pb-4">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (

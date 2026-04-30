@@ -16,11 +16,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Try to find existing quiz
-    const { data: existing, error: findError } = await supabase
+    const { data, error: findError } = await supabase
         .from("quizzes")
-        .select("*, quiz_questions(id)")
+        .select("*, questions(id)")
         .eq("section_id", sectionId)
-        .maybeSingle()
+        .limit(1)
+
+    const existing = data?.[0]
 
     if (findError) {
         return NextResponse.json({ error: findError.message }, { status: 500 })
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
                 timeLimitSec: existing.time_limit_sec,
                 isPublished: existing.is_published,
                 createdAt: existing.created_at,
-                questionCount: ((existing.quiz_questions as unknown[]) ?? []).length,
+                questionCount: ((existing.questions as unknown[]) ?? []).length,
             },
         })
     }

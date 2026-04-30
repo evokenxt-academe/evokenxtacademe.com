@@ -62,6 +62,7 @@ export interface QuizQuestion {
 // ── Form payloads ─────────────────────────────────────────────
 
 export interface CreateQuestionPayload {
+    quizId?: string
     question: string
     imageUrl?: string
     type: QuestionType
@@ -78,6 +79,7 @@ export interface CreateQuestionPayload {
 }
 
 export interface BulkCreateQuestionsPayload {
+    quizId?: string
     questions: CreateQuestionPayload[]
 }
 
