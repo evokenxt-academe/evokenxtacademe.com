@@ -10,7 +10,7 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
 
   // Pages where Navigation and Footer should NOT be shown
   const isHiddenRoute =
-    pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard");
+    pathname?.startsWith("/admin") || pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth/login") || pathname?.startsWith("/my-courses") || pathname?.startsWith("/learn")
 
   if (isHiddenRoute) {
     return <>{children}</>;

@@ -11,7 +11,8 @@ type Folder =
   | "course-thumbnails"
   | "course-resources"
   | "avatars"
-  | "certificates";
+  | "certificates"
+  | "question-bank-images";
 
 interface FileUploaderProps {
   accept: string;
