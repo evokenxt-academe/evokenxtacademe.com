@@ -14,6 +14,8 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
 export type StreamStatus = "scheduled" | "live" | "ended" | "cancelled"
 export type QuizType = "practice" | "graded" | "final"
 export type AttemptStatus = "in_progress" | "submitted" | "timed_out"
+export type QuestionType = "mcq" | "multiple_select" | "subjective" | "fill_in_the_blanks" | "true_or_false" | "assertion_reasoning" | "number"
+export type DifficultyLevel = "easy" | "medium" | "hard"
 
 export interface Database {
   public: {
@@ -464,6 +466,90 @@ export interface Database {
           selected_option_id?: string | null
         }
       }
+      question_bank: {
+        Row: {
+          id: string
+          question: string
+          type: QuestionType
+          explanation: string | null
+          difficulty: DifficultyLevel
+          tags: string[]
+          marks: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          question: string
+          type?: QuestionType
+          explanation?: string | null
+          difficulty?: DifficultyLevel
+          tags?: string[]
+          marks?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          question?: string
+          type?: QuestionType
+          explanation?: string | null
+          difficulty?: DifficultyLevel
+          tags?: string[]
+          marks?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      question_bank_options: {
+        Row: {
+          id: string
+          question_id: string
+          text: string
+          is_correct: boolean
+          position: number
+        }
+        Insert: {
+          id?: string
+          question_id: string
+          text: string
+          is_correct?: boolean
+          position?: number
+        }
+        Update: {
+          id?: string
+          question_id?: string
+          text?: string
+          is_correct?: boolean
+          position?: number
+        }
+      }
+      quiz_questions: {
+        Row: {
+          id: string
+          quiz_id: string
+          question_id: string
+          position: number
+          marks_override: number | null
+        }
+        Insert: {
+          id?: string
+          quiz_id: string
+          question_id: string
+          position?: number
+          marks_override?: number | null
+        }
+        Update: {
+          id?: string
+          quiz_id?: string
+          question_id?: string
+          position?: number
+          marks_override?: number | null
+        }
+      }
     }
   }
 }
@@ -479,3 +565,6 @@ export type ReviewRow = Database["public"]["Tables"]["reviews"]["Row"]
 export type CertificateRow = Database["public"]["Tables"]["certificates"]["Row"]
 export type LiveStreamRow = Database["public"]["Tables"]["live_streams"]["Row"]
 export type LiveChatMessageRow = Database["public"]["Tables"]["chat_messages"]["Row"]
+export type QuestionBankRow = Database["public"]["Tables"]["question_bank"]["Row"]
+export type QuestionBankOptionRow = Database["public"]["Tables"]["question_bank_options"]["Row"]
+export type QuizQuestionRow = Database["public"]["Tables"]["quiz_questions"]["Row"]

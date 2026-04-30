@@ -4,7 +4,8 @@ export type R2Folder =
   | "course-thumbnails"
   | "course-resources"
   | "avatars"
-  | "certificates";
+  | "certificates"
+  | "question-bank-images";
 
 type R2Config = {
   accountId: string;

@@ -31,6 +31,10 @@ const folderRules: Record<
         ],
         adminOnly: true,
     },
+    "question-bank-images": {
+        allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
+        adminOnly: true,
+    },
     avatars: {
         allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
         adminOnly: false,

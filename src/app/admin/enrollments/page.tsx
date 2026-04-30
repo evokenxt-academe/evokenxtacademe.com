@@ -9,6 +9,8 @@ import {
   IconSearch,
   IconUserPlus,
   IconShieldLock,
+  IconCheck,
+  IconX,
 } from "@tabler/icons-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +35,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -50,14 +56,37 @@ import {
 import { AdminPageShell } from "@/features/admin/components/admin-page-shell";
 import { AdminResourceTable } from "@/features/admin/components/admin-resource-table";
 import { adminApi } from "@/features/admin/lib/admin-api";
-import {
-  type AdminCourse,
-  type AdminEnrollment,
-  type AdminUser,
-} from "@/features/admin/data/admin-sample-data";
 import { formatDate, getInitials } from "@/features/admin/lib/formatters";
+import { createClient } from "@/utils/supabase/client";
 
-const userRoleStyles: Record<AdminUser["role"], string> = {
+// ── Types ───────────────────────────────────────────────
+
+type Role = "student" | "instructor" | "admin";
+type EnrollmentStatus = "active" | "expired" | "refunded";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  created_at: string;
+}
+
+interface Course {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface EnrollmentInput {
+  userIds: string[];
+  courseIds: string[];
+  expiresAt: string | null;
+}
+
+// ── UI Styles ───────────────────────────────────────────
+
+const userRoleStyles: Record<Role, string> = {
   student: "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300",
   instructor:
     "border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300",
@@ -65,7 +94,7 @@ const userRoleStyles: Record<AdminUser["role"], string> = {
     "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
 
-const enrollmentStyles: Record<AdminEnrollment["status"], string> = {
+const enrollmentStyles: Record<EnrollmentStatus, string> = {
   active:
     "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   expired: "border-muted-foreground/20 bg-muted text-muted-foreground",
@@ -73,98 +102,139 @@ const enrollmentStyles: Record<AdminEnrollment["status"], string> = {
     "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
+// ── Supabase Queries ────────────────────────────────────
+
+function useUsers() {
+  const supabase = createClient();
+  return useQuery({
+    queryKey: ["supabase-users"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name, email, role, created_at")
+        .order("name");
+
+      if (error) throw new Error(error.message);
+      return data as User[];
+    },
+  });
+}
+
+function useCourses() {
+  const supabase = createClient();
+  return useQuery({
+    queryKey: ["supabase-courses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, name, slug")
+        .order("name");
+
+      if (error) throw new Error(error.message);
+      return data as Course[];
+    },
+  });
+}
+
+function useCreateEnrollments() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: EnrollmentInput) => {
+      if (!input.userIds.length || !input.courseIds.length) {
+        throw new Error("Missing users or courses");
+      }
+
+      const payloads = [];
+      for (const userId of input.userIds) {
+        for (const courseId of input.courseIds) {
+          payloads.push({
+            user_id: userId,
+            course_id: courseId,
+            status: "active",
+            enrolled_at: new Date().toISOString(),
+            expires_at: input.expiresAt,
+          });
+        }
+      }
+
+      const { error } = await supabase.from("enrollments").insert(payloads);
+      if (error) throw new Error(error.message);
+
+      return payloads.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`Successfully created ${count} enrollment(s)`);
+      queryClient.invalidateQueries({ queryKey: ["admin-enrollments"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create enrollments");
+    },
+  });
+}
+
+// ── Component ───────────────────────────────────────────
+
 export default function EnrollmentsPage() {
+  // Keep the list viewing on the old admin API for now as requested
   const enrollmentsQuery = useQuery({
     queryKey: ["admin-enrollments"],
     queryFn: adminApi.getEnrollments,
-  });
-
-  const usersQuery = useQuery({
-    queryKey: ["admin-users"],
-    queryFn: adminApi.getUsers,
-  });
-
-  const coursesQuery = useQuery({
-    queryKey: ["admin-courses"],
-    queryFn: adminApi.getCourses,
   });
 
   const enrollments = React.useMemo(
     () => enrollmentsQuery.data?.enrollments ?? [],
     [enrollmentsQuery.data?.enrollments],
   );
-  const users = React.useMemo(
-    () => usersQuery.data?.users ?? [],
-    [usersQuery.data?.users],
-  );
-  const courses = React.useMemo(
-    () => coursesQuery.data?.courses ?? [],
-    [coursesQuery.data?.courses],
-  );
 
   const [search, setSearch] = React.useState("");
-  const [userSearch, setUserSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<
-    "all" | AdminEnrollment["status"]
-  >("all");
+  const [statusFilter, setStatusFilter] = React.useState<"all" | EnrollmentStatus>("all");
+
   const [enrollOpen, setEnrollOpen] = React.useState(false);
-  const [revokeEnrollment, setRevokeEnrollment] =
-    React.useState<AdminEnrollment | null>(null);
+  const [revokeEnrollment, setRevokeEnrollment] = React.useState<any | null>(null);
 
-  // Form state for manual enrollment
-  const [enrollForm, setEnrollForm] = React.useState({
-    learnerId: "",
-    courseId: "",
-    expiresAt: "",
-  });
+  // New hooks
+  const { data: users = [], isLoading: loadingUsers } = useUsers();
+  const { data: courses = [], isLoading: loadingCourses } = useCourses();
+  const createEnrollment = useCreateEnrollments();
 
-  const selectedLearner = React.useMemo(
-    () => users.find((user) => user.id === enrollForm.learnerId) ?? null,
-    [enrollForm.learnerId, users],
-  );
+  // Multi-select Form State
+  const [userSearch, setUserSearch] = React.useState("");
+  const [selectedUserIds, setSelectedUserIds] = React.useState<Set<string>>(new Set());
+  const [selectedCourseIds, setSelectedCourseIds] = React.useState<Set<string>>(new Set());
+  const [expiryType, setExpiryType] = React.useState<"never" | "custom">("never");
+  const [customExpiry, setCustomExpiry] = React.useState("");
 
-  const filteredUsers = React.useMemo(() => {
-    const query = userSearch.trim().toLowerCase();
+  const resetForm = () => {
+    setUserSearch("");
+    setSelectedUserIds(new Set());
+    setSelectedCourseIds(new Set());
+    setExpiryType("never");
+    setCustomExpiry("");
+  };
 
-    return users.filter((user) => {
-      return (
-        !query ||
-        user.name.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query) ||
-        user.role.toLowerCase().includes(query)
-      );
+  const handleOpenChange = (open: boolean) => {
+    setEnrollOpen(open);
+    if (!open) resetForm();
+  };
+
+  const handleEnroll = () => {
+    createEnrollment.mutate({
+      userIds: Array.from(selectedUserIds),
+      courseIds: Array.from(selectedCourseIds),
+      expiresAt: expiryType === "never" ? null : (customExpiry || null),
+    }, {
+      onSuccess: () => {
+        setEnrollOpen(false);
+        resetForm();
+      }
     });
-  }, [userSearch, users]);
+  };
 
   const queryClient = useQueryClient();
-
-  const createEnrollmentMutation = useMutation({
-    mutationFn: () => {
-      if (!selectedLearner) {
-        throw new Error("Select an existing learner before enrolling");
-      }
-
-      return adminApi.createEnrollment({
-        email: selectedLearner.email,
-        courseId: enrollForm.courseId,
-        expiresAt: enrollForm.expiresAt || undefined,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-enrollments"] });
-      toast.success("User enrolled successfully");
-      setEnrollOpen(false);
-      setEnrollForm({ learnerId: "", courseId: "", expiresAt: "" });
-      setUserSearch("");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to enroll user");
-    },
-  });
-
   const revokeEnrollmentMutation = useMutation({
-    mutationFn: (enrollmentId: string) =>
-      adminApi.revokeEnrollment(enrollmentId),
+    mutationFn: (enrollmentId: string) => adminApi.revokeEnrollment(enrollmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-enrollments"] });
       toast.success("Enrollment revoked");
@@ -174,15 +244,6 @@ export default function EnrollmentsPage() {
       toast.error(error.message || "Failed to revoke enrollment");
     },
   });
-
-  // Debugging
-  React.useEffect(() => {
-    console.log("Admin Enrollments Data:", {
-      enrollments: enrollments.length,
-      users: users.length,
-      courses: courses.length,
-    });
-  }, [enrollments, users, courses]);
 
   const filteredEnrollments = React.useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -200,7 +261,7 @@ export default function EnrollmentsPage() {
     });
   }, [enrollments, search, statusFilter]);
 
-  const columns = React.useMemo<ColumnDef<AdminEnrollment>[]>(
+  const columns = React.useMemo<ColumnDef<any>[]>(
     () => [
       { accessorKey: "user", header: "User" },
       { accessorKey: "course", header: "Course" },
@@ -208,7 +269,7 @@ export default function EnrollmentsPage() {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => {
-          const status = row.original.status;
+          const status = row.original.status as EnrollmentStatus;
           return (
             <Badge
               className={`rounded-full border px-2.5 py-1 capitalize ${enrollmentStyles[status]}`}
@@ -251,217 +312,221 @@ export default function EnrollmentsPage() {
       title="Enrollments"
       description="Grant access, track expiry windows, and revoke access in seconds."
       actions={
-        <Dialog open={enrollOpen} onOpenChange={setEnrollOpen}>
+        <Dialog open={enrollOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <Button className="rounded-xl">
               <IconUserPlus />
-              Manually enroll user
+              Assign access
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-3xl gap-6 flex flex-col max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Manual enrollment</DialogTitle>
+              <DialogTitle>Bulk Course Assignment</DialogTitle>
               <DialogDescription>
-                Select an existing learner from Supabase, then assign a course
-                and optional expiry date.
+                Select multiple users and courses to grant access in bulk.
               </DialogDescription>
             </DialogHeader>
-            <FieldGroup className="gap-5">
-              <Field>
-                <FieldLabel htmlFor="enroll-learner">Select learner</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="enroll-learner"
-                    placeholder="Search users by name, email, or role..."
-                    value={userSearch}
-                    onChange={(event) => setUserSearch(event.target.value)}
-                    className="h-10 rounded-xl"
-                  />
-                  <div className="mt-3 rounded-2xl border border-border/70 bg-background/60">
-                    <div className="border-b border-border/70 px-4 py-3 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                      Users from Supabase
-                    </div>
-                    <div className="max-h-72 overflow-y-auto p-2">
-                      {usersQuery.isLoading ? (
-                        <div className="px-3 py-6 text-center text-sm text-muted-foreground italic">
-                          Fetching users from Supabase...
-                        </div>
-                      ) : filteredUsers.length > 0 ? (
-                        filteredUsers.map((user: AdminUser) => {
-                          const isSelected = user.id === enrollForm.learnerId;
 
-                          return (
-                            <button
-                              key={user.id}
-                              type="button"
-                              onClick={() => {
-                                setEnrollForm((prev) => ({
-                                  ...prev,
-                                  learnerId: user.id,
-                                }));
-                                setUserSearch(user.name);
-                              }}
-                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                                isSelected
-                                  ? "bg-primary/10 ring-1 ring-primary/20"
-                                  : ""
-                              }`}
-                            >
-                              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                                {getInitials(user.name)}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="truncate font-medium text-sm">
-                                    {user.name}
-                                  </span>
-                                  <Badge
-                                    className={`rounded-full border px-2 py-0.5 text-[10px] capitalize ${userRoleStyles[user.role]}`}
+            <ScrollArea className="flex-1 -mx-6 px-6">
+              <div className="flex flex-col gap-8 pb-4">
+
+                {/* 1. USERS */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">1. Select Users</h3>
+                    {selectedUserIds.size > 0 && (
+                      <Badge variant="secondary" className="rounded-full">
+                        {selectedUserIds.size} selected
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-border/70 overflow-hidden bg-background">
+                    <Command className="bg-transparent" shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search users by name or email..."
+                        className="h-11"
+                        value={userSearch}
+                        onValueChange={setUserSearch}
+                      />
+                      <CommandList className="max-h-[240px] overflow-y-auto border-t">
+                        {!userSearch.trim() ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Type a name or email to search users...
+                          </div>
+                        ) : loadingUsers ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">Loading users...</div>
+                        ) : (
+                          <CommandGroup>
+                            {users
+                              .filter(u =>
+                                u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                                u.email.toLowerCase().includes(userSearch.toLowerCase())
+                              )
+                              .map((user) => {
+                                const isSelected = selectedUserIds.has(user.id);
+                                return (
+                                  <CommandItem
+                                    key={user.id}
+                                    value={`${user.name} ${user.email}`}
+                                    onSelect={() => {
+                                      const next = new Set(selectedUserIds);
+                                      if (isSelected) next.delete(user.id);
+                                      else next.add(user.id);
+                                      setSelectedUserIds(next);
+                                    }}
+                                    className="flex items-center gap-3 py-2 cursor-pointer"
                                   >
-                                    {user.role}
-                                  </Badge>
+                                    <div className={`flex items-center justify-center size-5 rounded border ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input'}`}>
+                                      {isSelected && <IconCheck className="size-3.5" />}
+                                    </div>
+                                    <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary shrink-0">
+                                      {getInitials(user.name)}
+                                    </div>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      <span className="text-sm font-medium truncate">{user.name}</span>
+                                      <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            {users.filter(u =>
+                              u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+                              u.email.toLowerCase().includes(userSearch.toLowerCase())
+                            ).length === 0 && (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                  No users found matching "{userSearch}"
                                 </div>
-                                <span className="block truncate text-xs text-muted-foreground">
-                                  {user.email}
-                                </span>
-                              </div>
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-                          No users found. Try a different name, email, or role.
-                        </div>
-                      )}
-                    </div>
+                              )}
+                          </CommandGroup>
+                        )}
+                      </CommandList>
+                    </Command>
                   </div>
-                </FieldContent>
-                <FieldDescription>
-                  Pulls users from the Supabase user list endpoint and reuses
-                  the selected learner&apos;s email for enrollment.
-                </FieldDescription>
-                {selectedLearner ? (
-                  <div className="mt-3 rounded-2xl border border-border/70 bg-muted/30 p-4">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                        {getInitials(selectedLearner.name)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="truncate font-medium">
-                            {selectedLearner.name}
-                          </p>
-                          <Badge
-                            className={`rounded-full border px-2.5 py-1 capitalize ${userRoleStyles[selectedLearner.role]}`}
-                          >
-                            {selectedLearner.role}
+
+                  {selectedUserIds.size > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {Array.from(selectedUserIds).map(id => {
+                        const u = users.find(x => x.id === id);
+                        if (!u) return null;
+                        return (
+                          <Badge key={u.id} variant="secondary" className="gap-1 pr-1">
+                            {u.name}
+                            <div
+                              className="rounded-full hover:bg-muted p-0.5 cursor-pointer"
+                              onClick={() => {
+                                const next = new Set(selectedUserIds);
+                                next.delete(u.id);
+                                setSelectedUserIds(next);
+                              }}
+                            >
+                              <IconX className="size-3" />
+                            </div>
                           </Badge>
-                        </div>
-                        <p className="truncate text-sm text-muted-foreground">
-                          {selectedLearner.email}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEnrollForm((prev) => ({ ...prev, learnerId: "" }));
-                          setUserSearch("");
-                        }}
-                      >
-                        Clear
-                      </Button>
+                        );
+                      })}
                     </div>
-                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                      <div className="rounded-xl bg-background/80 px-3 py-2">
-                        <span className="block uppercase tracking-wide text-[10px] text-muted-foreground">
-                          Account created
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {formatDate(selectedLearner.createdAt)}
-                        </span>
-                      </div>
-                      <div className="rounded-xl bg-background/80 px-3 py-2">
-                        <span className="block uppercase tracking-wide text-[10px] text-muted-foreground">
-                          Enrollment target
-                        </span>
-                        <span className="font-medium text-foreground">
-                          Ready for course assignment
-                        </span>
-                      </div>
-                    </div>
+                  )}
+                </div>
+
+                {/* 2. COURSES */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium">2. Select Courses</h3>
+                    {selectedCourseIds.size > 0 && (
+                      <Badge variant="secondary" className="rounded-full">
+                        {selectedCourseIds.size} selected
+                      </Badge>
+                    )}
                   </div>
-                ) : null}
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="enroll-course">Course</FieldLabel>
-                <FieldContent>
-                  <Select
-                    value={enrollForm.courseId}
-                    onValueChange={(value) =>
-                      setEnrollForm((prev) => ({ ...prev, courseId: value }))
-                    }
+
+                  <div className="rounded-xl border border-border/70 overflow-hidden bg-background">
+                    <ScrollArea className="h-[200px]">
+                      <div className="p-2 space-y-1">
+                        {loadingCourses ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">Loading courses...</div>
+                        ) : courses.length === 0 ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground">No courses found.</div>
+                        ) : (
+                          courses.map((course) => {
+                            const isSelected = selectedCourseIds.has(course.id);
+                            return (
+                              <label
+                                key={course.id}
+                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                              >
+                                <Checkbox
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) => {
+                                    const next = new Set(selectedCourseIds);
+                                    if (checked) next.add(course.id);
+                                    else next.delete(course.id);
+                                    setSelectedCourseIds(next);
+                                  }}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{course.name}</span>
+                                  <span className="text-xs text-muted-foreground font-mono">{course.slug}</span>
+                                </div>
+                              </label>
+                            );
+                          })
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </div>
+
+                {/* 3. EXPIRY */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium">3. Expiry Date</h3>
+                  <RadioGroup
+                    value={expiryType}
+                    onValueChange={(val: "never" | "custom") => setExpiryType(val)}
+                    className="flex flex-col gap-3 rounded-xl border border-border/70 p-4 bg-background"
                   >
-                    <SelectTrigger id="enroll-course">
-                      <SelectValue placeholder="Select a course" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {coursesQuery.isLoading ? (
-                        <SelectItem value="loading" disabled>
-                          Loading courses...
-                        </SelectItem>
-                      ) : (
-                        courses.map((course: AdminCourse) => (
-                          <SelectItem key={course.id} value={course.id}>
-                            {course.name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </FieldContent>
-                {!courses.length && !coursesQuery.isLoading ? (
-                  <FieldDescription className="text-destructive">
-                    No courses are available. Check the admin course list API.
-                  </FieldDescription>
-                ) : null}
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="enroll-expiry">Expiry date</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="enroll-expiry"
-                    type="date"
-                    value={enrollForm.expiresAt}
-                    onChange={(e) =>
-                      setEnrollForm((prev) => ({
-                        ...prev,
-                        expiresAt: e.target.value,
-                      }))
-                    }
-                  />
-                </FieldContent>
-                <FieldDescription>
-                  Use a date aligned with the enrollment policy.
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEnrollOpen(false)}>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <RadioGroupItem value="never" id="never" />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">Never expire</span>
+                        <span className="text-xs text-muted-foreground">Lifetime access to the assigned courses</span>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <RadioGroupItem value="custom" id="custom" />
+                      <div className="flex flex-col w-full max-w-xs">
+                        <span className="text-sm font-medium mb-2">Set expiry date</span>
+                        <Input
+                          type="datetime-local"
+                          value={customExpiry}
+                          onChange={(e) => setCustomExpiry(e.target.value)}
+                          disabled={expiryType !== "custom"}
+                          className="h-9"
+                        />
+                      </div>
+                    </label>
+                  </RadioGroup>
+                </div>
+
+              </div>
+            </ScrollArea>
+
+            <DialogFooter className="pt-2">
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
               <Button
                 disabled={
-                  createEnrollmentMutation.isPending ||
-                  !selectedLearner ||
-                  !enrollForm.courseId
+                  createEnrollment.isPending ||
+                  selectedUserIds.size === 0 ||
+                  selectedCourseIds.size === 0 ||
+                  (expiryType === "custom" && !customExpiry)
                 }
-                onClick={() => createEnrollmentMutation.mutate()}
+                onClick={handleEnroll}
               >
-                {createEnrollmentMutation.isPending
-                  ? "Enrolling..."
-                  : "Enroll user"}
+                {createEnrollment.isPending
+                  ? "Assigning access..."
+                  : `Assign ${selectedCourseIds.size} course(s) to ${selectedUserIds.size} user(s)`}
               </Button>
             </DialogFooter>
           </DialogContent>
