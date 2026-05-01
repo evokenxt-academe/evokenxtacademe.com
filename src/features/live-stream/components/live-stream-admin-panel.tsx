@@ -3,10 +3,12 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   IconBroadcast,
   IconClock,
   IconCopy,
+  IconMessageCircle,
   IconPlayerPauseFilled,
   IconPlayerPlayFilled,
   IconPlus,
@@ -127,7 +129,7 @@ export function LiveStreamAdminPanel() {
   const [videoSource, setVideoSource] = React.useState("");
 
   const streamsQuery = useQuery({
-    queryKey: ["admin-live-streams"],
+    queryKey: ["admin-live-streams-list"],
     queryFn: fetchLiveStreams,
   });
 
@@ -149,7 +151,7 @@ export function LiveStreamAdminPanel() {
       setTitle("");
       setCourseId("");
       setVideoSource("");
-      queryClient.invalidateQueries({ queryKey: ["admin-live-streams"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-live-streams-list"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -166,13 +168,13 @@ export function LiveStreamAdminPanel() {
         ytVideoId: payload.ytVideoId,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-live-streams"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-live-streams-list"] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const liveStreams = streamsQuery.data ?? [];
-  const courses = coursesQuery.data ?? [];
+  const liveStreams = Array.isArray(streamsQuery.data) ? streamsQuery.data : [];
+  const courses = Array.isArray(coursesQuery.data) ? coursesQuery.data : [];
 
   const handleCreate = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -194,7 +196,7 @@ export function LiveStreamAdminPanel() {
 
   const handleCopyLink = async (stream: LiveStreamAdminItem) => {
     const courseSegment = stream.courseSlug || stream.courseId;
-    const url = `${window.location.origin}/dashboard/courses/${courseSegment}/live`;
+    const url = `${window.location.origin}/dashboard/courses/${courseSegment}/learn/live`;
     await navigator.clipboard.writeText(url);
     toast.success("Student link copied");
   };
@@ -298,7 +300,7 @@ export function LiveStreamAdminPanel() {
         </CardContent>
       </Card>
 
-      <Card className="flex min-h-[620px] flex-col border-border/70 shadow-sm">
+      <Card className="flex min-h-155 flex-col border-border/70 shadow-sm">
         <CardHeader className="space-y-2 border-b border-border/60 bg-muted/20">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -314,7 +316,7 @@ export function LiveStreamAdminPanel() {
         </CardHeader>
         <CardContent className="flex min-h-0 flex-1 p-0">
           {liveStreams.length === 0 ? (
-            <Empty className="m-4 min-h-[420px] border-border/60 bg-muted/10">
+            <Empty className="m-4 min-h-105 border-border/60 bg-muted/10">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <IconBroadcast />
@@ -332,7 +334,7 @@ export function LiveStreamAdminPanel() {
               </EmptyContent>
             </Empty>
           ) : (
-            <ScrollArea className="h-[620px] w-full">
+            <ScrollArea className="h-155 w-full">
               <div className="flex flex-col gap-4 p-4">
                 {liveStreams.map((stream, index) => {
                   const isLive = stream.status === "live";
@@ -381,6 +383,14 @@ export function LiveStreamAdminPanel() {
                         </div>
 
                         <div className="flex flex-wrap gap-2 md:justify-end">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link
+                              href={`/admin/live-streams/${stream.id}/chat`}
+                            >
+                              <IconMessageCircle data-icon="inline-start" />
+                              Open Chat
+                            </Link>
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -422,7 +432,7 @@ export function LiveStreamAdminPanel() {
                             Course link
                           </div>
                           <div className="truncate">
-                            /dashboard/courses/{courseSegment}/live
+                            /dashboard/courses/{courseSegment}/learn/live
                           </div>
                         </div>
                         <div>
