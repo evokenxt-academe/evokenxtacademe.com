@@ -24,6 +24,7 @@ import {
   IconLayoutDashboard,
   IconMessage2,
   IconSchool,
+  IconTrophy,
   IconUsers,
   IconVideo,
 } from "@tabler/icons-react";
@@ -72,6 +73,11 @@ const ADMIN_SIDEBAR_SECTIONS = [
         title: "Quizzes",
         href: "/admin/quizzes",
         icon: IconClipboardList,
+      },
+      {
+        title: "Test Rankings",
+        href: "/admin/tests",
+        icon: IconTrophy,
       },
       {
         title: "Live Streams",

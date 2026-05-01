@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
+import { IconArrowLeft, IconArrowRight, IconSend } from "@tabler/icons-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { NavigationPanel } from "@/features/tests/components/navigation-panel";
 import { QuestionItem } from "@/features/tests/components/question-item";
 import { useAttempt, useQuiz, useSaveAnswer, useSubmitAttempt } from "@/features/tests/hooks";
@@ -113,17 +115,24 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
 
   if (quizQuery.isLoading || attemptQuery.isLoading) {
     return (
-      <div className="grid gap-4 p-4 md:p-6 lg:grid-cols-[1fr_320px]">
-        <Skeleton className="h-[460px] w-full" />
-        <Skeleton className="h-[460px] w-full" />
+      <div className="mx-auto grid w-full max-w-7xl gap-5 p-5 md:p-6 xl:grid-cols-[1fr_320px]">
+        <div className="space-y-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-[340px] rounded-xl" />
+          <div className="flex justify-between">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+        </div>
+        <Skeleton className="h-[460px] rounded-xl" />
       </div>
     );
   }
 
   if (!quiz || quizQuery.error) {
     return (
-      <div className="p-4 md:p-6">
-        <Card>
+      <div className="p-5 md:p-6">
+        <Card className="mx-auto max-w-xl rounded-xl">
           <CardHeader>
             <CardTitle>Quiz unavailable</CardTitle>
             <CardDescription>
@@ -137,17 +146,17 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
 
   if (!attempt) {
     return (
-      <div className="p-4 md:p-6">
-        <Card className="mx-auto max-w-xl">
+      <div className="p-5 md:p-6">
+        <Card className="mx-auto max-w-xl rounded-xl">
           <CardHeader>
             <CardTitle>No active attempt</CardTitle>
             <CardDescription>Start this test first to begin attempting questions.</CardDescription>
           </CardHeader>
-          <div className="px-6 pb-6">
+          <CardContent>
             <Button onClick={() => router.push(`/dashboard/tests/${quizId}/start`)}>
               Go to start page
             </Button>
-          </div>
+          </CardContent>
         </Card>
       </div>
     );
@@ -155,8 +164,8 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
 
   if (quiz.questions.length === 0) {
     return (
-      <div className="p-4 md:p-6">
-        <Card>
+      <div className="p-5 md:p-6">
+        <Card className="mx-auto max-w-xl rounded-xl">
           <CardHeader>
             <CardTitle>No questions available</CardTitle>
             <CardDescription>This quiz has no questions yet. Please contact support.</CardDescription>
@@ -169,32 +178,47 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
   const currentQuestion = quiz.questions[currentQuestionIndex];
   const timeLabel = secondsLeft == null ? null : formatClock(secondsLeft);
   const isDangerTime = secondsLeft != null && secondsLeft <= 60;
+  const progressPercent = quiz.questions.length > 0
+    ? Math.round((answeredQuestionIds.size / quiz.questions.length) * 100)
+    : 0;
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-4 p-4 md:gap-5 md:p-6 xl:grid-cols-[1fr_320px]">
+    <div className="mx-auto grid w-full max-w-7xl gap-5 p-5 md:p-6 xl:grid-cols-[1fr_320px]">
+      {/* Main Content */}
       <div className="flex flex-col gap-4">
-        <Card className="border-border/70 bg-card/95">
-          <CardHeader className="flex flex-row items-start justify-between gap-3">
-            <div className="space-y-1">
-              <CardTitle className="text-lg">{quiz.title}</CardTitle>
-              <CardDescription>
-                Question {currentQuestionIndex + 1} of {quiz.questions.length}
-              </CardDescription>
+        {/* Top Info Bar */}
+        <Card className="rounded-xl border-border/60">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-semibold">{quiz.title}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Question {currentQuestionIndex + 1} of {quiz.questions.length}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{answeredQuestionIds.size} answered</Badge>
+                {timeLabel ? (
+                  <Badge
+                    variant={isDangerTime ? "destructive" : "secondary"}
+                    className="text-base font-mono tabular-nums px-3"
+                  >
+                    {timeLabel}
+                  </Badge>
+                ) : null}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{answeredQuestionIds.size} answered</Badge>
-              {timeLabel ? (
-                <Badge variant={isDangerTime ? "destructive" : "secondary"}>{timeLabel}</Badge>
-              ) : null}
+            <div className="mt-3">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
+                <span>Progress</span>
+                <span>{answeredQuestionIds.size}/{quiz.questions.length}</span>
+              </div>
+              <Progress value={progressPercent} className="h-1.5" />
             </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Progress is auto-saved. Use the question map to jump quickly between questions.
-            </p>
           </CardContent>
         </Card>
 
+        {/* Question */}
         <QuestionItem
           question={currentQuestion}
           questionNumber={currentQuestionIndex + 1}
@@ -202,13 +226,14 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
           onSelect={(optionId) => handleSelect(currentQuestion.id, optionId)}
         />
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Navigation */}
+        <div className="flex items-center justify-between gap-2">
           <Button
             variant="outline"
             onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
             disabled={currentQuestionIndex === 0}
           >
-            <IconArrowLeft data-icon="inline-start" />
+            <IconArrowLeft className="mr-1.5 size-4" />
             Previous
           </Button>
 
@@ -222,11 +247,12 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
             disabled={currentQuestionIndex === quiz.questions.length - 1}
           >
             Next
-            <IconArrowRight data-icon="inline-end" />
+            <IconArrowRight className="ml-1.5 size-4" />
           </Button>
         </div>
       </div>
 
+      {/* Sidebar */}
       <div className="flex flex-col gap-4 xl:sticky xl:top-6 xl:self-start">
         <NavigationPanel
           totalQuestions={quiz.questions.length}
@@ -241,8 +267,9 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button className="w-full" disabled={submitMutation.isPending}>
-              {submitMutation.isPending ? "Submitting..." : "Submit test"}
+            <Button className="w-full gap-2" disabled={submitMutation.isPending}>
+              <IconSend className="size-4" />
+              {submitMutation.isPending ? "Submitting..." : "Submit Test"}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -250,12 +277,17 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
               <AlertDialogTitle>Submit test now?</AlertDialogTitle>
               <AlertDialogDescription>
                 You answered {answeredQuestionIds.size} of {quiz.questions.length} questions.
+                {quiz.questions.length - answeredQuestionIds.size > 0 && (
+                  <span className="block mt-1 font-medium text-destructive">
+                    {quiz.questions.length - answeredQuestionIds.size} questions are still unanswered.
+                  </span>
+                )}
                 This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSubmit}>Confirm submit</AlertDialogAction>
+              <AlertDialogAction onClick={handleSubmit}>Confirm Submit</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

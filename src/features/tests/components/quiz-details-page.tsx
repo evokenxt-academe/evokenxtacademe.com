@@ -4,15 +4,19 @@ import Link from "next/link";
 import {
   IconArrowRight,
   IconClockHour4,
-  IconDownload,
   IconFileDescription,
   IconHistory,
   IconTrophy,
+  IconTarget,
+  IconMedal,
+  IconUsers,
+  IconPercentage,
 } from "@tabler/icons-react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -62,26 +66,27 @@ export function QuizDetailsPage({ quizId }: { quizId: string }) {
 
   if (quizQuery.isLoading || attemptQuery.isLoading || insightsQuery.isLoading) {
     return (
-      <div className="p-4 md:p-6">
-        <Card className="mx-auto max-w-5xl">
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-5 md:p-6">
+        <Card className="rounded-xl">
           <CardHeader className="flex flex-col gap-2">
             <Skeleton className="h-7 w-1/2" />
             <Skeleton className="h-4 w-2/3" />
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
-            <Skeleton className="h-28 w-full" />
+          <CardContent className="grid gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
           </CardContent>
         </Card>
+        <Skeleton className="h-96 rounded-xl" />
       </div>
     );
   }
 
   if (!quizQuery.data || !insightsQuery.data || quizQuery.error || insightsQuery.error) {
     return (
-      <div className="p-4 md:p-6">
-        <Card className="mx-auto max-w-3xl">
+      <div className="mx-auto w-full max-w-3xl p-5 md:p-6">
+        <Card className="rounded-xl">
           <CardHeader>
             <CardTitle>Quiz unavailable</CardTitle>
             <CardDescription>
@@ -103,203 +108,261 @@ export function QuizDetailsPage({ quizId }: { quizId: string }) {
   const ctaHref = inProgressAttempt
     ? `/dashboard/tests/${quizId}/attempt`
     : `/dashboard/tests/${quizId}/start`;
-  const ctaLabel = inProgressAttempt ? "Continue test" : "Start test";
+  const ctaLabel = inProgressAttempt ? "Continue Test" : "Start Test";
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-5 md:gap-6">
-        <Card className="overflow-hidden border-border/70 shadow-sm">
-          <CardHeader className="flex flex-col gap-4 bg-linear-to-r from-primary/10 via-background to-background">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline">{quiz.courseName}</Badge>
-                <Badge variant="outline">{quiz.sectionTitle}</Badge>
-              </div>
-              <Badge variant={inProgressAttempt ? "secondary" : "outline"}>
-                {inProgressAttempt ? "In progress" : "Not attempted"}
-              </Badge>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-5 md:p-6">
+      {/* Header Card */}
+      <Card className="rounded-xl border-border/60 overflow-hidden">
+        <CardHeader className="flex flex-col gap-4 border-b bg-muted/20 px-6 py-6">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{quiz.courseName}</Badge>
+              <Badge variant="outline">{quiz.sectionTitle}</Badge>
             </div>
-            <div className="flex flex-col gap-2">
-              <CardTitle className="text-2xl md:text-3xl">{quiz.title}</CardTitle>
-              <CardDescription className="max-w-3xl text-sm md:text-base">
-                {quiz.description ?? "Review details before starting your test."}
-              </CardDescription>
-            </div>
-          </CardHeader>
+            <Badge variant={inProgressAttempt ? "secondary" : "outline"}>
+              {inProgressAttempt ? "In Progress" : "Not Attempted"}
+            </Badge>
+          </div>
+          <div className="flex flex-col gap-2">
+            <CardTitle className="text-2xl md:text-3xl">{quiz.title}</CardTitle>
+            <CardDescription className="max-w-3xl text-sm md:text-base">
+              {quiz.description ?? "Review details before starting your test."}
+            </CardDescription>
+          </div>
+        </CardHeader>
 
-          <CardContent className="grid gap-3 pt-6 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-lg border bg-muted/20 p-4">
+        <CardContent className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="flex items-center gap-3 rounded-xl border bg-muted/20 p-4">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <IconFileDescription className="size-4 text-primary" />
+            </div>
+            <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Questions</p>
-              <p className="mt-1 text-2xl font-semibold">{insights.about.questionCount}</p>
+              <p className="mt-0.5 text-xl font-semibold">{insights.about.questionCount}</p>
             </div>
-            <div className="rounded-lg border bg-muted/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total marks</p>
-              <p className="mt-1 text-2xl font-semibold">{insights.about.totalMarks}</p>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border bg-muted/20 p-4">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+              <IconTarget className="size-4 text-amber-600" />
             </div>
-            <div className="rounded-lg border bg-muted/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Pass marks</p>
-              <p className="mt-1 text-2xl font-semibold">{insights.about.passingMarks}</p>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Marks</p>
+              <p className="mt-0.5 text-xl font-semibold">{insights.about.totalMarks}</p>
             </div>
-            <div className="rounded-lg border bg-muted/20 p-4">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Time limit</p>
-              <p className="mt-1 text-xl font-semibold">{formatDuration(insights.about.timeLimitSec)}</p>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border bg-muted/20 p-4">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+              <IconTrophy className="size-4 text-emerald-600" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Pass Marks</p>
+              <p className="mt-0.5 text-xl font-semibold">{insights.about.passingMarks}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-xl border bg-muted/20 p-4">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+              <IconClockHour4 className="size-4 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Time Limit</p>
+              <p className="mt-0.5 text-lg font-semibold">{formatDuration(insights.about.timeLimitSec)}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Tabs defaultValue="about" className="flex flex-col gap-4">
-          <TabsList className="grid w-full grid-cols-3 rounded-xl">
-            <TabsTrigger value="about">
-              <IconFileDescription data-icon="inline-start" />
-              About
-            </TabsTrigger>
-            <TabsTrigger value="report">
-              <IconDownload data-icon="inline-start" />
-              Report
-            </TabsTrigger>
-            <TabsTrigger value="ranking">
-              <IconTrophy data-icon="inline-start" />
-              Ranking
-            </TabsTrigger>
-          </TabsList>
+      {/* Tabs */}
+      <Tabs defaultValue="about" className="flex flex-col gap-4">
+        <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0 overflow-x-auto">
+          <TabsTrigger value="about" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 gap-1.5">
+            <IconFileDescription className="size-4" />
+            About
+          </TabsTrigger>
+          <TabsTrigger value="report" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 gap-1.5">
+            <IconPercentage className="size-4" />
+            Report
+          </TabsTrigger>
+          <TabsTrigger value="ranking" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 gap-1.5">
+            <IconTrophy className="size-4" />
+            Ranking
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="about" className="mt-0">
-            <Card className="border-border/70">
-              <CardHeader>
-                <CardTitle>Assessment overview</CardTitle>
-                <CardDescription>
-                  Keep this page as your quick reference before you begin the test.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-[1fr_280px]">
-                <div className="flex flex-col gap-3 rounded-lg border bg-muted/15 p-4">
-                  <p className="text-sm text-muted-foreground">
-                    {insights.about.description ?? "No additional instructions were provided for this test."}
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="font-medium">Course</p>
-                      <p className="text-muted-foreground">{insights.about.courseName}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Section</p>
-                      <p className="text-muted-foreground">{insights.about.sectionTitle}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Attempts logged</p>
-                      <p className="text-muted-foreground">{insights.report.attempts}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium">Participants</p>
-                      <p className="text-muted-foreground">{insights.report.participants}</p>
-                    </div>
+        {/* About Tab */}
+        <TabsContent value="about" className="mt-0">
+          <Card className="rounded-xl">
+            <CardHeader>
+              <CardTitle>Assessment Overview</CardTitle>
+              <CardDescription>
+                Keep this page as your quick reference before you begin the test.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-6 md:grid-cols-[1fr_280px]">
+              <div className="flex flex-col gap-4 rounded-xl border bg-muted/10 p-5">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {insights.about.description ?? "No additional instructions were provided for this test."}
+                </p>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium">Course</p>
+                    <p className="text-muted-foreground">{insights.about.courseName}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Section</p>
+                    <p className="text-muted-foreground">{insights.about.sectionTitle}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Attempts Logged</p>
+                    <p className="text-muted-foreground">{insights.report.attempts}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Participants</p>
+                    <p className="text-muted-foreground">{insights.report.participants}</p>
                   </div>
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-3 rounded-lg border bg-background p-4">
-                  <p className="text-sm font-medium">Ready to start?</p>
-                  <p className="text-sm text-muted-foreground">
-                    Start a fresh attempt or resume your in-progress test. Progress is saved automatically.
-                  </p>
-                  <Button asChild>
-                    <Link href={ctaHref}>
-                      {ctaLabel}
-                      <IconArrowRight data-icon="inline-end" />
-                    </Link>
-                  </Button>
-                </div>
+              <div className="flex flex-col gap-4 rounded-xl border bg-background p-5">
+                <p className="text-sm font-medium">Ready to start?</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Start a fresh attempt or resume your in-progress test. Progress is saved automatically.
+                </p>
+                <Button asChild className="w-full gap-2">
+                  <Link href={ctaHref}>
+                    {ctaLabel}
+                    <IconArrowRight className="size-4" />
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Report Tab */}
+        <TabsContent value="report" className="mt-0">
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <Card className="rounded-xl">
+              <CardHeader>
+                <CardTitle>Score Distribution</CardTitle>
+                <CardDescription>How students performed across score brackets.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={reportChartConfig} className="h-72 w-full">
+                  <BarChart data={insights.report.distribution} margin={{ left: 8, right: 8 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} width={36} allowDecimals={false} />
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                    <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                      {insights.report.distribution.map((bucket) => (
+                        <Cell
+                          key={bucket.label}
+                          fill={
+                            bucket.label === "81-100%"
+                              ? "hsl(var(--chart-2))"
+                              : bucket.label === "61-80%"
+                                ? "hsl(var(--chart-3))"
+                                : "hsl(var(--chart-1))"
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="report" className="mt-0">
-            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <Card className="border-border/70">
-                <CardHeader>
-                  <CardTitle>Score distribution</CardTitle>
-                  <CardDescription>How students performed across score brackets.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={reportChartConfig} className="h-72 w-full">
-                    <BarChart data={insights.report.distribution} margin={{ left: 8, right: 8 }}>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                      <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                      <YAxis tickLine={false} axisLine={false} width={36} allowDecimals={false} />
-                      <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                      <Bar dataKey="count" radius={[8, 8, 0, 0]}>
-                        {insights.report.distribution.map((bucket) => (
-                          <Cell
-                            key={bucket.label}
-                            fill={
-                              bucket.label === "81-100%"
-                                ? "hsl(var(--chart-2))"
-                                : bucket.label === "61-80%"
-                                  ? "hsl(var(--chart-3))"
-                                  : "hsl(var(--chart-1))"
-                            }
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ChartContainer>
+            <div className="grid grid-cols-2 gap-4 self-start">
+              <Card className="rounded-xl">
+                <CardContent className="flex items-center gap-3 p-5">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <IconTarget className="size-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Avg Score</p>
+                    <p className="text-lg font-bold">{insights.report.averageScore}</p>
+                  </div>
                 </CardContent>
               </Card>
-
-              <Card className="border-border/70">
-                <CardHeader>
-                  <CardTitle>Report snapshot</CardTitle>
-                  <CardDescription>Live metrics synced from the latest submissions.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Average score</p>
-                    <p className="mt-1 text-xl font-semibold">{insights.report.averageScore}</p>
+              <Card className="rounded-xl">
+                <CardContent className="flex items-center gap-3 p-5">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                    <IconTrophy className="size-4 text-amber-600" />
                   </div>
-                  <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Highest score</p>
-                    <p className="mt-1 text-xl font-semibold">{insights.report.highestScore}</p>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Highest</p>
+                    <p className="text-lg font-bold">{insights.report.highestScore}</p>
                   </div>
-                  <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Pass rate</p>
-                    <p className="mt-1 text-xl font-semibold">{insights.report.passRate}%</p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="flex items-center gap-3 p-5">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                    <IconPercentage className="size-4 text-emerald-600" />
                   </div>
-                  <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">Average accuracy</p>
-                    <p className="mt-1 text-xl font-semibold">{insights.report.averageAccuracy}%</p>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Pass Rate</p>
+                    <p className="text-lg font-bold">{insights.report.passRate}%</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl">
+                <CardContent className="flex items-center gap-3 p-5">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <IconUsers className="size-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Accuracy</p>
+                    <p className="text-lg font-bold">{insights.report.averageAccuracy}%</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          </div>
+        </TabsContent>
 
-          <TabsContent value="ranking" className="mt-0">
-            <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
-              <Card className="border-border/70">
-                <CardHeader>
-                  <CardTitle>Leaderboard</CardTitle>
-                  <CardDescription>
-                    Ranking is based on best score, then earliest submission time.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
+        {/* Ranking Tab */}
+        <TabsContent value="ranking" className="mt-0">
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
+            <Card className="rounded-xl">
+              <CardHeader>
+                <CardTitle>Leaderboard</CardTitle>
+                <CardDescription>
+                  Ranking is based on best score, then earliest submission time.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y">
                   {insights.ranking.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No submitted attempts yet. Rankings will appear after the first submission.
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <IconTrophy className="mb-3 size-8 text-muted-foreground/20" />
+                      <p className="text-sm text-muted-foreground">
+                        No submitted attempts yet. Rankings will appear after the first submission.
+                      </p>
+                    </div>
                   ) : (
                     insights.ranking.map((entry) => (
                       <div
                         key={entry.userId}
-                        className="flex items-center justify-between rounded-lg border bg-background px-3 py-2"
+                        className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/30"
                       >
                         <div className="flex items-center gap-3">
+                          <div className="flex size-8 items-center justify-center rounded-full bg-muted">
+                            {entry.rank <= 3 ? (
+                              <IconMedal className={`size-4 ${entry.rank === 1 ? "text-amber-500" : entry.rank === 2 ? "text-zinc-400" : "text-amber-700"}`} />
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">{entry.rank}</span>
+                            )}
+                          </div>
                           <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
                             {entry.initials}
                           </div>
                           <div>
                             <p className="text-sm font-medium">{entry.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              Rank #{entry.rank} · {entry.attempts} attempt{entry.attempts > 1 ? "s" : ""}
+                              {entry.attempts} attempt{entry.attempts > 1 ? "s" : ""}
                             </p>
                           </div>
                         </div>
@@ -312,62 +375,63 @@ export function QuizDetailsPage({ quizId }: { quizId: string }) {
                       </div>
                     ))
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Card className="border-border/70">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <IconHistory className="size-4 text-muted-foreground" />
-                    Your history
-                  </CardTitle>
-                  <CardDescription>Latest attempts for this test.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {insights.history.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No attempts yet.</p>
-                  ) : (
-                    insights.history.map((attempt) => (
-                      <Link
-                        href={attempt.status === "in_progress" ? ctaHref : `/dashboard/tests/result/${attempt.attemptId}`}
-                        key={attempt.attemptId}
-                        className="flex flex-col gap-2 rounded-lg border bg-muted/15 p-3 transition-colors hover:bg-muted/30"
-                      >
-                        <div className="flex items-center justify-between">
-                          <Badge variant={attempt.status === "in_progress" ? "outline" : "secondary"}>
-                            {attempt.status?.replace("_", " ") ?? "Unknown"}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">{formatDate(attempt.submittedAt)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <p className="font-medium">
-                            {attempt.score}/{attempt.totalMarks} ({attempt.percentage}%)
-                          </p>
-                          <p className="text-muted-foreground">
-                            {attempt.rank ? `#${attempt.rank}` : "Not ranked"}
-                          </p>
-                        </div>
-                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <IconClockHour4 className="size-3.5" />
-                          Duration: {formatDurationSec(attempt.durationSec)}
+            <Card className="rounded-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconHistory className="size-4 text-muted-foreground" />
+                  Your History
+                </CardTitle>
+                <CardDescription>Latest attempts for this test.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {insights.history.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">No attempts yet.</p>
+                ) : (
+                  insights.history.map((attempt) => (
+                    <Link
+                      href={attempt.status === "in_progress" ? ctaHref : `/dashboard/tests/result/${attempt.attemptId}`}
+                      key={attempt.attemptId}
+                      className="flex flex-col gap-2 rounded-xl border bg-muted/10 p-3.5 transition-colors hover:bg-muted/25"
+                    >
+                      <div className="flex items-center justify-between">
+                        <Badge variant={attempt.status === "in_progress" ? "outline" : "secondary"} className="capitalize text-xs">
+                          {attempt.status?.replace("_", " ") ?? "Unknown"}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{formatDate(attempt.submittedAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <p className="font-medium">
+                          {attempt.score}/{attempt.totalMarks} ({attempt.percentage}%)
                         </p>
-                      </Link>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+                        <p className="text-muted-foreground">
+                          {attempt.rank ? `#${attempt.rank}` : "Not ranked"}
+                        </p>
+                      </div>
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <IconClockHour4 className="size-3.5" />
+                        Duration: {formatDurationSec(attempt.durationSec)}
+                      </p>
+                    </Link>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
-        <div className="flex justify-end">
-          <Button asChild variant="outline">
-            <Link href={ctaHref}>
-              {ctaLabel}
-              <IconArrowRight data-icon="inline-end" />
-            </Link>
-          </Button>
-        </div>
+      {/* Bottom CTA */}
+      <div className="flex justify-end">
+        <Button asChild variant="outline" className="gap-2">
+          <Link href={ctaHref}>
+            {ctaLabel}
+            <IconArrowRight className="size-4" />
+          </Link>
+        </Button>
       </div>
     </div>
   );

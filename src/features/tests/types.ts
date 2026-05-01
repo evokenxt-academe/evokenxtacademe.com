@@ -38,6 +38,7 @@ export interface QuizSummaryItem {
   sectionTitle: string;
   status: AttemptStatusLabel;
   latestAttemptId: string | null;
+  latestScore: number | null;
 }
 
 export interface QuizDetail {
@@ -90,6 +91,7 @@ export interface AttemptResultDetail {
   startedAt: string;
   correctCount: number;
   incorrectCount: number;
+  rank: number | null;
   review: Array<{
     questionId: string;
     question: string;
@@ -158,4 +160,40 @@ export interface QuizInsightsDetail {
   report: QuizInsightsReport;
   ranking: QuizRankingItem[];
   history: QuizHistoryItem[];
+}
+
+// ── Admin Types ────────────────────────────────────────────────
+
+export interface AdminQuizListItem {
+  id: string;
+  title: string;
+  description: string | null;
+  courseName: string;
+  sectionTitle: string;
+  totalMarks: number;
+  passingMarks: number;
+  timeLimitSec: number | null;
+  isPublished: boolean;
+  questionCount: number;
+  attemptCount: number;
+  participantCount: number;
+  averageScore: number;
+  highestScore: number;
+  passRate: number;
+  createdAt: string;
+}
+
+export interface AdminRankingEntry {
+  rank: number;
+  userId: string;
+  name: string;
+  email: string;
+  avatar: string | null;
+  initials: string;
+  score: number;
+  totalMarks: number;
+  percentage: number;
+  durationSec: number | null;
+  submittedAt: string | null;
+  status: AttemptRow["status"];
 }

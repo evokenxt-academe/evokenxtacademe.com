@@ -5,25 +5,23 @@ import {
   IconArrowLeft,
   IconCircleCheck,
   IconCircleX,
-  IconFileDescription,
   IconHistory,
   IconInfoCircle,
-  IconReport,
   IconTrophy,
-  IconChevronRight,
-  IconLayoutDashboard,
-  IconCalendarEvent
+  IconCalendarEvent,
+  IconTarget,
+  IconPercentage,
+  IconMedal,
 } from "@tabler/icons-react";
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Separator } from "@/components/ui/separator";
 import { useAttemptResult, useQuizInsights } from "@/features/tests/hooks";
+import { cn } from "@/lib/utils";
 
 const reportChartConfig = {
   count: {
@@ -45,12 +43,12 @@ function formatDate(value: string | null) {
   }).format(date);
 }
 
-const HeaderDecorator = () => (
-  <div className="pointer-events-none absolute inset-0 z-10">
-    <span className="absolute -left-px -top-px block size-4 border-l-2 border-t-2 border-primary/40"></span>
-    <span className="absolute -right-px -bottom-px block size-4 border-r-2 border-b-2 border-primary/40"></span>
-  </div>
-);
+function formatDurationSec(value: number | null) {
+  if (value == null || value <= 0) return "—";
+  const min = Math.floor(value / 60);
+  const sec = value % 60;
+  return `${min}m ${sec}s`;
+}
 
 export function ResultPage({ attemptId }: { attemptId: string }) {
   const resultQuery = useAttemptResult(attemptId);
@@ -59,21 +57,48 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
 
   if (resultQuery.isLoading || (quizId && insightsQuery.isLoading)) {
     return (
-      <div className="p-4 md:p-6">
-        <Skeleton className="h-[600px] w-full rounded-none" />
+      <div className="mx-auto w-full max-w-5xl space-y-6 p-5 md:p-8">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <Skeleton className="h-48 rounded-xl" />
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }
 
-  if (!resultQuery.data || resultQuery.error) {
+  if (resultQuery.error || !resultQuery.data) {
+    const errorMessage = resultQuery.error instanceof Error
+      ? resultQuery.error.message
+      : "The assessment result could not be retrieved at this time.";
+
     return (
-      <div className="p-4 md:p-6">
-        <div className="border border-border/40 bg-card p-8">
-          <h2 className="text-xl font-black uppercase tracking-widest">Result unavailable</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {resultQuery.error instanceof Error ? resultQuery.error.message : "Unable to load result."}
-          </p>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center p-5">
+        <Card className="w-full max-w-md rounded-xl border-destructive/20 shadow-sm">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <IconCircleX className="size-6 text-destructive" />
+            </div>
+            <CardTitle className="text-xl font-bold">Result Unavailable</CardTitle>
+            <CardDescription className="mt-2 text-sm leading-relaxed">
+              {errorMessage}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <Button asChild className="w-full">
+              <Link href="/dashboard/tests">Return to Tests Dashboard</Link>
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -83,312 +108,391 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
   const isPassed = result.score >= result.passingMarks;
   const attemptedCount = result.correctCount + result.incorrectCount;
   const accuracy = attemptedCount > 0 ? Math.round((result.correctCount / attemptedCount) * 100) : 0;
-  const completion = result.review.length > 0 ? Math.round((attemptedCount / result.review.length) * 100) : 0;
+  const scorePercent = result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0;
+  const rank = result.rank;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-4 md:p-6 lg:p-8">
-      {/* ── Premium Header Section ────────────────────────────────── */}
-      <section className="relative overflow-hidden border border-border/40 bg-linear-to-br from-background via-muted/5 to-primary/[0.03] dark:from-background dark:via-muted/10 dark:to-primary/5 rounded-none">
-        <HeaderDecorator />
-        
-        {/* Background Accents */}
-        <div className="absolute -right-20 -top-20 size-64 rounded-full bg-primary/[0.03] blur-3xl" />
-        <div className="absolute -left-20 -bottom-20 size-64 rounded-full bg-blue-500/[0.03] blur-3xl" />
-        
-        <div className="relative p-6 md:p-10 border-b border-border/40">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
-                <IconLayoutDashboard className="size-3.5" />
-                <span>Assessment Result</span>
-                <IconChevronRight className="size-3 text-muted-foreground/30" />
-                <span className="text-muted-foreground">{insights?.about.courseName}</span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground max-w-3xl leading-[1.1]">
-                {result.quizTitle}
-              </h1>
-              <div className="flex flex-wrap items-center gap-5 text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-                <div className="flex items-center gap-2">
-                  <IconCalendarEvent className="size-4 text-primary/60" />
-                  <span>{formatDate(result.submittedAt)}</span>
-                </div>
-                <div className="h-4 w-px bg-border/40" />
-                <div className="flex items-center gap-2">
-                  <div className={`size-1.5 rounded-full ${isPassed ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                  <span>{result.status.replace("_", " ").toUpperCase()}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-col items-end gap-4 min-w-[200px]">
-              <div className={`inline-flex items-center rounded-none px-8 py-2.5 text-xs font-black uppercase tracking-[0.3em] shadow-2xl ${
-                isPassed ? 'bg-primary text-primary-foreground shadow-primary/20' : 'bg-destructive text-destructive-foreground shadow-destructive/20'
-              }`}>
-                {isPassed ? "PASSED" : "FAILED"}
-              </div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                PASSING GRADE: <span className="text-foreground ml-1">{result.passingMarks} PTS</span>
-              </p>
-            </div>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-5 md:p-8">
+      {/* 1. Header Area */}
+      <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <Link href="/dashboard/tests" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <IconArrowLeft className="size-3.5" />
+              Tests
+            </Link>
+            <span>•</span>
+            <span className="truncate">{insights?.about.courseName ?? "Assessment"}</span>
           </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl leading-snug line-clamp-2">
+            {result.quizTitle}
+          </h1>
         </div>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-border/40">
-          <div className="p-6 md:p-10 flex flex-col gap-3">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Final Score</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black text-foreground">{result.score}</span>
-              <span className="text-sm font-bold text-muted-foreground">/ {result.totalMarks}</span>
-            </div>
-          </div>
-          <div className="p-6 md:p-10 flex flex-col gap-3">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Accuracy</span>
-            <span className="text-4xl font-black text-foreground">{accuracy}%</span>
-          </div>
-          <div className="p-6 md:p-10 flex flex-col gap-3 border-t lg:border-t-0 border-border/40">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Correct</span>
-            <span className="text-4xl font-black text-foreground">{result.correctCount}</span>
-          </div>
-          <div className="p-6 md:p-10 flex flex-col gap-3 border-t lg:border-t-0 border-border/40">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">Completion</span>
-            <span className="text-4xl font-black text-foreground">{completion}%</span>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Tabs & Content Section ────────────────────────────────── */}
-      <Tabs defaultValue="about" className="w-full">
-        <TabsList className="h-auto w-full justify-start gap-4 bg-transparent p-0 mb-8 border-b border-border/40 rounded-none overflow-x-auto">
-          <TabsTrigger 
-            value="about" 
-            className="rounded-none border-b-2 border-transparent px-8 py-4 text-xs font-black uppercase tracking-[0.2em] data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary transition-all"
+        <div className="flex shrink-0 items-center gap-3">
+          <Badge variant="outline" className="px-3 py-1.5 text-xs font-medium gap-1.5 bg-background">
+            <IconCalendarEvent className="size-3.5 text-muted-foreground" />
+            {formatDate(result.submittedAt)}
+          </Badge>
+          <Badge
+            variant={isPassed ? "default" : "destructive"}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold uppercase tracking-wider",
+              isPassed ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10" : "bg-destructive/10 text-destructive hover:bg-destructive/10"
+            )}
           >
-            Overview
+            {isPassed ? "Passed" : "Failed"}
+          </Badge>
+        </div>
+      </div>
+
+      {/* 2. Premium Hero Card */}
+      <Card className="rounded-xl border-border/60 bg-muted/5 shadow-sm overflow-hidden">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+
+            {/* Circular Progress Indicator */}
+            <div className="flex shrink-0 flex-col items-center justify-center">
+              <div className="relative flex size-32 items-center justify-center">
+                <svg className="absolute inset-0 size-full -rotate-90 transform" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    strokeDasharray={`${scorePercent * 2.76} 276`}
+                    className={isPassed ? "text-emerald-500" : "text-destructive"}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="flex flex-col items-center justify-center">
+                  <span className="text-3xl font-extrabold tracking-tight text-foreground">{scorePercent}%</span>
+                </div>
+              </div>
+              <p className="mt-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">Total Score</p>
+            </div>
+
+            <div className="h-px w-full bg-border/50 md:h-24 md:w-px" />
+
+            {/* Stats Grid */}
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <IconTarget className="size-4" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">Marks</span>
+                </div>
+                <p className="text-2xl font-bold leading-none mt-1">
+                  {result.score}<span className="text-sm font-medium text-muted-foreground">/{result.totalMarks}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <IconCircleCheck className="size-4 text-emerald-500" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">Correct</span>
+                </div>
+                <p className="text-2xl font-bold leading-none mt-1">{result.correctCount}</p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <IconCircleX className="size-4 text-destructive" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">Incorrect</span>
+                </div>
+                <p className="text-2xl font-bold leading-none mt-1">{result.incorrectCount}</p>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <IconPercentage className="size-4 text-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wider">Accuracy</span>
+                </div>
+                <p className="text-2xl font-bold leading-none mt-1">{accuracy}%</p>
+              </div>
+            </div>
+
+            {/* Rank display if available */}
+            {rank != null && (
+              <div className="hidden lg:flex shrink-0 flex-col items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
+                <IconMedal className="size-8 text-amber-500 mb-2" />
+                <p className="text-xs font-bold uppercase tracking-widest text-amber-600/80">Class Rank</p>
+                <p className="text-3xl font-extrabold text-amber-500">#{rank}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3. Refined Tabs */}
+      <Tabs defaultValue="review" className="w-full">
+        <TabsList className="w-full justify-start border-b border-border/50 bg-transparent h-12 p-0 mb-6 gap-6 overflow-x-auto rounded-none">
+          <TabsTrigger 
+            value="review" 
+            className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
+          >
+            Review Questions
           </TabsTrigger>
           <TabsTrigger 
-            value="report" 
-            className="rounded-none border-b-2 border-transparent px-8 py-4 text-xs font-black uppercase tracking-[0.2em] data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary transition-all"
+            value="overview" 
+            className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
           >
-            Question Review
+            Class Overview
           </TabsTrigger>
           <TabsTrigger 
             value="ranking" 
-            className="rounded-none border-b-2 border-transparent px-8 py-4 text-xs font-black uppercase tracking-[0.2em] data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary transition-all"
+            className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
           >
             Leaderboard
           </TabsTrigger>
         </TabsList>
 
-        {/* ── Overview Tab ────────────────────────────────────────── */}
-        <TabsContent value="about" className="mt-0 space-y-8 outline-none">
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="border border-border/40 bg-card/40 p-8 space-y-8 rounded-2xl shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-6">Attempt Parameters</h4>
-              <div className="grid grid-cols-2 gap-8">
-                <div className="flex flex-col gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Submission Status</span>
-                  <span className="text-sm font-black text-foreground">{result.status.toUpperCase()}</span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Answered Questions</span>
-                  <span className="text-sm font-black text-foreground">{attemptedCount} / {result.review.length}</span>
-                </div>
-                <div className="flex flex-col gap-2 col-span-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Associated Course</span>
-                  <span className="text-sm font-black text-foreground">{insights?.about.courseName ?? "—"}</span>
-                </div>
+        {/* Review Tab */}
+        <TabsContent value="review" className="space-y-6 outline-none mt-2">
+          <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-border/50">
+            <h2 className="text-lg font-semibold text-foreground">Detailed Review</h2>
+            <div className="flex items-center gap-4 text-sm font-medium">
+              <div className="flex items-center gap-1.5 text-emerald-500">
+                <IconCircleCheck className="size-4" />
+                <span>{result.correctCount} Correct</span>
               </div>
-              <Separator className="bg-border/20" />
-              <Button asChild variant="outline" className="w-full rounded-xl h-12 text-[11px] font-black uppercase tracking-widest border-border/60 hover:bg-primary hover:border-primary hover:text-primary-foreground transition-all">
-                <Link href="/dashboard/tests">
-                  <IconArrowLeft className="mr-2 size-4" />
-                  Return to Dashboard
-                </Link>
-              </Button>
-            </div>
-
-            <div className="border border-border/40 bg-card/40 p-8 flex flex-col justify-between rounded-2xl shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-6">Quick Insights</h4>
-              <div className="space-y-8">
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/5 border border-border/20">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-xl font-black text-foreground">{accuracy}%</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Your Performance</span>
-                  </div>
-                  <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <IconReport className="size-6 text-primary" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-xl bg-muted/5 border border-border/20">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-xl font-black text-foreground">{insights?.report.passRate ?? "—"}%</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Global Pass Rate</span>
-                  </div>
-                  <div className="size-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                    <IconTrophy className="size-6 text-blue-500" />
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5 text-destructive">
+                <IconCircleX className="size-4" />
+                <span>{result.incorrectCount} Incorrect</span>
               </div>
             </div>
           </div>
-        </TabsContent>
 
-        {/* ── Review Tab ──────────────────────────────────────────── */}
-        <TabsContent value="report" className="mt-0 space-y-10 outline-none">
-          <div className="grid gap-8 xl:grid-cols-2">
-            <div className="border border-border/40 bg-card/40 p-8 overflow-hidden rounded-2xl shadow-sm">
-              <h4 className="text-xs font-black uppercase tracking-[0.25em] text-primary mb-8">Score Distribution</h4>
-              {insights ? (
-                <ChartContainer config={reportChartConfig} className="h-72 w-full">
-                  <BarChart data={insights.report.distribution} margin={{ left: -20, top: 20 }}>
-                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" opacity={0.5} />
-                    <XAxis 
-                      dataKey="label" 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }} 
-                    />
-                    <YAxis 
-                      tickLine={false} 
-                      axisLine={false} 
-                      tick={{ fontSize: 10, fontWeight: 800, fill: "hsl(var(--muted-foreground))" }} 
-                    />
-                    <ChartTooltip content={<ChartTooltipContent hideLabel className="rounded-xl border-border/40 shadow-xl" />} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {insights.report.distribution.map((bucket, index) => (
-                        <Cell key={index} fill="hsl(var(--primary))" fillOpacity={0.8} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <div className="flex h-72 items-center justify-center text-[10px] font-black uppercase tracking-widest text-muted-foreground italic">
-                  Data processing in progress...
+          <div className="flex flex-col">
+            {result.review.map((item, index) => (
+              <div key={item.questionId} className="flex flex-col gap-3 py-6 border-b border-border/40 last:border-0">
+                
+                {/* Question Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <h3 className="text-base font-medium leading-relaxed text-foreground">
+                    <span className="text-muted-foreground font-normal mr-3">{index + 1}.</span>
+                    {item.question}
+                  </h3>
+                  <div className="flex items-center gap-2 shrink-0 mt-1">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {item.marks} mark{item.marks !== 1 && "s"}
+                    </span>
+                    <Badge variant="outline" className={cn(
+                      "px-2 py-0 text-[10px] uppercase font-bold tracking-wider border-transparent shadow-none",
+                      item.isCorrect ? "text-emerald-500 bg-emerald-500/10" : "text-destructive bg-destructive/10"
+                    )}>
+                      {item.isCorrect ? "Correct" : "Incorrect"}
+                    </Badge>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: "Avg. Score", value: insights?.report.averageScore ?? "—" },
-                { label: "Highest Score", value: insights?.report.highestScore ?? "—" },
-                { label: "Avg. Accuracy", value: (insights?.report.averageAccuracy ?? "—") + "%" },
-                { label: "Total Students", value: insights?.report.participants ?? "—" },
-              ].map((stat, i) => (
-                <div key={i} className="bg-card/40 p-8 flex flex-col gap-3 rounded-2xl border border-border/30 shadow-sm transition-all hover:border-primary/30">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{stat.label}</span>
-                  <span className="text-2xl font-black text-foreground">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-8">
-            <h4 className="text-xs font-black uppercase tracking-[0.25em] text-primary flex items-center gap-3">
-              <div className="h-px w-8 bg-primary" />
-              Detailed Analysis
-            </h4>
-            <div className="grid gap-8">
-              {result.review.map((item, index) => (
-                <div key={item.questionId} className="border border-border/40 bg-card/40 group overflow-hidden rounded-2xl shadow-md transition-all hover:shadow-lg hover:border-border/60">
-                  <div className="p-6 md:p-10 flex flex-col gap-8">
-                    <div className="flex items-start justify-between gap-6">
-                      <h5 className="text-base md:text-lg font-bold leading-relaxed text-foreground">
-                        <span className="text-primary font-black mr-4 text-xl">Q{index + 1}.</span>
-                        {item.question}
-                      </h5>
-                      <Badge variant={item.isCorrect ? "default" : "outline"} className="rounded-lg px-3 py-1.5 text-[10px] font-black tracking-widest shrink-0">
-                        {item.isCorrect ? item.marks : 0}/{item.marks} PTS
-                      </Badge>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className={`p-6 rounded-xl border-l-4 ${item.isCorrect ? 'border-emerald-500 bg-emerald-500/5' : 'border-red-500 bg-red-500/5 shadow-inner'}`}>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block mb-3">Your Submission</span>
-                        <div className="flex items-center gap-4">
-                          {item.isCorrect ? <IconCircleCheck className="size-6 text-emerald-500" /> : <IconCircleX className="size-6 text-red-500" />}
-                          <span className="text-base font-bold text-foreground">{item.selectedOptionText ?? "NOT ANSWERED"}</span>
-                        </div>
-                      </div>
-                      {!item.isCorrect && (
-                        <div className="p-6 rounded-xl border-l-4 border-primary bg-primary/5 shadow-inner">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block mb-3">Correct Solution</span>
-                          <div className="flex items-center gap-4">
-                            <IconCircleCheck className="size-6 text-primary" />
-                            <span className="text-base font-bold text-foreground">{item.correctOptionText ?? "NOT AVAILABLE"}</span>
-                          </div>
-                        </div>
+                {/* Answers Stack */}
+                <div className="flex flex-col gap-2 pl-7 mt-2">
+                  
+                  {/* User's Answer */}
+                  <div className="flex items-start gap-2">
+                    <span className="text-sm text-muted-foreground w-28 shrink-0">Your Answer:</span>
+                    <div className="flex items-start gap-2">
+                      {item.isCorrect ? (
+                        <IconCircleCheck className="mt-0.5 size-4 text-emerald-500 shrink-0" />
+                      ) : (
+                        <IconCircleX className="mt-0.5 size-4 text-destructive shrink-0" />
                       )}
+                      <span className={cn(
+                        "text-sm font-medium",
+                        item.isCorrect ? "text-foreground" : "text-destructive"
+                      )}>
+                        {item.selectedOptionText ?? "Not Answered"}
+                      </span>
                     </div>
-
-                    {item.explanation && (
-                      <div className="mt-2 p-6 bg-muted/20 border border-border/30 rounded-xl relative overflow-hidden">
-                        <div className="absolute top-0 left-0 h-full w-1.5 bg-primary/30" />
-                        <div className="flex items-center gap-3 mb-4">
-                          <IconInfoCircle className="size-5 text-primary" />
-                          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Academic Insight</span>
-                        </div>
-                        <p className="text-sm leading-relaxed text-muted-foreground font-medium italic pl-2">{item.explanation}</p>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Correct Answer (if user was wrong) */}
+                  {!item.isCorrect && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm text-muted-foreground w-28 shrink-0">Correct Answer:</span>
+                      <div className="flex items-start gap-2">
+                        <IconCircleCheck className="mt-0.5 size-4 text-emerald-500 shrink-0" />
+                        <span className="text-sm font-medium text-foreground">
+                          {item.correctOptionText ?? "Not Available"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
-              ))}
+
+                {/* Explanation */}
+                {item.explanation && (
+                  <div className="mt-4 ml-7 rounded-lg border border-border/40 bg-muted/20 p-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <IconInfoCircle className="size-4 text-muted-foreground" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Explanation</span>
+                    </div>
+                    <p className="text-sm text-foreground/80 leading-relaxed">
+                      {item.explanation}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6 outline-none mt-2">
+          <div className="flex flex-col lg:flex-row gap-6">
+            
+            {/* Attempt Details Column */}
+            <div className="flex flex-col gap-6 lg:w-1/3">
+              <Card className="rounded-xl border-border/60 shadow-sm h-full">
+                <CardHeader className="p-5 pb-4">
+                  <CardTitle className="text-base font-semibold">Attempt Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="flex flex-col divide-y divide-border/50 text-sm">
+                    <div className="flex items-center justify-between p-5 py-3.5">
+                      <span className="font-medium text-muted-foreground">Status</span>
+                      <span className="font-semibold capitalize">{result.status.replace("_", " ")}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-5 py-3.5">
+                      <span className="font-medium text-muted-foreground">Time Taken</span>
+                      <span className="font-semibold">{formatDurationSec(result.durationSec)}</span>
+                    </div>
+                    <div className="flex items-center justify-between p-5 py-3.5">
+                      <span className="font-medium text-muted-foreground">Passing Required</span>
+                      <span className="font-semibold">{result.passingMarks} / {result.totalMarks} marks</span>
+                    </div>
+                    <div className="flex items-center justify-between p-5 py-3.5">
+                      <span className="font-medium text-muted-foreground">Unanswered</span>
+                      <span className="font-semibold text-destructive">{result.review.length - attemptedCount}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Chart Column */}
+            <div className="flex flex-col gap-6 lg:w-2/3">
+              <Card className="rounded-xl border-border/60 shadow-sm h-full">
+                <CardHeader className="p-5 pb-4">
+                  <CardTitle className="text-base font-semibold">Class Distribution</CardTitle>
+                  <CardDescription className="text-xs">How students performed across score brackets.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-5 pt-0">
+                  {insights ? (
+                    <div className="flex flex-col gap-4 mt-2">
+                      <ChartContainer config={reportChartConfig} className="h-[220px] w-full">
+                        <BarChart data={insights.report.distribution} margin={{ left: -25, top: 10, right: 0, bottom: 0 }}>
+                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="currentColor" className="text-muted/50" />
+                          <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} tickMargin={10} className="fill-muted-foreground" />
+                          <YAxis tickLine={false} axisLine={false} fontSize={11} allowDecimals={false} className="fill-muted-foreground" />
+                          <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                          <Bar dataKey="count" radius={[4, 4, 0, 0]} className="fill-primary" />
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
+                  ) : (
+                    <div className="flex h-[220px] items-center justify-center text-sm font-medium text-muted-foreground bg-muted/10 rounded-lg">
+                      Loading distribution...
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>
 
-        {/* ── Leaderboard Tab ────────────────────────────────────── */}
-        <TabsContent value="ranking" className="mt-0 outline-none space-y-8">
-          <div className="grid lg:grid-cols-[1fr_0.4fr] gap-8">
-            <div className="border border-border/40 bg-card/40 rounded-2xl overflow-hidden shadow-sm">
-              <div className="p-8 border-b border-border/40 bg-muted/5">
-                <h4 className="text-xs font-black uppercase tracking-[0.25em] text-primary">Global Leaderboard</h4>
+        {/* Ranking Tab */}
+        <TabsContent value="ranking" className="space-y-6 outline-none mt-2">
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="md:col-span-2 rounded-xl border-border/60 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between border-b border-border/40 p-5 bg-card">
+                <div>
+                  <CardTitle className="text-base font-semibold">Class Leaderboard</CardTitle>
+                  <CardDescription className="mt-1 text-xs">Global ranking based on highest scores</CardDescription>
+                </div>
               </div>
-              <div className="divide-y divide-border/30">
-                {insights?.ranking.map((entry) => (
-                  <div key={entry.userId} className="p-6 flex items-center justify-between hover:bg-primary/5 transition-all group/row">
-                    <div className="flex items-center gap-5">
-                      <div className="size-12 rounded-xl border border-border/60 bg-muted/20 flex items-center justify-center text-xs font-black text-muted-foreground group-hover/row:border-primary group-hover/row:text-primary transition-all">
-                        {entry.initials}
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/40">
+                  {insights?.ranking.map((entry) => (
+                    <div key={entry.userId} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-muted/30">
+                      <div className="flex items-center gap-4">
+                        <div className="flex size-8 shrink-0 items-center justify-center">
+                          {entry.rank <= 3 ? (
+                            <IconMedal className={cn(
+                              "size-6",
+                              entry.rank === 1 ? "text-amber-500" : entry.rank === 2 ? "text-zinc-400" : "text-amber-700"
+                            )} />
+                          ) : (
+                            <span className="text-sm font-bold text-muted-foreground">#{entry.rank}</span>
+                          )}
+                        </div>
+                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-1 ring-primary/20">
+                          {entry.initials}
+                        </div>
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <p className="truncate text-sm font-semibold leading-tight">{entry.name}</p>
+                          <p className="text-[11px] font-medium text-muted-foreground">
+                            {entry.attempts} attempt{entry.attempts > 1 ? "s" : ""}
+                            {entry.durationSec ? ` · ${formatDurationSec(entry.durationSec)}` : ""}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-black text-foreground">{entry.name}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em] mt-1">Rank Position #{entry.rank}</p>
+                      <div className="flex flex-col items-end gap-0.5 shrink-0 ml-4">
+                        <p className="text-sm font-bold leading-none">{entry.score}<span className="text-[10px] font-medium text-muted-foreground ml-0.5">/ {entry.totalMarks}</span></p>
+                        <p className="text-[11px] font-bold text-emerald-500">{entry.percentage}%</p>
                       </div>
                     </div>
-                    <div className="text-right flex flex-col gap-1.5">
-                      <span className="text-base font-black text-foreground">{entry.score} <span className="text-xs text-muted-foreground">/ {entry.totalMarks}</span></span>
-                      <Badge variant="secondary" className="rounded-lg text-[9px] font-bold uppercase tracking-widest">{entry.percentage}% ACCURACY</Badge>
+                  )) ?? (
+                    <div className="p-10 text-center text-sm font-medium text-muted-foreground">
+                      No participants yet.
                     </div>
-                  </div>
-                )) ?? <div className="p-16 text-center italic text-muted-foreground uppercase tracking-widest text-[10px] font-black">Waiting for participants...</div>}
-              </div>
-            </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="border border-border/40 bg-card/40 rounded-2xl overflow-hidden shadow-sm">
-              <div className="p-8 border-b border-border/40 bg-muted/5">
-                <h4 className="text-xs font-black uppercase tracking-[0.25em] text-primary flex items-center gap-3">
-                  <IconHistory className="size-5" />
-                  Attempt History
-                </h4>
+            <Card className="rounded-xl border-border/60 shadow-sm overflow-hidden h-fit">
+              <div className="flex items-center gap-2 border-b border-border/40 p-5 bg-card">
+                <IconHistory className="size-4 text-muted-foreground" />
+                <CardTitle className="text-base font-semibold">Your History</CardTitle>
               </div>
-              <div className="divide-y divide-border/30">
-                {insights?.history.map((attempt) => (
-                  <div key={attempt.attemptId} className="p-6 flex flex-col gap-4 hover:bg-primary/5 transition-all">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="rounded-lg border-primary/40 text-[9px] font-black uppercase tracking-widest px-2">{attempt.status.toUpperCase()}</Badge>
-                      <span className="text-[10px] font-bold text-muted-foreground">{formatDate(attempt.submittedAt)}</span>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/40">
+                  {insights?.history.map((histAttempt) => (
+                    <div key={histAttempt.attemptId} className="flex flex-col gap-3 p-5 hover:bg-muted/10 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className={cn(
+                          "capitalize text-[10px] font-bold tracking-widest px-2",
+                          histAttempt.status === "completed" ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/10" : "bg-muted/20"
+                        )}>
+                          {histAttempt.status.replace("_", " ")}
+                        </Badge>
+                        <span className="text-[11px] font-medium text-muted-foreground">{formatDate(histAttempt.submittedAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-sm font-bold">
+                          {histAttempt.score}<span className="text-[10px] font-medium text-muted-foreground ml-0.5">/ {histAttempt.totalMarks}</span>
+                        </p>
+                        {histAttempt.rank && (
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                            Rank
+                            <span className="text-foreground text-sm">#{histAttempt.rank}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-base font-black text-foreground">{attempt.score}/{attempt.totalMarks} <span className="text-[11px] font-bold text-muted-foreground">({attempt.percentage}%)</span></p>
-                      <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-1">Global Position #{attempt.rank ?? "—"}</p>
+                  )) ?? (
+                    <div className="p-8 text-center text-sm font-medium text-muted-foreground">
+                      No previous attempts.
                     </div>
-                  </div>
-                )) ?? <div className="p-16 text-center italic text-muted-foreground uppercase tracking-widest text-[10px] font-black">No previous attempts</div>}
-              </div>
-            </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>

@@ -22,6 +22,8 @@ type QuizRow = {
 type AttemptRow = {
   id: string;
   quiz_id: string;
+  score: number | null;
+  total_marks: number | null;
   status: "in_progress" | "submitted" | "timed_out" | null;
 };
 
@@ -170,7 +172,7 @@ export async function GET(request: Request) {
   const quizIds = visibleQuizzes.map((quiz) => quiz.id);
   const { data: attemptRows, error: attemptError } = await adminClient
     .from("quiz_attempts")
-    .select("id, quiz_id, status, started_at")
+    .select("id, quiz_id, status, score, total_marks, started_at")
     .eq("user_id", user.id)
     .in("quiz_id", quizIds)
     .order("started_at", { ascending: false });
@@ -210,6 +212,7 @@ export async function GET(request: Request) {
       sectionTitle: quiz.section!.title,
       status,
       latestAttemptId: latest?.id ?? null,
+      latestScore: latest && latest.status !== "in_progress" ? toFiniteNumber(latest.score) : null,
     };
   });
 

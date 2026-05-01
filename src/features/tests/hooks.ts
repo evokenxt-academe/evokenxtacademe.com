@@ -12,6 +12,12 @@ import {
   saveAnswer,
   submitAttempt,
 } from "@/features/tests/api";
+import type {
+  AdminQuizListItem,
+  AdminRankingEntry,
+} from "@/features/tests/types";
+
+// ── Student Hooks ─────────────────────────────────────────────
 
 export function useStudentQuizzes() {
   return useQuery({
@@ -93,5 +99,44 @@ export function useQuizInsights(quizId: string) {
     queryFn: () => fetchQuizInsights(quizId),
     enabled: Boolean(quizId),
     staleTime: 60_000,
+  });
+}
+
+// ── Admin Hooks ───────────────────────────────────────────────
+
+async function fetchAdminQuizList(): Promise<AdminQuizListItem[]> {
+  const res = await fetch("/api/admin/tests", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const payload = await res.json();
+  if (!res.ok) throw new Error(payload.error ?? "Failed to load quizzes.");
+  return payload.quizzes ?? [];
+}
+
+export function useAdminQuizList() {
+  return useQuery({
+    queryKey: ["admin", "quizzes"],
+    queryFn: fetchAdminQuizList,
+    staleTime: 30_000,
+  });
+}
+
+async function fetchAdminQuizRanking(quizId: string): Promise<AdminRankingEntry[]> {
+  const res = await fetch(`/api/admin/tests/${quizId}/ranking`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  const payload = await res.json();
+  if (!res.ok) throw new Error(payload.error ?? "Failed to load ranking.");
+  return payload.ranking ?? [];
+}
+
+export function useAdminQuizRanking(quizId: string | null) {
+  return useQuery({
+    queryKey: ["admin", "quiz-ranking", quizId],
+    queryFn: () => fetchAdminQuizRanking(quizId!),
+    enabled: Boolean(quizId),
+    staleTime: 30_000,
   });
 }

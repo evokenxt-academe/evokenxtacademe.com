@@ -24,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import type { QuestionBankItem, QuestionType, DifficultyLevel } from "../types";
 import { QUESTION_TYPE_LABELS, DIFFICULTY_LABELS } from "../types";
-import { useQuestionBank } from "../hooks/use-quiz-builder";
+import { useQuestionBank, useDeleteQuestion } from "../hooks/use-quiz-builder";
 import { QuestionCard } from "./question-form";
 import { QuestionFormSheet } from "./question-form-sheet";
 
@@ -48,6 +48,7 @@ export function QuestionBankPanel({
     React.useState<QuestionBankItem | null>(null);
 
   const debouncedSearch = useDebounce(search, 300);
+  const deleteMutation = useDeleteQuestion();
 
   const { data, isLoading } = useQuestionBank({
     search: debouncedSearch || undefined,
@@ -199,6 +200,11 @@ export function QuestionBankPanel({
                       isAlreadyInQuiz ? undefined : () => toggleSelection(q.id)
                     }
                     onEdit={() => handleEdit(q)}
+                    onDelete={() => {
+                      if (confirm("Are you sure you want to delete this question?")) {
+                        deleteMutation.mutate(q.id);
+                      }
+                    }}
                   />
                   {isAlreadyInQuiz && (
                     <p className="text-[10px] text-muted-foreground mt-1 ml-8">

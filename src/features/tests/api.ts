@@ -289,15 +289,18 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
     headers: { "Content-Type": "application/json" },
   });
 
-  let payload: (AttemptResultDetail & { error?: string }) | { error?: string } = {};
+  let payload: any;
+  const text = await response.text();
+  
   try {
-    payload = (await response.json()) as typeof payload;
-  } catch {
-    throw new Error("Failed to parse attempt result.");
+    payload = JSON.parse(text);
+  } catch (err) {
+    console.error("[tests] Failed to parse attempt result JSON:", text.slice(0, 200));
+    throw new Error(`Failed to parse attempt result. Server returned: ${response.status} ${response.statusText}`);
   }
 
   if (!response.ok) {
-    throw new Error(payload.error ?? "Result not found.");
+    throw new Error(payload.error ?? `Result not found (${response.status})`);
   }
 
   return payload as AttemptResultDetail;

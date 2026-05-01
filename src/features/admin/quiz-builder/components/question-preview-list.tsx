@@ -49,7 +49,7 @@ export function QuestionPreviewList({
   }
 
   return (
-    <ScrollArea className="rounded-xl border border-border/60" style={{ maxHeight }}>
+    <div className="rounded-xl border border-border/60 overflow-y-auto" style={{ maxHeight }}>
       <div className="flex flex-col gap-2 p-3">
         {questions.map((question, index) => (
           <label
@@ -143,6 +143,6 @@ export function QuestionPreviewList({
           </label>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 }
