@@ -5,6 +5,7 @@ import type {
   AttemptResultDetail,
   AttemptWithAnswers,
   QuizDetail,
+  QuizInsightsDetail,
   QuizSummaryItem,
   SubmitAttemptResult,
 } from "@/features/tests/types";
@@ -300,4 +301,24 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
   }
 
   return payload as AttemptResultDetail;
+}
+
+export async function fetchQuizInsights(quizId: string): Promise<QuizInsightsDetail> {
+  const response = await fetch(`/api/student/quiz/${quizId}/insights`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  let payload: (QuizInsightsDetail & { error?: string }) | { error?: string } = {};
+  try {
+    payload = (await response.json()) as typeof payload;
+  } catch {
+    throw new Error("Failed to parse quiz insights.");
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Unable to load quiz insights.");
+  }
+
+  return payload as QuizInsightsDetail;
 }

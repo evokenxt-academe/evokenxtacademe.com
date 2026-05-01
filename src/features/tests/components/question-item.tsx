@@ -20,21 +20,21 @@ export function QuestionItem({
   onSelect,
 }: QuestionItemProps) {
   return (
-    <Card className="border-border/70">
+    <Card className="border-border/70 bg-card/95">
       <CardHeader className="flex flex-row items-start justify-between gap-2 border-b bg-muted/20">
         <div className="flex flex-col gap-2">
           <Badge variant="outline">Question {questionNumber}</Badge>
-          <CardTitle className="text-base leading-6">{question.question}</CardTitle>
+          <CardTitle className="text-base leading-6 md:text-lg">{question.question}</CardTitle>
         </div>
         <Badge variant="secondary">{question.marks} marks</Badge>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-5">
         <RadioGroup value={selectedOptionId} onValueChange={onSelect} className="flex flex-col gap-3">
           {question.options.map((option, index) => (
             <Label
               key={option.id}
               htmlFor={option.id}
-              className="flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors hover:bg-muted/30"
+              className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors hover:bg-muted/30 md:p-4"
             >
               <RadioGroupItem id={option.id} value={option.id} />
               <span className="flex-1">

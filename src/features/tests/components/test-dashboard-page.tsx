@@ -93,34 +93,34 @@ export function TestDashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:p-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Tests</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 md:gap-6 md:p-6">
+      <div className="rounded-2xl border border-border/70 bg-linear-to-r from-primary/10 via-background to-background p-4 md:p-6">
+        <h1 className="text-2xl font-semibold md:text-3xl">Tests</h1>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Start new quizzes, resume active attempts, and review submitted results.
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border/70">
+      <div className="grid gap-3 md:gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-border/70 bg-card/95 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Available tests</p>
             <p className="mt-1 text-2xl font-semibold">{quizzes.length}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/70">
+        <Card className="border-border/70 bg-card/95 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">In progress</p>
             <p className="mt-1 text-2xl font-semibold">{inProgressCount}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/70">
+        <Card className="border-border/70 bg-card/95 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Completed</p>
             <p className="mt-1 text-2xl font-semibold">{completedCount}</p>
           </CardContent>
         </Card>
-        <Card className="border-border/70">
+        <Card className="border-border/70 bg-card/95 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Not attempted</p>
             <p className="mt-1 text-2xl font-semibold">{notAttemptedCount}</p>
@@ -128,7 +128,7 @@ export function TestDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {quizzes.map((quiz) => (
           <QuizCard key={quiz.id} quiz={quiz} />
         ))}
