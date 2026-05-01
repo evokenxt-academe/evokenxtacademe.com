@@ -2,6 +2,7 @@
 
 import { useMyCourses } from "./hooks";
 import { CourseCard } from "./components/course-card";
+import { LiveStreamsSection } from "./components/live-stream-card";
 import { LoadingSkeleton } from "./components/loading-skeleton";
 import { EmptyState } from "./components/empty-state";
 import { ErrorState } from "./components/error-state";
@@ -10,7 +11,7 @@ export default function MyCoursesPage() {
   const { data: courses, isLoading, error, refetch } = useMyCourses();
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
+    <div className="flex flex-col gap-8 p-4 md:p-6">
       {/* ── Header ──────────────────────────────────── */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">My Courses</h1>
@@ -18,6 +19,9 @@ export default function MyCoursesPage() {
           Continue your learning journey
         </p>
       </div>
+
+      {/* ── Live Streams Section ─────────────────────────── */}
+      <LiveStreamsSection />
 
       {/* ── Loading ─────────────────────────────────── */}
       {isLoading && <LoadingSkeleton />}

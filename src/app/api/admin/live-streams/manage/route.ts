@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
                     title,
                     course_id: courseId,
                     yt_video_id: resolvedVideoId || null,
-                    status: "ended",
-                    started_at: null,
+                    status: "live",
+                    started_at: new Date().toISOString(),
                     ended_at: null,
                 })
                 .select("id")

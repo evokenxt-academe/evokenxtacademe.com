@@ -28,11 +28,13 @@ export default async function LearnRedirectPage({ params }: Props) {
     redirect("/dashboard");
   }
 
+  const courseId = (course as { id: string }).id;
+
   const { data: enrollment } = await supabase
     .from("enrollments")
     .select("id")
     .eq("user_id", user.id)
-    .eq("course_id", course.id)
+    .eq("course_id", courseId)
     .eq("status", "active")
     .maybeSingle();
 
@@ -43,7 +45,7 @@ export default async function LearnRedirectPage({ params }: Props) {
   const { data: sectionsData } = await supabase
     .from("sections")
     .select("id, position, lectures(id, position)")
-    .eq("course_id", course.id)
+    .eq("course_id", courseId)
     .order("position", { ascending: true });
 
   const allLectures = (sectionsData ?? [])
