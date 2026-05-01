@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
+  const authErrorDescription = searchParams.get('error_description')
 
   if (code) {
     const supabase = await createClient()
@@ -52,6 +53,13 @@ export async function GET(request: Request) {
 
       return NextResponse.redirect(`${origin}${next}`)
     }
+
+    const message = error?.message ?? 'Could not authenticate user'
+    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(message)}`)
+  }
+
+  if (authErrorDescription) {
+    return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(authErrorDescription)}`)
   }
 
   // return the user to an error page with some instructions

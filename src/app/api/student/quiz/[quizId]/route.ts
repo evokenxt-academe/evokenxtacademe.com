@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/adminClient";
 import { fetchQuizForAttempt } from "@/features/student/lib/quiz-data";
 
 export async function GET(
@@ -16,11 +17,15 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const quiz = await fetchQuizForAttempt(supabase, user.id, quizId);
+  const adminClient = createAdminClient();
+  const quiz = await fetchQuizForAttempt(adminClient, user.id, quizId);
 
   if (!quiz) {
     return NextResponse.json(
-      { error: "Quiz not found or not authorized" },
+      {
+        error:
+          "Quiz not found, not published yet, or unavailable for your enrollment.",
+      },
       { status: 404 },
     );
   }
