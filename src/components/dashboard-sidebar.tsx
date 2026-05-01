@@ -8,6 +8,7 @@ import {
   IconCertificate,
   IconCreditCard,
   IconUser,
+  IconChecklist,
 } from "@tabler/icons-react";
 import {
   Sidebar,
@@ -20,7 +21,6 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,6 +31,7 @@ import type { StudentProfile } from "@/features/student/lib/lms-data";
 const mainNav = [
   { title: "Dashboard", href: "/dashboard", icon: IconLayoutDashboard },
   { title: "My Courses", href: "/my-courses", icon: IconBook },
+  { title: "Tests", href: "/dashboard/tests", icon: IconChecklist },
   { title: "Certificates", href: "/dashboard/certificates", icon: IconCertificate },
   { title: "Payments", href: "/dashboard/payments", icon: IconCreditCard },
 ];
