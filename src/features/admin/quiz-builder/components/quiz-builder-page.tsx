@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -59,6 +60,15 @@ export function QuizBuilderPage() {
         (quizQuestionsData?.questions ?? []).map((q) => q.questionId)
       ),
     [quizQuestionsData]
+  );
+  const quizQuestionRows = quizQuestionsData?.questions ?? [];
+  const totalConfiguredMarks = React.useMemo(
+    () =>
+      quizQuestionRows.reduce((sum, row) => {
+        const marks = row.marksOverride ?? row.question.marks ?? 0;
+        return sum + marks;
+      }, 0),
+    [quizQuestionRows]
   );
 
   const addQuestionsMutation = useAddQuestionsToQuiz();
@@ -163,9 +173,37 @@ export function QuizBuilderPage() {
 
       {/* Main two-column layout — shown once quiz is loaded */}
       {hasSection && !isLoadingQuiz && hasQuiz && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="flex flex-col gap-6">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="rounded-xl border-border/60 bg-card/90">
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Questions</p>
+                <p className="mt-1 text-2xl font-semibold">{quiz.questionCount}</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-border/60 bg-card/90">
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Total marks</p>
+                <p className="mt-1 text-2xl font-semibold">{quiz.totalMarks}</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-border/60 bg-card/90">
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Configured marks</p>
+                <p className="mt-1 text-2xl font-semibold">{totalConfiguredMarks}</p>
+              </CardContent>
+            </Card>
+            <Card className="rounded-xl border-border/60 bg-card/90">
+              <CardContent className="p-4">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Pass marks</p>
+                <p className="mt-1 text-2xl font-semibold">{quiz.passingMarks}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px]">
           {/* Left column: Tabs + Quiz Questions */}
-          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6">
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
@@ -210,15 +248,16 @@ export function QuizBuilderPage() {
             {/* Quiz Questions list below tabs */}
             <Separator />
             <QuizQuestionList quizId={quiz.id} />
-          </div>
+            </div>
 
           {/* Right column: Question Bank */}
-          <div className="flex flex-col rounded-xl border border-border/60 bg-card p-4 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)] overflow-hidden self-start">
-            <QuestionBankPanel
-              onAddToQuiz={handleAddToQuiz}
-              isAddingToQuiz={addQuestionsMutation.isPending}
-              existingQuestionIds={existingQuestionIds}
-            />
+            <div className="flex flex-col rounded-xl border border-border/60 bg-card p-4 lg:sticky lg:top-24 lg:h-[calc(100vh-120px)] overflow-hidden self-start">
+              <QuestionBankPanel
+                onAddToQuiz={handleAddToQuiz}
+                isAddingToQuiz={addQuestionsMutation.isPending}
+                existingQuestionIds={existingQuestionIds}
+              />
+            </div>
           </div>
         </div>
       )}

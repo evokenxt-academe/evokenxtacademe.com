@@ -482,14 +482,14 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
           />
 
           {/* Below-video controls */}
-          <div className="rounded-b-xl border border-t-0 border-border bg-card px-4 py-4 lg:px-6">
+          <div className="mt-4 rounded-xl border border-border/60 bg-card px-5 py-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex items-center gap-2">
                   {isCurrentCompleted ? (
                     <Badge
                       variant="secondary"
-                      className="gap-1 text-[10px] uppercase tracking-wider"
+                      className="gap-1.5 text-[10px] uppercase tracking-wider"
                     >
                       <IconCircleCheckFilled className="size-3 text-emerald-500" />
                       Completed
@@ -497,18 +497,18 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                   ) : (
                     <Badge
                       variant="outline"
-                      className="text-[10px] uppercase tracking-wider"
+                      className="text-[10px] uppercase tracking-wider text-muted-foreground"
                     >
                       In Progress
                     </Badge>
                   )}
                   {currentFlatLecture && (
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Lecture {currentFlatLecture.globalIndex + 1} of {totalCount}
                     </span>
                   )}
                 </div>
-                <h1 className="text-lg font-semibold leading-tight text-foreground lg:text-xl">
+                <h1 className="text-xl font-bold leading-tight text-foreground lg:text-2xl">
                   {currentFlatLecture?.title ?? "Select a lecture"}
                 </h1>
                 {currentLectureData?.description && (
@@ -518,7 +518,7 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                 )}
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
@@ -526,9 +526,9 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                   className="gap-1.5"
                   onClick={() => setResourcesDialogOpen(true)}
                 >
-                  <IconPaperclip className="size-3.5" />
+                  <IconPaperclip className="size-4 text-muted-foreground" />
                   Attachments
-                  <Badge variant="secondary" className="rounded-full px-1.5">
+                  <Badge variant="secondary" className="rounded-full px-1.5 text-[10px]">
                     {resourcesLoading ? "…" : currentResources.length}
                   </Badge>
                 </Button>
@@ -539,26 +539,29 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                   disabled={isCurrentCompleted || isMarkingComplete}
                   size="sm"
                   variant={isCurrentCompleted ? "secondary" : "default"}
-                  className="gap-1.5"
+                  className="gap-1.5 min-w-[140px]"
                 >
                   {isMarkingComplete ? (
-                    <IconLoader2 className="size-3.5 animate-spin" />
+                    <IconLoader2 className="size-4 animate-spin" />
                   ) : (
-                    <IconCheck className="size-3.5" />
+                    <IconCheck className="size-4" />
                   )}
                   {isCurrentCompleted ? "Completed" : "Mark Complete"}
                 </Button>
 
+                <div className="h-6 w-px bg-border/60 mx-1 hidden sm:block" />
+
                 {/* Prev / Next */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="outline"
-                          size="icon-sm"
+                          size="icon"
                           onClick={handlePrev}
                           disabled={!prevLecture}
+                          className="size-9"
                         >
                           <IconChevronLeft className="size-4" />
                         </Button>
@@ -576,9 +579,10 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                       <TooltipTrigger asChild>
                         <Button
                           variant="outline"
-                          size="icon-sm"
+                          size="icon"
                           onClick={handleNext}
                           disabled={!nextLecture}
+                          className="size-9"
                         >
                           <IconChevronRight className="size-4" />
                         </Button>
@@ -829,37 +833,37 @@ function CurriculumSidebarContent({
   }, [sections]);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full bg-muted/10">
       {/* Sidebar header */}
-      <div className="shrink-0 border-b border-border bg-muted/20 px-4 py-4 lg:px-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-foreground">
-              Course Content
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{courseName}</p>
-          </div>
-          <Badge variant="outline" className="rounded-full">
-            {totalCount} Lectures
-          </Badge>
+      <div className="shrink-0 border-b border-border/60 bg-background px-5 py-5">
+        <div className="flex flex-col gap-1.5">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+            Curriculum
+          </h2>
+          <p className="text-base font-semibold leading-tight text-foreground line-clamp-2">
+            {courseName}
+          </p>
         </div>
-        <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            <span>Progress</span>
-            <span>
-              {completedCount}/{totalCount} lectures
+        <div className="mt-5 space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+            <span>Course Progress</span>
+            <span className="text-foreground">
+              {progressPercent}%
             </span>
           </div>
-          <Progress value={progressPercent} className="h-2" />
+          <Progress value={progressPercent} className="h-1.5" />
+          <p className="text-[10px] text-muted-foreground text-right">
+            {completedCount} of {totalCount} completed
+          </p>
         </div>
       </div>
 
       {/* Sections accordion */}
-      <div className="p-2 lg:p-3">
+      <div className="flex-1 overflow-y-auto p-4">
         <Accordion
           type="multiple"
           defaultValue={[activeSectionId]}
-          className="space-y-2"
+          className="space-y-3"
         >
           {sections.map((section, sIdx) => {
             const sectionCompleted = section.lectures.filter(
@@ -872,19 +876,22 @@ function CurriculumSidebarContent({
               <AccordionItem
                 key={section.id}
                 value={section.id}
-                className="overflow-hidden rounded-xl border border-border bg-card"
+                className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
               >
-                <AccordionTrigger className="px-3 py-3 text-sm hover:bg-accent/60 hover:no-underline data-[state=open]:bg-accent/30">
-                  <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5 text-left">
-                    <span className="truncate text-[13px] font-medium">
-                      Section {sIdx + 1}: {section.title}
+                <AccordionTrigger className="px-4 py-3.5 hover:bg-muted/40 hover:no-underline data-[state=open]:bg-muted/20 data-[state=open]:border-b border-border/60 transition-colors">
+                  <div className="flex min-w-0 flex-1 flex-col items-start gap-1 text-left">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Section {sIdx + 1}
                     </span>
-                    <span className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="truncate text-sm font-semibold text-foreground leading-snug">
+                      {section.title}
+                    </span>
+                    <span className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                       <span>
-                        {sectionCompleted}/{sectionTotal} lectures
+                        {sectionCompleted}/{sectionTotal}
                       </span>
-                      <span className="text-muted-foreground/40">·</span>
-                      <span className="flex items-center gap-0.5">
+                      <span className="text-border">·</span>
+                      <span className="flex items-center gap-1">
                         <IconClock className="size-3" />
                         {fmtSectionDuration(section.lectures)}
                       </span>
@@ -892,8 +899,8 @@ function CurriculumSidebarContent({
                   </div>
                 </AccordionTrigger>
 
-                <AccordionContent className="border-t border-border bg-background/60 pb-2 pt-2">
-                  <div className="flex flex-col gap-1 px-2">
+                <AccordionContent className="bg-background pt-2 pb-2">
+                  <div className="flex flex-col gap-0.5 px-1.5">
                     {section.lectures.map((lecture, lIdx) => {
                       const isActive = lecture.id === currentLectureId;
                       const isCompleted =
@@ -905,37 +912,37 @@ function CurriculumSidebarContent({
                           key={lecture.id}
                           onClick={() => onSelectLecture(lecture.id)}
                           className={cn(
-                            "group/lecture flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors",
+                            "group/lecture flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-all",
                             isActive
-                              ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-                              : "text-foreground hover:bg-accent/70",
+                              ? "bg-primary/5 text-primary ring-1 ring-primary/20 shadow-sm"
+                              : "text-foreground hover:bg-muted/60",
                           )}
                         >
                           {/* Status indicator */}
-                          <div className="shrink-0">
+                          <div className="shrink-0 mt-0.5">
                             {isCompleted ? (
                               <IconCircleCheckFilled className="size-4 text-emerald-500" />
                             ) : isActive ? (
                               <IconPlayerPlayFilled className="size-4 text-primary" />
                             ) : (
-                              <div className="flex size-4 items-center justify-center rounded-full border-[1.5px] border-muted-foreground/30 text-[9px] font-medium text-muted-foreground">
+                              <div className="flex size-4 items-center justify-center rounded-full border border-muted-foreground/40 text-[9px] font-medium text-muted-foreground">
                                 {lectureGlobalIndex + 1}
                               </div>
                             )}
                           </div>
 
                           {/* Lecture info */}
-                          <div className="flex min-w-0 flex-1 flex-col">
+                          <div className="flex min-w-0 flex-1 flex-col gap-1">
                             <span
                               className={cn(
-                                "truncate text-[13px] leading-snug",
-                                isActive ? "font-medium" : "font-normal",
+                                "text-sm leading-tight",
+                                isActive ? "font-semibold" : "font-medium",
                               )}
                             >
                               {lecture.title}
                             </span>
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <IconClock className="size-2.5" />
+                            <span className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                              <IconClock className="size-3" />
                               {fmtDuration(lecture.durationSec)}
                             </span>
                           </div>
