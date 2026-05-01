@@ -31,14 +31,14 @@ export function NavigationPanel({
   const progress = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
   return (
-    <Card className="border-border/70">
+    <Card className="border-border/70 bg-card/95">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-sm">Question map</CardTitle>
         <Badge variant="outline">
           {answeredCount}/{totalQuestions}
         </Badge>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-4 pt-2">
         <Progress value={progress} />
         {timeLabel ? (
           <div className="rounded-md border bg-muted/20 px-3 py-2">
@@ -48,7 +48,7 @@ export function NavigationPanel({
             </Badge>
           </div>
         ) : null}
-        <ScrollArea className="h-56">
+        <ScrollArea className="h-52 md:h-56">
           <div className="grid grid-cols-5 gap-2 pr-3">
             {Array.from({ length: totalQuestions }).map((_, index) => {
               const isCurrent = index === currentIndex;

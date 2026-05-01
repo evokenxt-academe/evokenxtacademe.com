@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NavigationPanel } from "@/features/tests/components/navigation-panel";
 import { QuestionItem } from "@/features/tests/components/question-item";
@@ -171,9 +171,9 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
   const isDangerTime = secondsLeft != null && secondsLeft <= 60;
 
   return (
-    <div className="grid gap-4 p-4 md:p-6 lg:grid-cols-[1fr_320px]">
+    <div className="mx-auto grid w-full max-w-7xl gap-4 p-4 md:gap-5 md:p-6 xl:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-4">
-        <Card className="border-border/70">
+        <Card className="border-border/70 bg-card/95">
           <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div className="space-y-1">
               <CardTitle className="text-lg">{quiz.title}</CardTitle>
@@ -188,6 +188,11 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
               ) : null}
             </div>
           </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Progress is auto-saved. Use the question map to jump quickly between questions.
+            </p>
+          </CardContent>
         </Card>
 
         <QuestionItem
@@ -197,7 +202,7 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
           onSelect={(optionId) => handleSelect(currentQuestion.id, optionId)}
         />
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Button
             variant="outline"
             onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
@@ -222,7 +227,7 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+      <div className="flex flex-col gap-4 xl:sticky xl:top-6 xl:self-start">
         <NavigationPanel
           totalQuestions={quiz.questions.length}
           questionIds={quiz.questions.map((question) => question.id)}
@@ -236,7 +241,7 @@ export function QuizAttemptPage({ quizId }: { quizId: string }) {
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button disabled={submitMutation.isPending}>
+            <Button className="w-full" disabled={submitMutation.isPending}>
               {submitMutation.isPending ? "Submitting..." : "Submit test"}
             </Button>
           </AlertDialogTrigger>

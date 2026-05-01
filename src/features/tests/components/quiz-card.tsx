@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { IconArrowRight, IconClock } from "@tabler/icons-react";
+import { IconArrowRight } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import type { QuizSummaryItem } from "@/features/tests/types";
 
 function formatDuration(seconds: number | null) {
@@ -14,14 +14,14 @@ function formatDuration(seconds: number | null) {
 }
 
 function statusLabel(status: QuizSummaryItem["status"]) {
-  if (status === "in_progress") return "In progress";
+  if (status === "in_progress") return "Ongoing";
   if (status === "completed") return "Completed";
-  return "Not attempted";
+  return "New";
 }
 
 function ctaLabel(status: QuizSummaryItem["status"]) {
-  if (status === "in_progress") return "Continue";
-  if (status === "completed") return "View result";
+  if (status === "in_progress") return "Resume";
+  if (status === "completed") return "Result";
   return "Start";
 }
 
@@ -33,49 +33,84 @@ function ctaHref(quiz: QuizSummaryItem) {
   return `/dashboard/tests/${quiz.id}/start`;
 }
 
+const CardDecorator = () => (
+  <div className="pointer-events-none absolute inset-0 z-10">
+    <span className="absolute -left-px -top-px block size-2 border-l-2 border-t-2 border-primary"></span>
+    <span className="absolute -right-px -top-px block size-2 border-r-2 border-t-2 border-primary"></span>
+    <span className="absolute -bottom-px -left-px block size-2 border-b-2 border-l-2 border-primary"></span>
+    <span className="absolute -bottom-px -right-px block size-2 border-b-2 border-r-2 border-primary"></span>
+  </div>
+);
+
 export function QuizCard({ quiz }: { quiz: QuizSummaryItem }) {
+  const isCompleted = quiz.status === "completed";
+  const isInProgress = quiz.status === "in_progress";
+
+  // Clean up title if it's redundant with section title
+  const displayTitle = quiz.title.startsWith(quiz.sectionTitle) 
+    ? quiz.title.replace(quiz.sectionTitle, "").replace(/^[\s—\-:]+/, "") || quiz.title
+    : quiz.title;
+
   return (
-    <Card className="border-border/70 transition-all hover:-translate-y-0.5 hover:shadow-md">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <CardTitle className="text-base">{quiz.title}</CardTitle>
-            <CardDescription className="line-clamp-2">
-              {quiz.description ?? `${quiz.courseName} - ${quiz.sectionTitle}`}
-            </CardDescription>
+    <div className="group relative flex h-full min-h-[340px] flex-col rounded-none border border-border/50 bg-card transition-all duration-300 hover:border-foreground/20 hover:shadow-lg">
+      <CardDecorator />
+      
+      <div className="flex-1 flex flex-col p-5">
+        {/* Top Info */}
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+              {quiz.courseName}
+            </span>
+            <span className="text-[10px] font-bold text-primary uppercase tracking-tight">
+              {quiz.sectionTitle}
+            </span>
           </div>
-          <Badge variant={quiz.status === "completed" ? "secondary" : "outline"}>
+          <Badge 
+            variant={isCompleted ? "default" : isInProgress ? "secondary" : "outline"}
+            className="rounded-none text-[8px] font-bold uppercase tracking-widest px-1.5 h-4.5"
+          >
             {statusLabel(quiz.status)}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{quiz.courseName}</Badge>
-          <Badge variant="outline">{quiz.sectionTitle}</Badge>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-          <div>
-            <p className="font-medium text-foreground">{quiz.totalMarks}</p>
-            <p>Total marks</p>
-          </div>
-          <div>
-            <p className="font-medium text-foreground">{quiz.passingMarks}</p>
-            <p>Passing marks</p>
-          </div>
-          <div className="col-span-2 flex items-center gap-1">
-            <IconClock />
-            <span>{formatDuration(quiz.timeLimitSec)}</span>
-          </div>
-        </div>
 
-        <Button asChild>
+        {/* Title */}
+        <h3 className="text-lg font-black leading-tight group-hover:text-primary transition-colors line-clamp-2">
+          {displayTitle === quiz.title ? quiz.title : `${quiz.sectionTitle}: ${displayTitle}`}
+        </h3>
+
+        {/* Description */}
+        <p className="mt-3 text-[11px] text-muted-foreground/70 line-clamp-2">
+          {quiz.description ?? "Access the full evaluation module."}
+        </p>
+
+        {/* Stats Row */}
+        <div className="mt-auto pt-5 grid grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Marks</span>
+            <span className="text-sm font-bold text-white">{quiz.totalMarks} pts</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">Time Limit</span>
+            <span className="text-sm font-bold text-white">{formatDuration(quiz.timeLimitSec)}</span>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Footer */}
+      <div className="flex items-center justify-between bg-muted/10 p-5">
+        <Link href={`/dashboard/tests/${quiz.id}`} className="text-[10px] font-bold hover:text-primary transition-colors uppercase tracking-widest">
+          Details
+        </Link>
+        <Button asChild variant="secondary" className="h-9 rounded-none px-5 text-xs font-black transition-all group-hover:bg-primary group-hover:text-primary-foreground">
           <Link href={ctaHref(quiz)}>
             {ctaLabel(quiz.status)}
-            <IconArrowRight data-icon="inline-end" />
+            <IconArrowRight className="ml-1.5 size-3.5" />
           </Link>
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

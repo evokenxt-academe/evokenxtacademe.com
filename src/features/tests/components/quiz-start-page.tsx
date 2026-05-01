@@ -73,7 +73,7 @@ export function QuizStartPage({ quizId }: { quizId: string }) {
 
   return (
     <div className="p-4 md:p-6">
-      <Card className="mx-auto max-w-3xl overflow-hidden border-border/70 shadow-sm">
+      <Card className="mx-auto max-w-5xl overflow-hidden border-border/70 bg-card/95 shadow-sm">
         <CardHeader className="flex flex-col gap-4 border-b bg-linear-to-b from-muted/60 to-background">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="bg-background/70">
@@ -91,7 +91,7 @@ export function QuizStartPage({ quizId }: { quizId: string }) {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-8 pt-6">
+        <CardContent className="flex flex-col gap-6 pt-6 md:gap-8">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg border bg-muted/30 p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Questions</p>
@@ -111,7 +111,7 @@ export function QuizStartPage({ quizId }: { quizId: string }) {
             </div>
           </div>
 
-          <div className="grid gap-4 rounded-lg border bg-muted/20 p-4 md:grid-cols-3">
+          <div className="grid gap-3 rounded-xl border bg-muted/20 p-4 md:gap-4 md:grid-cols-3">
             <div className="flex items-start gap-2">
               <IconBook2 className="mt-0.5 size-4 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
@@ -134,7 +134,7 @@ export function QuizStartPage({ quizId }: { quizId: string }) {
 
           <Button
             size="lg"
-            className="w-full md:w-auto"
+            className="w-full md:w-auto md:min-w-48"
             onClick={handleStart}
             disabled={createAttemptMutation.isPending}
           >

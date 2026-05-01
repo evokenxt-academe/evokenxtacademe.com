@@ -102,3 +102,60 @@ export interface AttemptResultDetail {
     isCorrect: boolean;
   }>;
 }
+
+export interface QuizInsightsAbout {
+  quizId: string;
+  title: string;
+  description: string | null;
+  courseName: string;
+  sectionTitle: string;
+  totalMarks: number;
+  passingMarks: number;
+  timeLimitSec: number | null;
+  questionCount: number;
+}
+
+export interface QuizInsightsReport {
+  participants: number;
+  attempts: number;
+  averageScore: number;
+  highestScore: number;
+  passRate: number;
+  averageAccuracy: number;
+  distribution: Array<{
+    label: string;
+    count: number;
+  }>;
+}
+
+export interface QuizRankingItem {
+  rank: number;
+  userId: string;
+  name: string;
+  initials: string;
+  score: number;
+  totalMarks: number;
+  percentage: number;
+  submittedAt: string | null;
+  durationSec: number | null;
+  attempts: number;
+}
+
+export interface QuizHistoryItem {
+  attemptId: string;
+  status: AttemptRow["status"];
+  score: number;
+  totalMarks: number;
+  percentage: number;
+  startedAt: string;
+  submittedAt: string | null;
+  durationSec: number | null;
+  rank: number | null;
+}
+
+export interface QuizInsightsDetail {
+  about: QuizInsightsAbout;
+  report: QuizInsightsReport;
+  ranking: QuizRankingItem[];
+  history: QuizHistoryItem[];
+}

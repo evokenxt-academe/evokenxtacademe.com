@@ -7,6 +7,7 @@ import {
   fetchAttemptResult,
   fetchEnrolledQuizzes,
   fetchQuiz,
+  fetchQuizInsights,
   fetchStudentQuizzes,
   saveAnswer,
   submitAttempt,
@@ -82,6 +83,15 @@ export function useAttemptResult(attemptId: string) {
     queryKey: ["tests", "result", attemptId],
     queryFn: () => fetchAttemptResult(attemptId),
     enabled: Boolean(attemptId),
+    staleTime: 60_000,
+  });
+}
+
+export function useQuizInsights(quizId: string) {
+  return useQuery({
+    queryKey: ["tests", "quiz-insights", quizId],
+    queryFn: () => fetchQuizInsights(quizId),
+    enabled: Boolean(quizId),
     staleTime: 60_000,
   });
 }
