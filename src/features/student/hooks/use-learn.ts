@@ -66,7 +66,6 @@ export function useLectureProgress(
 // ─── useUpdateProgress ─────────────────────────────────────────────
 
 export function useUpdateProgress(userId: string | null) {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -80,14 +79,23 @@ export function useUpdateProgress(userId: string | null) {
       watchedSeconds?: number;
     }) => {
       if (!userId) throw new Error("Not authenticated");
-      const success = await upsertLectureProgress(
-        supabase,
-        userId,
-        lectureId,
-        isCompleted,
-        watchedSeconds
-      );
-      if (!success) throw new Error("Failed to update progress");
+      
+      const res = await fetch(`/api/student/lectures/${lectureId}/progress`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isCompleted,
+          watchedSeconds,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        throw new Error(error.error || "Failed to update progress");
+      }
+
       return { lectureId, isCompleted, watchedSeconds };
     },
     onSuccess: () => {

@@ -316,14 +316,26 @@ export default async function DashboardPage() {
                       ? `/learn/${course.slug}/${continueLectureId}`
                       : `/learn/${course.slug}`;
 
+                    const activeLiveStream = dashboard.upcomingStreams.find(
+                      (stream) => stream.courseId === course.id && stream.status === "live"
+                    );
+
                     return (
                       <Link
                         href={learnHref}
                         key={course.id}
-                        className="group block"
+                        className="group block relative"
                       >
-                        <Card className="transition-shadow hover:shadow-md">
-                          <CardContent className="flex items-center gap-4 p-4">
+                        <Card className="transition-shadow hover:shadow-md relative overflow-hidden">
+                          {activeLiveStream && (
+                            <div className="absolute top-0 right-0 p-3 flex justify-end z-10 pointer-events-none">
+                              <Badge className="bg-red-500 hover:bg-red-600 text-white border-none animate-pulse shadow-sm shadow-red-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                                LIVE
+                              </Badge>
+                            </div>
+                          )}
+                          <CardContent className="flex items-center gap-4 p-4 relative z-0">
                             <ProgressRing
                               value={enrollment.progress.progressPercent}
                               size={48}
@@ -332,7 +344,7 @@ export default async function DashboardPage() {
                             />
                             <div className="min-w-0 flex-1 flex flex-col gap-2">
                               <div className="flex items-center justify-between gap-2">
-                                <h3 className="truncate font-medium">
+                                <h3 className="truncate font-medium pr-12">
                                   {course.name}
                                 </h3>
                                 <span className="shrink-0 text-lg font-semibold tabular-nums">
@@ -558,32 +570,45 @@ export default async function DashboardPage() {
               {upcomingStreams.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {upcomingStreams.map((stream) => (
-                    <div key={stream.id} className="flex flex-col gap-1">
+                    <div key={stream.id} className="flex flex-col gap-1.5 rounded-md border p-3 hover:bg-accent/50 transition-colors">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-sm font-medium">
+                        <span className="truncate text-sm font-semibold">
                           {stream.title}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className="shrink-0 capitalize"
-                        >
-                          {stream.status}
-                        </Badge>
+                        {stream.status === "live" ? (
+                          <Badge className="bg-red-500 hover:bg-red-600 text-white border-none animate-pulse shrink-0 px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-sm shadow-red-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                            LIVE
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 capitalize text-[10px]"
+                          >
+                            {stream.status}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {stream.startedAt ||
-                        stream.endedAt ||
-                        stream.scheduledAt
-                          ? new Date(
-                              stream.startedAt ||
-                                stream.endedAt ||
-                                stream.scheduledAt ||
-                                "",
-                            ).toLocaleString("en-IN", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            })
-                          : "Awaiting broadcast"}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs font-medium text-primary">
+                          {stream.courseName}
+                        </span>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <IconClock className="w-3 h-3" />
+                          {stream.startedAt ||
+                          stream.endedAt ||
+                          stream.scheduledAt
+                            ? new Date(
+                                stream.startedAt ||
+                                  stream.endedAt ||
+                                  stream.scheduledAt ||
+                                  "",
+                              ).toLocaleString("en-IN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              })
+                            : "Awaiting broadcast"}
+                        </div>
                       </div>
                     </div>
                   ))}

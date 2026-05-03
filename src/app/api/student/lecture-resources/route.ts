@@ -75,7 +75,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Lecture not found" }, { status: 404 });
     }
 
-    const { data, error } = await supabase
+    const adminClient = await import("@/utils/supabase/adminClient").then(m => m.createAdminClient());
+    const { data, error } = await adminClient
         .from("resources")
         .select("id, title, file_url")
         .eq("lecture_id", lectureId)

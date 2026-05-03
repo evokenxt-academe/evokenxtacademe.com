@@ -24,6 +24,7 @@ import {
   IconFileTypePdf,
   IconLink,
   IconLoader2,
+  IconDownload,
 } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +45,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -694,6 +702,8 @@ function LectureCard({
         updateLecture(sectionId, lecture.id, {
           videoUrl: result.videoUrl,
           durationSec: result.durationSec,
+          title: result.title || lecture.title,
+          description: result.description || lecture.description,
         });
         setYoutubeUrl("");
         setUrlMode(false);
@@ -707,7 +717,7 @@ function LectureCard({
     } finally {
       setIsFetchingDuration(false);
     }
-  }, [youtubeUrl, sectionId, lecture.id, updateLecture]);
+  }, [youtubeUrl, sectionId, lecture.id, lecture.title, lecture.description, updateLecture]);
 
   const handleSaveToken = useCallback(async () => {
     if (!youtubeToken.trim()) return;
@@ -837,15 +847,35 @@ function LectureCard({
                 <IconChevronDown className="size-3" />
               </Button>
             )}
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-6 text-destructive hover:bg-destructive/10"
-              onClick={() => deleteLecture(sectionId, lecture.id)}
-            >
-              <IconTrash className="size-3" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-6 text-destructive hover:bg-destructive/10"
+                >
+                  <IconTrash className="size-3" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Lecture?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently remove &ldquo;{lecture.title || `Lecture ${lectureIndex + 1}`}&rdquo; and all its resources.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteLecture(sectionId, lecture.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <CollapsibleTrigger asChild>
               <Button
                 type="button"
@@ -913,15 +943,35 @@ function LectureCard({
                         <IconCheck className="size-2.5" />
                         Uploaded
                       </Badge>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 shrink-0 text-destructive hover:bg-destructive/10"
-                        onClick={handleRemoveVideo}
-                      >
-                        <IconTrash className="size-3.5" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 shrink-0 text-destructive hover:bg-destructive/10"
+                          >
+                            <IconTrash className="size-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Video?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will remove the uploaded video from this lecture.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleRemoveVideo}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 )}
@@ -1295,6 +1345,7 @@ function ResourceRow({
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [error, setError] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const isUploaded = !!resource.fileUrl;
   const isPdf =
@@ -1381,10 +1432,157 @@ function ResourceRow({
 
         {/* Upload / Status */}
         {isUploaded ? (
-          <Badge variant="secondary" className="gap-1 text-[10px]">
-            <IconCheck className="size-2.5" />
-            Uploaded
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="gap-1 text-[10px]">
+              <IconCheck className="size-2.5" />
+              Uploaded
+            </Badge>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 text-[11px]"
+              onClick={() => setPreviewOpen(true)}
+            >
+              <IconEye className="mr-1 size-3" />
+              Preview
+            </Button>
+
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+              <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] flex-col overflow-hidden p-0 sm:max-w-[1600px]">
+                {resource.fileUrl && (
+                  <div className="grid h-full grid-cols-1 lg:grid-cols-[320px_1fr]">
+                    {/* Sidebar */}
+                    <div className="flex flex-col border-b border-border bg-muted/10 p-6 lg:border-b-0 lg:border-r">
+                      <DialogHeader className="text-left">
+                        <div className="mb-2 flex items-center gap-3">
+                          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                            {isPdf ? (
+                              <IconFileTypePdf className="size-6" />
+                            ) : (
+                              <IconPhoto className="size-6" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <DialogTitle className="truncate text-lg font-semibold leading-tight text-foreground">
+                              {resource.title}
+                            </DialogTitle>
+                            <DialogDescription className="mt-1 text-xs">
+                              {isPdf ? "PDF Document" : "Image Resource"}
+                            </DialogDescription>
+                          </div>
+                        </div>
+                      </DialogHeader>
+
+                      <div className="mt-8 flex flex-col gap-6">
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Source URL
+                          </p>
+                          <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+                            <p className="break-all text-xs leading-relaxed text-foreground/80">
+                              {resource.fileUrl}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Quick Actions
+                          </p>
+                          <div className="flex flex-col gap-2.5">
+                            <Button
+                              asChild
+                              size="lg"
+                              className="w-full justify-between shadow-sm"
+                            >
+                              <a
+                                href={resource.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                download
+                              >
+                                <span className="inline-flex items-center gap-2 font-medium">
+                                  <IconDownload className="size-4.5" />
+                                  Download File
+                                </span>
+                              </a>
+                            </Button>
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="lg"
+                              className="w-full justify-between bg-background"
+                            >
+                              <a
+                                href={resource.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <span className="font-medium">
+                                  Open in new tab
+                                </span>
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Preview Area */}
+                    <div className="flex flex-col bg-accent/30">
+                      <div className="flex items-center justify-between border-b border-border/50 bg-background/50 px-5 py-3 backdrop-blur-md">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Resource Preview
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Admin Preview Mode
+                          </p>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground shadow-sm ring-1 ring-border"
+                        >
+                          {isPdf ? "PDF" : "IMAGE"}
+                        </Badge>
+                      </div>
+                      <div className="relative flex-1 bg-black/5">
+                        <iframe
+                          title={resource.title}
+                          src={
+                            resource.fileUrl +
+                            (isPdf ? "#toolbar=0&navpanes=0" : "")
+                          }
+                          className="absolute inset-0 h-full w-full border-0 rounded-br-lg shadow-inner"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between border-t border-border/50 bg-background/50 px-5 py-3 backdrop-blur-md sm:justify-between">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setPreviewOpen(false)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          Dismiss
+                        </Button>
+                        <Button asChild>
+                          <a
+                            href={resource.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            download
+                          >
+                            <IconDownload className="mr-2 size-4" />
+                            Save Copy
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+          </div>
         ) : isUploading ? (
           <div className="flex items-center gap-2">
             <Progress value={progress?.percent || 0} className="h-1.5 w-16" />
@@ -1419,15 +1617,35 @@ function ResourceRow({
           </>
         )}
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-6 text-destructive"
-          onClick={() => deleteResource(sectionId, lectureId, resource.id)}
-        >
-          <IconTrash className="size-3" />
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-6 text-destructive"
+            >
+              <IconTrash className="size-3" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Resource?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove &ldquo;{resource.title || 'this resource'}&rdquo;.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteResource(sectionId, lectureId, resource.id)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {error && (

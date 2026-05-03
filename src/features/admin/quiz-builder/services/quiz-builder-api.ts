@@ -194,4 +194,15 @@ export const quizBuilderApi = {
                 body: JSON.stringify({ orderedIds: payload.orderedIds }),
             }
         ),
+
+    // ── Answer Key Import
+    importAnswerKey: (file: File, quizId: string) => {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("quizId", quizId)
+        return apiUpload<import("./answer-key-parser").ImportAnswerKeyResult>(
+            "/api/admin/import-answer-key",
+            formData
+        )
+    },
 }

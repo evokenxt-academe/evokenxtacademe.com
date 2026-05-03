@@ -671,63 +671,69 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
           if (!open) setSelectedResource(null);
         }}
       >
-        <DialogContent className="max-w-5xl overflow-hidden p-0 sm:max-w-5xl">
+        <DialogContent className="flex h-[95vh] w-[95vw] max-w-[95vw] sm:max-w-[1600px] flex-col overflow-hidden p-0">
           {selectedResource && (
-            <div className="grid max-h-[85vh] grid-cols-1 lg:grid-cols-[360px_1fr]">
-              <div className="border-b border-border bg-muted/30 p-5 lg:border-b-0 lg:border-r">
-                <DialogHeader>
-                  <DialogTitle className="text-xl">
-                    {selectedResource.title}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {getResourceKind(selectedResource.fileUrl)} resource for
-                    this lecture.
-                  </DialogDescription>
+            <div className="grid h-full grid-cols-1 lg:grid-cols-[320px_1fr]">
+              {/* Sidebar */}
+              <div className="flex flex-col border-b border-border bg-muted/10 p-6 lg:border-b-0 lg:border-r">
+                <DialogHeader className="text-left">
+                  <div className="mb-2 flex items-center gap-3">
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                      <IconPaperclip className="size-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <DialogTitle className="truncate text-lg font-semibold leading-tight text-foreground">
+                        {selectedResource.title}
+                      </DialogTitle>
+                      <DialogDescription className="mt-1 text-xs">
+                        {getResourceKind(selectedResource.fileUrl)} Resource
+                      </DialogDescription>
+                    </div>
+                  </div>
                 </DialogHeader>
 
-                <div className="mt-5 space-y-3">
-                  <div className="rounded-xl border border-border bg-background p-4">
+                <div className="mt-8 flex flex-col gap-6">
+                  <div className="space-y-3">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                       Source
                     </p>
-                    <p className="mt-1 break-all text-sm text-foreground/90">
-                      {selectedResource.fileUrl}
-                    </p>
+                    <div className="rounded-xl border border-border/60 bg-background/50 p-3">
+                      <p className="break-all text-xs text-foreground/80 leading-relaxed">
+                        {selectedResource.fileUrl}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-background p-4">
+                  <div className="space-y-3">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                      Actions
+                      Quick Actions
                     </p>
-                    <div className="mt-3 flex flex-col gap-2">
-                      <Button asChild className="w-full justify-between">
+                    <div className="flex flex-col gap-2.5">
+                      <Button asChild size="lg" className="w-full justify-between shadow-sm">
                         <a
                           href={selectedResource.fileUrl}
                           target="_blank"
                           rel="noreferrer"
                           download
                         >
-                          <span className="inline-flex items-center gap-2">
-                            <IconDownload className="size-4" />
-                            Download file
-                          </span>
-                          <span className="text-xs opacity-70">
-                            opens in browser
+                          <span className="inline-flex items-center gap-2 font-medium">
+                            <IconDownload className="size-4.5" />
+                            Download File
                           </span>
                         </a>
                       </Button>
                       <Button
                         asChild
                         variant="outline"
-                        className="w-full justify-between"
+                        size="lg"
+                        className="w-full justify-between bg-background"
                       >
                         <a
                           href={selectedResource.fileUrl}
                           target="_blank"
                           rel="noreferrer"
                         >
-                          <span>Open in new tab</span>
-                          <span className="text-xs opacity-70">preview</span>
+                          <span className="font-medium">Open in new tab</span>
                         </a>
                       </Button>
                     </div>
@@ -735,38 +741,39 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                 </div>
               </div>
 
-              <div className="flex min-h-80 flex-col bg-background">
-                <div className="border-b border-border px-4 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        Preview
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        If the file supports embedding, it will render below.
-                      </p>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="rounded-full text-[10px] uppercase tracking-wider"
-                    >
-                      {getResourceKind(selectedResource.fileUrl)}
-                    </Badge>
+              {/* Preview Area */}
+              <div className="flex flex-col bg-accent/30">
+                <div className="flex items-center justify-between border-b border-border/50 bg-background/50 px-5 py-3 backdrop-blur-md">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      Document Preview
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Rendered natively within your browser
+                    </p>
                   </div>
+                  <Badge
+                    variant="secondary"
+                    className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground shadow-sm ring-1 ring-border"
+                  >
+                    {getResourceKind(selectedResource.fileUrl)}
+                  </Badge>
                 </div>
-                <div className="relative flex-1 bg-muted/20">
+                <div className="relative flex-1 bg-black/5">
+                  {/* For PDFs, we add #toolbar=0&navpanes=0 for a cleaner look natively if supported */}
                   <iframe
                     title={selectedResource.title}
-                    src={selectedResource.fileUrl}
-                    className="absolute inset-0 h-full w-full border-0"
+                    src={selectedResource.fileUrl + (isPdfResource(selectedResource.fileUrl) ? "#toolbar=0&navpanes=0" : "")}
+                    className="absolute inset-0 h-full w-full border-0 rounded-br-lg shadow-inner"
                   />
                 </div>
-                <DialogFooter className="m-0 border-t border-border bg-muted/40 px-4 py-3">
+                <DialogFooter className="m-0 flex items-center justify-between border-t border-border/50 bg-background/50 px-5 py-3 backdrop-blur-md sm:justify-between">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => setSelectedResource(null)}
+                    className="text-muted-foreground hover:text-foreground"
                   >
-                    Close
+                    Dismiss
                   </Button>
                   <Button asChild>
                     <a
@@ -775,7 +782,8 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
                       rel="noreferrer"
                       download
                     >
-                      Download
+                      <IconDownload className="mr-2 size-4" />
+                      Save Copy
                     </a>
                   </Button>
                 </DialogFooter>

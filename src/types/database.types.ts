@@ -405,9 +405,10 @@ export interface Database {
           source: string | null
           marks: number
           position: number
+          answer_text: string | null
         }
-        Insert: { id?: string; quiz_id: string; question: string; source?: string | null; marks?: number; position?: number }
-        Update: { id?: string; quiz_id?: string; question?: string; source?: string | null; marks?: number; position?: number }
+        Insert: { id?: string; quiz_id: string; question: string; source?: string | null; marks?: number; position?: number; answer_text?: string | null }
+        Update: { id?: string; quiz_id?: string; question?: string; source?: string | null; marks?: number; position?: number; answer_text?: string | null }
       }
       options: {
         Row: { id: string; question_id: string; text: string; is_correct: boolean }

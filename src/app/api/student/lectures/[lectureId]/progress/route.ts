@@ -102,11 +102,33 @@ export async function POST(
         last_watched_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    const { createAdminClient } = await import("@/utils/supabase/adminClient");
+    const adminSupabase = createAdminClient();
+
+    let data, error;
+    
+    // Check if progress already exists to avoid onConflict constraint issues
+    const { data: existingRecord } = await adminSupabase
         .from("lecture_progress")
-        .upsert(payload, { onConflict: "user_id,lecture_id" })
-        .select("lecture_id, watched_seconds, is_completed, last_watched_at")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("lecture_id", lectureId)
         .maybeSingle();
+
+    if (existingRecord?.id) {
+        ({ data, error } = await adminSupabase
+            .from("lecture_progress")
+            .update(payload)
+            .eq("id", existingRecord.id)
+            .select("lecture_id, watched_seconds, is_completed, last_watched_at")
+            .maybeSingle());
+    } else {
+        ({ data, error } = await adminSupabase
+            .from("lecture_progress")
+            .insert(payload)
+            .select("lecture_id, watched_seconds, is_completed, last_watched_at")
+            .maybeSingle());
+    }
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });

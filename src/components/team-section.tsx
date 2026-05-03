@@ -1,10 +1,9 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-// Custom SVGs for consistent branding & reliability
 const IconInstagram = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
 );
@@ -80,68 +79,54 @@ const teamMembers = [
 ];
 
 export function TeamSection() {
-  const [activeIdx, setActiveIdx] = useState<number | null>(null);
-
   return (
-    <section className="py-24 bg-[#F9F6F3] relative overflow-hidden text-slate-900 leading-normal">
-      <div className="container mx-auto px-6 relative z-10">
-        {/* Section Header - Condensed LMS Content */}
-        <div className="max-w-5xl mb-16">
+    <section id="team" className="py-16 bg-muted/20 border-y">
+      <div className="container mx-auto px-6 max-w-7xl">
+        <div className="text-center mb-12 max-w-2xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
-            <h2 className="text-[0.65rem] font-[800] text-slate-500 uppercase tracking-[0.3em] mb-6">Our Experts</h2>
-            <h3 className="text-3xl md:text-5xl font-[500] text-slate-900 mb-6 tracking-tighter max-w-4xl leading-[1.1]">
-              World-class experts providing the tools, technology, and mentorship for your educational success.
-            </h3>
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Meet Our Experts</h2>
+            <p className="text-muted-foreground text-sm">
+              World-class professionals providing the tools, technology, and mentorship for your educational success.
+            </p>
           </motion.div>
         </div>
 
-        {/* Team Grid - Dense & Professional 4-Column Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {teamMembers.map((member, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.05 }}
-              className="group cursor-pointer max-w-[300px] mx-auto md:mx-0"
-              onMouseEnter={() => setActiveIdx(idx)}
-              onMouseLeave={() => setActiveIdx(null)}
-              onClick={() => setActiveIdx(activeIdx === idx ? null : idx)}
+              transition={{ duration: 0.4, delay: idx * 0.05 }}
             >
-              <div className="relative aspect-[1/1] overflow-hidden mb-4 shadow-sm transition-all duration-500 group-hover:shadow-xl">
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                
-                {/* Social Overlay on Hover/Touch */}
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: activeIdx === idx ? 1 : 0 }}
-                  className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center gap-4"
-                >
-                  <a href={member.instagram} className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 hover:bg-slate-100 transition-all transform hover:scale-110 shadow-lg">
-                    <IconInstagram className="w-5 h-5" />
-                  </a>
-                  <a href={member.whatsapp} className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 hover:bg-slate-100 transition-all transform hover:scale-110 shadow-lg">
-                    <IconWhatsApp className="w-5 h-5" />
-                  </a>
-                </motion.div>
-              </div>
-
-              <div className="space-y-1 px-1 text-left">
-                <h4 className="text-lg font-[600] text-slate-900 tracking-tight leading-tight">{member.name}</h4>
-                <p className="text-[0.6rem] font-[800] text-slate-500 uppercase tracking-[0.12em] leading-tight line-clamp-1">
-                  {member.role}
-                </p>
-              </div>
+              <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow">
+                <div className="aspect-square bg-muted">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardContent className="p-4 text-center">
+                  <h4 className="font-semibold text-base">{member.name}</h4>
+                  <p className="text-xs text-muted-foreground mb-3">{member.role}</p>
+                  
+                  <div className="flex items-center justify-center gap-2">
+                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground" asChild>
+                      <a href={member.instagram}><IconInstagram className="w-4 h-4" /></a>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground" asChild>
+                      <a href={member.whatsapp}><IconWhatsApp className="w-4 h-4" /></a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </div>

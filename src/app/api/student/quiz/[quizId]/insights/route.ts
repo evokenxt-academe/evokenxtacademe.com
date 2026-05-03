@@ -3,6 +3,8 @@ import { createAdminClient } from "@/utils/supabase/adminClient";
 import { createClient } from "@/utils/supabase/server";
 import { fetchQuizForAttempt } from "@/features/student/lib/quiz-data";
 
+export const dynamic = "force-dynamic";
+
 type AttemptRow = {
   id: string;
   user_id: string;
@@ -19,7 +21,12 @@ type UserRow = {
 };
 
 function toNumber(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }
 
 function toInitials(name: string): string {

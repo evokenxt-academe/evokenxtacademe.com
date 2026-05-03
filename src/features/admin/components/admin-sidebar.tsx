@@ -70,7 +70,7 @@ const ADMIN_SIDEBAR_SECTIONS = [
         icon: IconBook,
       },
       {
-        title: "Quizzes",
+        title: "Test Builder",
         href: "/admin/quizzes",
         icon: IconClipboardList,
       },
