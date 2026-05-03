@@ -7,8 +7,37 @@ import type {
   QuizDetail,
   QuizInsightsDetail,
   QuizSummaryItem,
+  StudentAttemptAnalytics,
   SubmitAttemptResult,
 } from "@/features/tests/types";
+
+// ── Analytics Response ────────────────────────────────────────
+
+export interface StudentAnalyticsResponse {
+  attempts: StudentAttemptAnalytics[];
+}
+
+export async function fetchStudentTestAnalytics(): Promise<StudentAnalyticsResponse> {
+  const response = await fetch("/api/student/tests/analytics", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  let payload: { attempts?: StudentAttemptAnalytics[]; error?: string } = {};
+  try {
+    payload = (await response.json()) as typeof payload;
+  } catch {
+    throw new Error("Failed to parse analytics response.");
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Failed to load analytics.");
+  }
+
+  return {
+    attempts: Array.isArray(payload.attempts) ? payload.attempts : [],
+  };
+}
 
 function toNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;

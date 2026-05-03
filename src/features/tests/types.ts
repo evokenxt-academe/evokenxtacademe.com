@@ -163,6 +163,39 @@ export interface QuizInsightsDetail {
   history: QuizHistoryItem[];
 }
 
+// ── Dashboard Analytics Types ──────────────────────────────────
+
+export interface StudentAttemptAnalytics {
+  id: string;
+  quizId: string;
+  quizTitle: string;
+  courseName: string;
+  courseId: string;
+  score: number;
+  totalMarks: number;
+  passingMarks: number;
+  percentage: number;
+  passed: boolean;
+  status: string;
+  startedAt: string;
+  submittedAt: string | null;
+  durationSec: number | null;
+}
+
+export interface TestDashboardStats {
+  totalTests: number;
+  completedTests: number;
+  averageScore: number;
+  bestScore: number;
+}
+
+export type StatusFilter = "all" | "completed" | "in_progress" | "not_attempted";
+
+export interface TestDashboardFilters {
+  courseId: string | null;
+  status: StatusFilter;
+}
+
 // ── Admin Types ────────────────────────────────────────────────
 
 export interface AdminQuizListItem {

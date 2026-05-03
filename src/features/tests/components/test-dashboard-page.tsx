@@ -1,24 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  IconChecklist,
-  IconClockHour4,
-  IconListCheck,
-  IconCircleCheck,
-  IconPlayerPlay,
-  IconArrowsSort,
-} from "@tabler/icons-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { ClipboardList, SlidersHorizontal } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -27,223 +11,280 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { useStudentQuizzes } from "@/features/tests/hooks";
+import {
+  useStudentQuizzes,
+  useTestAnalytics,
+  useTestStats,
+  useRealtimeAttempts,
+} from "@/features/tests/hooks";
+import { StatsCards } from "@/features/tests/components/stats-cards";
+import { ScoreChart } from "@/features/tests/components/score-chart";
+import { AccuracyChart } from "@/features/tests/components/accuracy-chart";
+import { RecentAttemptsList } from "@/features/tests/components/recent-attempts-list";
 import { QuizCard } from "@/features/tests/components/quiz-card";
-import type { QuizSummaryItem } from "@/features/tests/types";
+import type { QuizSummaryItem, StatusFilter } from "@/features/tests/types";
 
-type SortKey = "latest" | "pending" | "completed" | "name";
+// ── Loading Skeleton ──────────────────────────────────────────
 
-function sortQuizzes(quizzes: QuizSummaryItem[], sort: SortKey): QuizSummaryItem[] {
-  const clone = [...quizzes];
-  switch (sort) {
-    case "pending":
-      return clone.sort((a, b) => {
-        const order = { in_progress: 0, not_attempted: 1, completed: 2 };
-        return (order[a.status] ?? 3) - (order[b.status] ?? 3);
-      });
-    case "completed":
-      return clone.sort((a, b) => {
-        if (a.status === "completed" && b.status !== "completed") return -1;
-        if (a.status !== "completed" && b.status === "completed") return 1;
-        return 0;
-      });
-    case "name":
-      return clone.sort((a, b) => a.title.localeCompare(b.title));
-    default:
-      return clone;
-  }
-}
+function DashboardSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-6 py-6">
+      {/* Header */}
+      <div className="space-y-1.5">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-4 w-64" />
+      </div>
 
-export function TestDashboardPage() {
-  const { data, isLoading, error } = useStudentQuizzes();
-  const [sortBy, setSortBy] = useState<SortKey>("latest");
+      {/* Stats Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-[88px] rounded-xl" />
+        ))}
+      </div>
 
-  const quizzes = data?.quizzes ?? [];
-  const enrollmentCount = data?.enrollmentCount ?? 0;
-  const inProgressCount = quizzes.filter((quiz) => quiz.status === "in_progress").length;
-  const completedCount = quizzes.filter((quiz) => quiz.status === "completed").length;
-  const notAttemptedCount = quizzes.filter((quiz) => quiz.status === "not_attempted").length;
+      {/* Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Skeleton className="h-[290px] rounded-xl" />
+        <Skeleton className="h-[290px] rounded-xl" />
+      </div>
 
-  const sorted = useMemo(() => sortQuizzes(quizzes, sortBy), [quizzes, sortBy]);
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto w-full max-w-7xl space-y-6 p-5 md:p-6">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
-          ))}
+      {/* Test List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-9 w-36" />
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="rounded-xl">
-              <CardHeader className="flex flex-col gap-2">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-9 w-full" />
-              </CardContent>
-            </Card>
+            <Skeleton key={i} className="h-[200px] rounded-xl" />
           ))}
         </div>
       </div>
-    );
+    </div>
+  );
+}
+
+// ── Empty State ───────────────────────────────────────────────
+
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-7xl px-6 py-6">
+      <Card className="rounded-xl border-border/50 shadow-none">
+        <CardContent className="flex flex-col items-center justify-center gap-3 py-16">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
+            <ClipboardList className="size-6 text-muted-foreground" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-foreground">{title}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── Main Dashboard ────────────────────────────────────────────
+
+export function TestDashboardPage() {
+  const { data: quizData, isLoading: quizzesLoading, error: quizzesError } = useStudentQuizzes();
+  const { data: analyticsData, isLoading: analyticsLoading } = useTestAnalytics();
+
+  // Realtime subscription — invalidates queries on quiz_attempts INSERT/UPDATE
+  useRealtimeAttempts();
+
+  // Filter state
+  const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
+  // Raw data
+  const allQuizzes = quizData?.quizzes ?? [];
+  const enrollmentCount = quizData?.enrollmentCount ?? 0;
+  const allAttempts = analyticsData?.attempts ?? [];
+
+  // Derive unique courses for filter dropdown
+  const courseOptions = useMemo(() => {
+    const courseMap = new Map<string, string>();
+    for (const q of allQuizzes) {
+      if (!courseMap.has(q.courseId)) {
+        courseMap.set(q.courseId, q.courseName);
+      }
+    }
+    return Array.from(courseMap.entries()).map(([id, name]) => ({ id, name }));
+  }, [allQuizzes]);
+
+  // Apply filters
+  const filteredQuizzes = useMemo(() => {
+    let result = allQuizzes;
+
+    if (courseFilter !== "all") {
+      result = result.filter((q) => q.courseId === courseFilter);
+    }
+
+    if (statusFilter !== "all") {
+      result = result.filter((q) => q.status === statusFilter);
+    }
+
+    return result;
+  }, [allQuizzes, courseFilter, statusFilter]);
+
+  const filteredAttempts = useMemo(() => {
+    if (courseFilter === "all") return allAttempts;
+    return allAttempts.filter((a) => a.courseId === courseFilter);
+  }, [allAttempts, courseFilter]);
+
+  // Compute stats from filtered data
+  const stats = useTestStats(filteredQuizzes, filteredAttempts);
+
+  // Determine last attempted quiz for highlight
+  const lastAttemptedQuizId = useMemo(() => {
+    if (!filteredAttempts.length) return null;
+    const sorted = [...filteredAttempts].sort((a, b) => {
+      const da = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
+      const db = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+      return db - da;
+    });
+    return sorted[0]?.quizId ?? null;
+  }, [filteredAttempts]);
+
+  // Loading state
+  if (quizzesLoading || analyticsLoading) {
+    return <DashboardSkeleton />;
   }
 
-  if (error) {
+  // Error state
+  if (quizzesError) {
     return (
-      <div className="mx-auto w-full max-w-7xl p-5 md:p-6">
-        <Card className="rounded-xl">
+      <div className="mx-auto w-full max-w-7xl px-6 py-6">
+        <Card className="rounded-xl border-border/50 shadow-none">
           <CardHeader>
-            <CardTitle>Unable to load tests</CardTitle>
-            <CardDescription>{error.message}</CardDescription>
+            <CardTitle className="text-lg font-medium">Unable to load tests</CardTitle>
           </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">{quizzesError.message}</p>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
+  // No enrollment state
   if (enrollmentCount === 0) {
     return (
-      <div className="mx-auto w-full max-w-7xl p-5 md:p-6">
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <IconChecklist />
-            </EmptyMedia>
-            <EmptyTitle>You are not enrolled in any courses</EmptyTitle>
-            <EmptyDescription>
-              Enroll in a course to view and attempt tests.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent />
-        </Empty>
-      </div>
+      <EmptyState
+        title="No courses enrolled"
+        description="Enroll in a course to access tests and track your performance."
+      />
     );
   }
 
-  if (quizzes.length === 0) {
+  // No quizzes state
+  if (allQuizzes.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-7xl p-5 md:p-6">
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <IconChecklist />
-            </EmptyMedia>
-            <EmptyTitle>No tests available for your courses</EmptyTitle>
-            <EmptyDescription>
-              Published quizzes from your enrolled courses will appear here.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent />
-        </Empty>
-      </div>
+      <EmptyState
+        title="No tests available"
+        description="Published tests from your enrolled courses will appear here."
+      />
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-5 md:p-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Tests</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Start new quizzes, resume active attempts, and review submitted results.
-        </p>
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-6 py-6">
+      {/* ─── 1. Header ────────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
+          <p className="text-sm text-muted-foreground">
+            Track your performance and attempts
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="size-4 text-muted-foreground hidden sm:block" />
+
+          {courseOptions.length > 1 && (
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="h-9 w-[160px] text-sm">
+                <SelectValue placeholder="All Courses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {courseOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
+            <SelectTrigger className="h-9 w-[140px] text-sm">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="not_attempted">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="rounded-xl border-border/60 bg-muted/5 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Available</p>
-                <p className="text-2xl font-bold leading-none">{quizzes.length}</p>
-              </div>
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                <IconListCheck className="size-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* ─── 2. Stats Overview ────────────────────────────── */}
+      <StatsCards stats={stats} />
 
-        <Card className="rounded-xl border-border/60 bg-muted/5 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold leading-none">{inProgressCount}</p>
-              </div>
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                <IconClockHour4 className="size-5 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-border/60 bg-muted/5 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold leading-none">{completedCount}</p>
-              </div>
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                <IconCircleCheck className="size-5 text-emerald-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-xl border-border/60 bg-muted/5 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Not Attempted</p>
-                <p className="text-2xl font-bold leading-none">{notAttemptedCount}</p>
-              </div>
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted border border-border/50">
-                <IconPlayerPlay className="size-5 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* ─── 3. Performance Analytics ─────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ScoreChart attempts={filteredAttempts} />
+        <AccuracyChart attempts={filteredAttempts} />
       </div>
 
-      <Separator />
+      {/* ─── 4. Test List ─────────────────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">
+            All Tests
+            <span className="ml-2 text-sm font-normal text-muted-foreground">
+              ({filteredQuizzes.length})
+            </span>
+          </h2>
+        </div>
 
-      {/* Sort Controls */}
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm font-medium text-muted-foreground">
-          {sorted.length} {sorted.length === 1 ? "test" : "tests"}
-        </p>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-          <SelectTrigger className="w-44">
-            <IconArrowsSort className="mr-2 size-4" />
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="latest">Latest First</SelectItem>
-            <SelectItem value="pending">Pending First</SelectItem>
-            <SelectItem value="completed">Completed First</SelectItem>
-            <SelectItem value="name">Name A–Z</SelectItem>
-          </SelectContent>
-        </Select>
+        {filteredQuizzes.length === 0 ? (
+          <Card className="rounded-xl border-border/50 shadow-none">
+            <CardContent className="flex h-32 items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                No tests match the current filters.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredQuizzes.map((quiz: QuizSummaryItem) => (
+              <QuizCard
+                key={quiz.id}
+                quiz={quiz}
+                isLastAttempted={quiz.id === lastAttemptedQuizId}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Quiz Grid */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {sorted.map((quiz) => (
-          <QuizCard key={quiz.id} quiz={quiz} />
-        ))}
-      </div>
+      {/* ─── 5. Recent Attempts ────────────────────────────── */}
+      <RecentAttemptsList attempts={filteredAttempts} />
     </div>
   );
 }
