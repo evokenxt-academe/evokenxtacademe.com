@@ -665,11 +665,11 @@ export async function fetchStudentDashboardData(
   if (overview.courseIds.length > 0) {
     const { data: streamData, error: streamError } = await supabase
       .from("live_streams")
-      .select("id, title, course_id, status, started_at, ended_at, yt_video_id")
+      .select("id, title, course_id, status, scheduled_at, started_at, ended_at, yt_video_id")
       .in("course_id", overview.courseIds)
-      .in("status", ["live", "ended"])
-      .order("started_at", { ascending: false })
-      .limit(8);
+      .in("status", ["scheduled", "live", "ended"])
+      .order("scheduled_at", { ascending: false })
+      .limit(10);
 
     logSupabaseError("fetch live streams", streamError);
 
@@ -689,7 +689,7 @@ export async function fetchStudentDashboardData(
           courseId,
           courseName: courseNameById.get(courseId) ?? "Course",
           status: toStringValue(row.status),
-          scheduledAt: toNullableString(row.started_at) ?? toNullableString(row.ended_at),
+          scheduledAt: toNullableString(row.scheduled_at),
           startedAt: toNullableString(row.started_at),
           endedAt: toNullableString(row.ended_at),
           ytVideoId: toNullableString(row.yt_video_id),

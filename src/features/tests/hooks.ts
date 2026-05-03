@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo, useEffect, useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createClient } from "@/utils/supabase/client";
 import {
   createAttempt,
   fetchAttempt,
@@ -9,12 +11,16 @@ import {
   fetchQuiz,
   fetchQuizInsights,
   fetchStudentQuizzes,
+  fetchStudentTestAnalytics,
   saveAnswer,
   submitAttempt,
 } from "@/features/tests/api";
 import type {
   AdminQuizListItem,
   AdminRankingEntry,
+  QuizSummaryItem,
+  StudentAttemptAnalytics,
+  TestDashboardStats,
 } from "@/features/tests/types";
 
 // ── Student Hooks ─────────────────────────────────────────────
@@ -80,6 +86,7 @@ export function useSubmitAttempt() {
       void queryClient.invalidateQueries({
         queryKey: ["tests", "result", result.attemptId],
       });
+      void queryClient.invalidateQueries({ queryKey: ["tests", "analytics"] });
     },
   });
 }
@@ -100,6 +107,91 @@ export function useQuizInsights(quizId: string) {
     enabled: Boolean(quizId),
     staleTime: 60_000,
   });
+}
+
+// ── Analytics & Stats Hooks ───────────────────────────────────
+
+export function useTestAnalytics() {
+  return useQuery({
+    queryKey: ["tests", "analytics"],
+    queryFn: fetchStudentTestAnalytics,
+    staleTime: 60_000,
+  });
+}
+
+export function useTestStats(
+  quizzes: QuizSummaryItem[],
+  attempts: StudentAttemptAnalytics[],
+): TestDashboardStats {
+  return useMemo(() => {
+    const totalTests = quizzes.length;
+    const completedTests = quizzes.filter((q) => q.status === "completed").length;
+
+    const submittedAttempts = attempts.filter(
+      (a) => a.status === "submitted" || a.status === "timed_out",
+    );
+
+    const avgScore =
+      submittedAttempts.length > 0
+        ? Math.round(
+            submittedAttempts.reduce((sum, a) => sum + a.percentage, 0) /
+              submittedAttempts.length,
+          )
+        : 0;
+
+    const bestScore =
+      submittedAttempts.length > 0
+        ? Math.max(...submittedAttempts.map((a) => a.percentage))
+        : 0;
+
+    return {
+      totalTests,
+      completedTests,
+      averageScore: avgScore,
+      bestScore,
+    };
+  }, [quizzes, attempts]);
+}
+
+// ── Realtime Subscription Hook ────────────────────────────────
+
+export function useRealtimeAttempts() {
+  const queryClient = useQueryClient();
+
+  const invalidate = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ["tests", "student-quizzes"] });
+    void queryClient.invalidateQueries({ queryKey: ["tests", "analytics"] });
+  }, [queryClient]);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel("test-dashboard-attempts")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "quiz_attempts",
+        },
+        () => invalidate(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "quiz_attempts",
+        },
+        () => invalidate(),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [invalidate]);
 }
 
 // ── Admin Hooks ───────────────────────────────────────────────
