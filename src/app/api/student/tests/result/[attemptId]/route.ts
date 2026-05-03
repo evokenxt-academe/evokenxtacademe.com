@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/adminClient";
 
+export const dynamic = "force-dynamic";
+
 function toNumber(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }
 
 type AttemptRow = {
@@ -161,6 +168,15 @@ export async function GET(
     const resolvedScore = questions.length > 0 ? derivedScore : toNumber(attempt.score);
     const resolvedTotalMarks = toNumber(attempt.total_marks) || derivedTotalMarks;
 
+    // Self-healing: if the DB score is wrong (e.g. from an old client-side submission bug), fix it
+    if (questions.length > 0 && (attempt.score !== resolvedScore || attempt.total_marks !== resolvedTotalMarks)) {
+      console.log(`[tests] Self-healing score for attempt ${attemptId}. DB had ${attempt.score}, calculated ${resolvedScore}.`);
+      await adminClient
+        .from("quiz_attempts")
+        .update({ score: resolvedScore, total_marks: resolvedTotalMarks })
+        .eq("id", attemptId);
+    }
+
     // ── Compute rank ──────────────────────────────────────────────
     let rank: number | null = null;
     try {
@@ -168,19 +184,27 @@ export async function GET(
         .from("quiz_attempts")
         .select("id, user_id, score")
         .eq("quiz_id", attempt.quiz_id)
-        .in("status", ["submitted", "timed_out"])
-        .order("score", { ascending: false });
+        .in("status", ["submitted", "timed_out"]);
 
       if (allAttempts && allAttempts.length > 0) {
-        // Best score per user, then find rank
+        // Best score per user
         const bestByUser = new Map<string, number>();
         for (const a of allAttempts) {
           const prev = bestByUser.get(a.user_id) ?? -1;
           if (toNumber(a.score) > prev) bestByUser.set(a.user_id, toNumber(a.score));
         }
-        const sorted = [...bestByUser.entries()].sort((a, b) => b[1] - a[1]);
-        const idx = sorted.findIndex(([uid]) => uid === user.id);
-        if (idx !== -1) rank = idx + 1;
+
+        const myScore = bestByUser.get(user.id);
+        if (myScore !== undefined) {
+          // Standard Competition Ranking: 1 + number of users who scored higher
+          let higherScores = 0;
+          for (const [uid, score] of bestByUser.entries()) {
+            if (uid !== user.id && score > myScore) {
+              higherScores++;
+            }
+          }
+          rank = higherScores + 1;
+        }
       }
     } catch {
       // Rank is non-critical, proceed without it
@@ -188,6 +212,7 @@ export async function GET(
 
     return NextResponse.json({
       attemptId: attempt.id,
+      userId: attempt.user_id,
       quizId: attempt.quiz_id,
       quizTitle: quiz?.title ?? "Assessment Result",
       score: resolvedScore,

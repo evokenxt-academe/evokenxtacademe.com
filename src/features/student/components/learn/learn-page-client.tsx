@@ -135,7 +135,8 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
       const timeDelta = Math.abs(currentTime - lastSavedTimeRef.current);
       if (timeDelta >= 10) {
         lastSavedTimeRef.current = currentTime;
-        const isNearEnd = duration > 0 && currentTime / duration >= 0.9;
+        // Mark as complete if there is 1 minute (60 seconds) or less remaining
+        const isNearEnd = duration > 0 && (duration - currentTime <= 60);
 
         updateProgress.mutate({
           lectureId: currentLectureId,

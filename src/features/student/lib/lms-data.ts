@@ -873,11 +873,13 @@ export async function fetchStudentCoursePlayerData(
 
   const [resourcesResult, streamsResult] = await Promise.all([
     currentLecture
-      ? supabase
-        .from("resources")
-        .select("id, title, file_url")
-        .eq("lecture_id", currentLecture.id)
-        .order("title", { ascending: true })
+      ? import("@/utils/supabase/adminClient").then(m => m.createAdminClient())
+        .then(adminClient => adminClient
+          .from("resources")
+          .select("id, title, file_url")
+          .eq("lecture_id", currentLecture.id)
+          .order("title", { ascending: true })
+        )
       : Promise.resolve({ data: [], error: null }),
     supabase
       .from("live_streams")

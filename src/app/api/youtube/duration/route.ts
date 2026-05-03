@@ -36,22 +36,37 @@ export async function POST(request: NextRequest) {
         const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY
         if (!YOUTUBE_API_KEY) {
             try {
-                // Try to get at least title and thumbnail via oEmbed (no API key needed)
-                const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
-                if (oembedRes.ok) {
-                    const oembed = await oembedRes.json()
+                // Scrape the YouTube page directly since we don't have an API key
+                const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                    }
+                })
+                
+                if (pageRes.ok) {
+                    const html = await pageRes.text()
+                    
+                    const titleMatch = html.match(/<meta itemprop="name" content="([^"]+)">/)
+                    const durationMatch = html.match(/<meta itemprop="duration" content="([^"]+)">/)
+                    const descMatch = html.match(/<meta itemprop="description" content="([^"]+)">/)
+                    
+                    const title = titleMatch ? titleMatch[1] : "YouTube Video"
+                    const description = descMatch ? descMatch[1] : ""
+                    const durationSec = durationMatch ? parseIsoDuration(durationMatch[1]) : 0
+
                     return NextResponse.json({
                         success: true,
                         videoId,
                         videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
-                        durationSec: 0,
-                        title: oembed.title || "YouTube Video",
-                        thumbnailUrl: oembed.thumbnail_url || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-                        note: "Duration auto-detection requires a YouTube API Key. Please configure YOUTUBE_API_KEY in your .env file."
+                        durationSec,
+                        title,
+                        description,
+                        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                        note: "Using scraped data due to missing YOUTUBE_API_KEY."
                     })
                 }
             } catch (e) {
-                console.error("oEmbed fallback failed:", e)
+                console.error("Scraping fallback failed:", e)
             }
 
             return NextResponse.json({
@@ -60,6 +75,7 @@ export async function POST(request: NextRequest) {
                 videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
                 durationSec: 0,
                 title: "YouTube Video (No API Key)",
+                description: "",
                 thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
                 note: "Duration auto-detection requires a YouTube API Key. Please configure YOUTUBE_API_KEY in your .env file."
             })
@@ -117,6 +133,7 @@ export async function POST(request: NextRequest) {
                     videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
                     durationSec,
                     title: item.snippet?.title || "",
+                    description: item.snippet?.description || "",
                     thumbnailUrl: item.snippet?.thumbnails?.high?.url || item.snippet?.thumbnails?.default?.url || "",
                 })
             } catch (err) {

@@ -123,11 +123,19 @@ export async function GET(
     return aTime - bTime;
   });
 
+  let currentRank = 1;
+  let previousScore: number | null = null;
+
   const ranking = sorted.map(([userId, data], index) => {
+    if (previousScore !== null && data.score < previousScore) {
+      currentRank = index + 1;
+    }
+    previousScore = data.score;
+    
     const userInfo = userMap.get(userId);
     const totalMarks = data.totalMarks || 1;
     return {
-      rank: index + 1,
+      rank: currentRank,
       userId,
       name: userInfo?.name ?? "Unknown",
       email: userInfo?.email ?? "",

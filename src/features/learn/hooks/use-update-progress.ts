@@ -4,30 +4,26 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import type { ProgressPayload } from "../types";
 
-async function upsertProgress(payload: ProgressPayload) {
-  const supabase = createClient();
-
-  const { error } = await supabase
-    .from("lecture_progress")
-    .upsert(
-      {
-        user_id: payload.user_id,
-        lecture_id: payload.lecture_id,
-        watched_seconds: payload.watched_seconds,
-        is_completed: payload.is_completed,
-        last_watched_at: payload.last_watched_at,
-      },
-      { onConflict: "user_id,lecture_id" }
-    );
-
-  if (error) throw new Error(error.message);
-}
-
 export function useUpdateProgress(courseId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: upsertProgress,
+    mutationFn: async (payload: ProgressPayload) => {
+      const res = await fetch(`/api/student/lectures/${payload.lecture_id}/progress`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isCompleted: payload.is_completed,
+          watchedSeconds: payload.watched_seconds,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update progress");
+      }
+    },
     onSuccess: () => {
       // Invalidate progress cache to refetch updated progress
       queryClient.invalidateQueries({

@@ -11,7 +11,12 @@ import type {
 } from "@/features/tests/types";
 
 function toNumber(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }
 
 export interface StudentQuizzesResponse {
@@ -291,7 +296,7 @@ export async function fetchAttemptResult(attemptId: string): Promise<AttemptResu
 
   let payload: any;
   const text = await response.text();
-  
+
   try {
     payload = JSON.parse(text);
   } catch (err) {

@@ -347,6 +347,7 @@ export interface YouTubeDurationResult {
     videoUrl: string
     durationSec: number
     title: string
+    description?: string
     thumbnailUrl: string
     error?: string
 }
@@ -370,6 +371,7 @@ export async function fetchYouTubeVideoDuration(
                 videoUrl: "",
                 durationSec: 0,
                 title: "",
+                description: "",
                 thumbnailUrl: "",
                 error: data.error || "Failed to fetch video duration",
             }
@@ -381,6 +383,7 @@ export async function fetchYouTubeVideoDuration(
             videoUrl: data.videoUrl,
             durationSec: data.durationSec,
             title: data.title || "",
+            description: data.description || "",
             thumbnailUrl: data.thumbnailUrl || "",
         }
     } catch (err: any) {
@@ -390,6 +393,7 @@ export async function fetchYouTubeVideoDuration(
             videoUrl: "",
             durationSec: 0,
             title: "",
+            description: "",
             thumbnailUrl: "",
             error: err.message || "Network error",
         }

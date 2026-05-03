@@ -229,20 +229,20 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
       {/* 3. Refined Tabs */}
       <Tabs defaultValue="review" className="w-full">
         <TabsList className="w-full justify-start border-b border-border/50 bg-transparent h-12 p-0 mb-6 gap-6 overflow-x-auto rounded-none">
-          <TabsTrigger 
-            value="review" 
+          <TabsTrigger
+            value="review"
             className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
           >
             Review Questions
           </TabsTrigger>
-          <TabsTrigger 
-            value="overview" 
+          <TabsTrigger
+            value="overview"
             className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
           >
             Class Overview
           </TabsTrigger>
-          <TabsTrigger 
-            value="ranking" 
+          <TabsTrigger
+            value="ranking"
             className="rounded-none border-b-2 border-transparent px-2 py-3 text-sm font-medium text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none transition-none"
           >
             Leaderboard
@@ -268,7 +268,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
           <div className="flex flex-col">
             {result.review.map((item, index) => (
               <div key={item.questionId} className="flex flex-col gap-3 py-6 border-b border-border/40 last:border-0">
-                
+
                 {/* Question Header */}
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="text-base font-medium leading-relaxed text-foreground">
@@ -290,7 +290,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
 
                 {/* Answers Stack */}
                 <div className="flex flex-col gap-2 pl-7 mt-2">
-                  
+
                   {/* User's Answer */}
                   <div className="flex items-start gap-2">
                     <span className="text-sm text-muted-foreground w-28 shrink-0">Your Answer:</span>
@@ -344,7 +344,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6 outline-none mt-2">
           <div className="flex flex-col lg:flex-row gap-6">
-            
+
             {/* Attempt Details Column */}
             <div className="flex flex-col gap-6 lg:w-1/3">
               <Card className="rounded-xl border-border/60 shadow-sm h-full">
@@ -447,10 +447,10 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
                       </div>
                     </div>
                   )) ?? (
-                    <div className="p-10 text-center text-sm font-medium text-muted-foreground">
-                      No participants yet.
-                    </div>
-                  )}
+                      <div className="p-10 text-center text-sm font-medium text-muted-foreground">
+                        No participants yet.
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -486,10 +486,10 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
                       </div>
                     </div>
                   )) ?? (
-                    <div className="p-8 text-center text-sm font-medium text-muted-foreground">
-                      No previous attempts.
-                    </div>
-                  )}
+                      <div className="p-8 text-center text-sm font-medium text-muted-foreground">
+                        No previous attempts.
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>

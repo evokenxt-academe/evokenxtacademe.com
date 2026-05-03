@@ -81,6 +81,7 @@ export interface SubmitAttemptResult {
 
 export interface AttemptResultDetail {
   attemptId: string;
+  userId: string;
   quizId: string;
   quizTitle: string;
   score: number;

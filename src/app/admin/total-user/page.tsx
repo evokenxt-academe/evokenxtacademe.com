@@ -12,23 +12,12 @@ import {
   IconSearch,
   IconUser,
   IconUserPlus,
-  IconUserShield,
-  IconTrash,
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 import {
   Dialog,
   DialogContent,
@@ -78,7 +67,6 @@ function UsersPageContent() {
     "all",
   );
   const [viewUser, setViewUser] = React.useState<AdminUser | null>(null);
-  const [deleteUser, setDeleteUser] = React.useState<AdminUser | null>(null);
 
   const queryClient = useQueryClient();
   const updateRoleMutation = useMutation({
@@ -164,6 +152,10 @@ function UsersPageContent() {
         cell: ({ row }) => {
           const user = row.original;
 
+          if (user.role === "admin") {
+            return <span className="text-sm text-muted-foreground">None</span>;
+          }
+
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -202,22 +194,6 @@ function UsersPageContent() {
                     Make instructor
                   </DropdownMenuItem>
                 ) : null}
-                <DropdownMenuItem
-                  onClick={() =>
-                    updateRoleMutation.mutate({ userId: user.id, role: "admin" })
-                  }
-                >
-                  <IconUserShield />
-                  Promote to admin
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => setDeleteUser(user)}
-                >
-                  <IconTrash />
-                  Delete
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -337,34 +313,6 @@ function UsersPageContent() {
           ) : null}
         </DialogContent>
       </Dialog>
-
-      <AlertDialog
-        open={!!deleteUser}
-        onOpenChange={(open) => !open && setDeleteUser(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete user?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes {deleteUser?.name} from the admin panel and revokes
-              access.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (deleteUser) {
-                  toast.success(`${deleteUser.name} deleted`);
-                  setDeleteUser(null);
-                }
-              }}
-            >
-              Delete user
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AdminPageShell>
   );
 }
