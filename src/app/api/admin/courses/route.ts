@@ -60,42 +60,44 @@ export async function POST(request: NextRequest) {
 
         const courseId = String(course.id)
 
-        // ── 2. Insert sections + lectures + resources ────────
-        for (const section of body.sections || []) {
-            const { data: insertedSection, error: sectionError } = await supabase
-                .from("sections")
+        // ── 2. Insert chapters + lectures + resources ────────
+        // Support both body.chapters and body.sections (legacy)
+        const chaptersData = body.chapters || body.sections || []
+        for (const chapter of chaptersData) {
+            const { data: insertedChapter, error: chapterError } = await supabase
+                .from("chapters")
                 .insert({
                     id: crypto.randomUUID(),
                     course_id: courseId,
-                    title: section.title,
-                    position: section.position,
+                    title: chapter.title,
+                    sort_order: chapter.position ?? chapter.sort_order ?? 0,
                 })
                 .select("id")
                 .single()
 
-            if (sectionError || !insertedSection) {
-                console.error(`Section insert error for course ${courseId}:`, sectionError)
+            if (chapterError || !insertedChapter) {
+                console.error(`Chapter insert error for course ${courseId}:`, chapterError)
                 return NextResponse.json(
                     {
-                        error: isIntegerIdTypeError(sectionError)
-                            ? "Supabase still has an integer id/foreign-key column. sections.id and sections.course_id must be uuid."
-                            : `${sectionError?.message || "Failed to insert section"} (Course ID: ${courseId})`
+                        error: isIntegerIdTypeError(chapterError)
+                            ? "Supabase still has an integer id/foreign-key column. chapters.id and chapters.course_id must be uuid."
+                            : `${chapterError?.message || "Failed to insert chapter"} (Course ID: ${courseId})`
                     },
                     { status: 500 }
                 )
             }
 
-            for (const lecture of section.lectures || []) {
+            for (const lecture of chapter.lectures || []) {
                 const { data: insertedLecture, error: lectureError } = await supabase
                     .from("lectures")
                     .insert({
                         id: crypto.randomUUID(),
-                        section_id: insertedSection.id,
+                        chapter_id: insertedChapter.id,
                         title: lecture.title,
                         video_url: lecture.videoUrl || null,
                         description: lecture.description || null,
                         duration_sec: lecture.durationSec || 0,
-                        position: lecture.position,
+                        sort_order: lecture.position ?? lecture.sort_order ?? 0,
                         is_preview: lecture.isPreview || false,
                     })
                     .select("id")
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
                     return NextResponse.json(
                         {
                             error: isIntegerIdTypeError(lectureError) 
-                                ? "Supabase still has an integer id/foreign-key column. lectures.id and lectures.section_id must be uuid."
+                                ? "Supabase still has an integer id/foreign-key column. lectures.id and lectures.chapter_id must be uuid."
                                 : lectureError?.message || "Failed to insert lecture"
                         },
                         { status: 500 }

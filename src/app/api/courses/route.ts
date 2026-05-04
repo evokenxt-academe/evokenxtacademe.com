@@ -1,19 +1,27 @@
 import { NextResponse } from "next/server";
-
 import { createClient } from "@/utils/supabase/server";
+import { getPublishedCourses } from "@/lib/supabase/queries";
 
-export async function GET() {
+export async function GET(request: Request) {
     const supabase = await createClient();
+    const { searchParams } = new URL(request.url);
+    
+    const subjectId = searchParams.get("subjectId") ?? undefined;
+    const programId = searchParams.get("programId") ?? undefined;
+    const levelId = searchParams.get("levelId") ?? undefined;
+    const featured = searchParams.get("featured") === "true" ? true : undefined;
+    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
 
-    const { data, error } = await supabase
-        .from("courses")
-        .select(
-            "id, slug, thumbnail_url, level, name, description, discount_price, price, instructor:users!instructor_id(name, avatar)",
-        )
-        .order("created_at", { ascending: false });
+    const { data, error } = await getPublishedCourses(supabase, {
+        subjectId,
+        programId,
+        levelId,
+        featured,
+        limit,
+    });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error }, { status: 500 });
     }
 
     return NextResponse.json({ courses: data ?? [] });

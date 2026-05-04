@@ -1,20 +1,47 @@
 import { NextResponse } from "next/server";
-
 import { createClient } from "@/utils/supabase/server";
+import { 
+    updateLectureProgress, 
+    updateDailyWatchHours,
+    getLectureProgress 
+} from "@/lib/supabase/queries";
 
 function toSafeNumber(value: unknown): number {
     if (typeof value === "number" && Number.isFinite(value)) {
         return Math.max(0, Math.round(value));
     }
-
     if (typeof value === "string") {
         const parsed = Number.parseFloat(value);
         if (Number.isFinite(parsed)) {
             return Math.max(0, Math.round(parsed));
         }
     }
-
     return 0;
+}
+
+export async function GET(
+    request: Request,
+    context: { params: Promise<{ lectureId: string }> },
+) {
+    const { lectureId } = await context.params;
+    if (!lectureId) {
+        return NextResponse.json({ error: "Invalid lecture id" }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data, error } = await getLectureProgress(supabase, user.id, lectureId);
+
+    if (error) {
+        return NextResponse.json({ error }, { status: 500 });
+    }
+
+    return NextResponse.json({ progress: data });
 }
 
 export async function POST(
@@ -27,11 +54,7 @@ export async function POST(
     }
 
     const supabase = await createClient();
-
-    const {
-        data: { user },
-        error: authError,
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,15 +62,18 @@ export async function POST(
 
     const body = (await request.json().catch(() => ({}))) as {
         watchedSeconds?: number;
+        resumeAtSeconds?: number;
         isCompleted?: boolean;
     };
 
     const watchedSeconds = toSafeNumber(body.watchedSeconds);
+    const resumeAtSeconds = toSafeNumber(body.resumeAtSeconds);
     const requestedCompletion = body.isCompleted === true;
 
+    // Verify lecture exists and get chapter info (for course_id)
     const { data: lectureData, error: lectureError } = await supabase
         .from("lectures")
-        .select("id, is_preview, section_id")
+        .select("id, is_preview, chapter_id, chapter:chapters!chapter_id(course_id)")
         .eq("id", lectureId)
         .maybeSingle();
 
@@ -55,83 +81,40 @@ export async function POST(
         return NextResponse.json({ error: "Lecture not found" }, { status: 404 });
     }
 
-    const { data: sectionData, error: sectionError } = await supabase
-        .from("sections")
-        .select("course_id")
-        .eq("id", lectureData.section_id)
-        .maybeSingle();
-
-    if (sectionError || !sectionData?.course_id) {
-        return NextResponse.json({ error: "Lecture section not found" }, { status: 404 });
+    const courseId = (lectureData.chapter as { course_id: string })?.course_id;
+    if (!courseId) {
+        return NextResponse.json({ error: "Lecture chapter not found" }, { status: 404 });
     }
 
-    const { data: enrollmentData } = await supabase
-        .from("enrollments")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("course_id", sectionData.course_id)
-        .eq("status", "active")
-        .maybeSingle();
+    // Check enrollment (unless preview lecture)
+    if (!lectureData.is_preview) {
+        const { data: enrollmentData } = await supabase
+            .from("enrollments")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("course_id", courseId)
+            .eq("status", "active")
+            .maybeSingle();
 
-    if (!enrollmentData && !lectureData.is_preview) {
-        return NextResponse.json({ error: "Enrollment required" }, { status: 403 });
+        if (!enrollmentData) {
+            return NextResponse.json({ error: "Enrollment required" }, { status: 403 });
+        }
     }
 
-    const { data: existingProgressData, error: existingProgressError } = await supabase
-        .from("lecture_progress")
-        .select("watched_seconds, is_completed")
-        .eq("user_id", user.id)
-        .eq("lecture_id", lectureId)
-        .maybeSingle();
-
-    if (existingProgressError) {
-        return NextResponse.json(
-            { error: existingProgressError.message },
-            { status: 500 },
-        );
-    }
-
-    const previousWatched = toSafeNumber(existingProgressData?.watched_seconds);
-    const previousCompleted = existingProgressData?.is_completed === true;
-
-    const payload = {
-        user_id: user.id,
-        lecture_id: lectureId,
-        watched_seconds: Math.max(previousWatched, watchedSeconds),
-        is_completed: requestedCompletion || previousCompleted,
-        last_watched_at: new Date().toISOString(),
-    };
-
-    const { createAdminClient } = await import("@/utils/supabase/adminClient");
-    const adminSupabase = createAdminClient();
-
-    let data, error;
-    
-    // Check if progress already exists to avoid onConflict constraint issues
-    const { data: existingRecord } = await adminSupabase
-        .from("lecture_progress")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("lecture_id", lectureId)
-        .maybeSingle();
-
-    if (existingRecord?.id) {
-        ({ data, error } = await adminSupabase
-            .from("lecture_progress")
-            .update(payload)
-            .eq("id", existingRecord.id)
-            .select("lecture_id, watched_seconds, is_completed, last_watched_at")
-            .maybeSingle());
-    } else {
-        ({ data, error } = await adminSupabase
-            .from("lecture_progress")
-            .insert(payload)
-            .select("lecture_id, watched_seconds, is_completed, last_watched_at")
-            .maybeSingle());
-    }
+    // Update lecture progress using the query layer
+    const { data, error } = await updateLectureProgress(supabase, user.id, lectureId, {
+        watched_seconds: watchedSeconds,
+        resume_at_seconds: resumeAtSeconds,
+        is_completed: requestedCompletion,
+    });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error }, { status: 500 });
+    }
+
+    // Update daily watch hours aggregation
+    if (watchedSeconds > 0) {
+        await updateDailyWatchHours(supabase, user.id, courseId, watchedSeconds);
     }
 
     return NextResponse.json({

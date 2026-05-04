@@ -130,22 +130,22 @@ async function resolveCourseRecord(supabase: any, identifier: string) {
 }
 
 async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRecord = true) {
-    const sectionIdsResult = await supabase
-        .from("sections")
+    const chapterIdsResult = await supabase
+        .from("chapters")
         .select("id")
         .eq("course_id", courseId);
 
-    if (sectionIdsResult.error) {
-        return { error: sectionIdsResult.error.message } as const;
+    if (chapterIdsResult.error) {
+        return { error: chapterIdsResult.error.message } as const;
     }
 
-    const sectionIds = (sectionIdsResult.data ?? []).map((row: Row) => String(row.id));
+    const chapterIds = (chapterIdsResult.data ?? []).map((row: Row) => String(row.id));
 
-    if (sectionIds.length > 0) {
+    if (chapterIds.length > 0) {
         const lectureIdsResult = await supabase
             .from("lectures")
             .select("id")
-            .in("section_id", sectionIds);
+            .in("chapter_id", chapterIds);
 
         if (lectureIdsResult.error) {
             return { error: lectureIdsResult.error.message } as const;
@@ -167,19 +167,19 @@ async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRec
         const { error: lectureDeleteError } = await supabase
             .from("lectures")
             .delete()
-            .in("section_id", sectionIds);
+            .in("chapter_id", chapterIds);
 
         if (lectureDeleteError) {
             return { error: lectureDeleteError.message } as const;
         }
 
-        const { error: sectionDeleteError } = await supabase
-            .from("sections")
+        const { error: chapterDeleteError } = await supabase
+            .from("chapters")
             .delete()
             .eq("course_id", courseId);
 
-        if (sectionDeleteError) {
-            return { error: sectionDeleteError.message } as const;
+        if (chapterDeleteError) {
+            return { error: chapterDeleteError.message } as const;
         }
     }
 
@@ -233,32 +233,32 @@ export async function GET(
     const users = (usersResult.data ?? []).map(normalizeUser);
     const userMap = createLookupMap(users);
 
-    const sectionsResult = await supabase
-        .from("sections")
+    const chaptersResult = await supabase
+        .from("chapters")
         .select("*")
         .eq("course_id", courseId)
-        .order("position", { ascending: true });
+        .order("sort_order", { ascending: true });
 
-    if (sectionsResult.error) {
-        return NextResponse.json({ error: sectionsResult.error.message }, { status: 500 });
+    if (chaptersResult.error) {
+        return NextResponse.json({ error: chaptersResult.error.message }, { status: 500 });
     }
 
-    const sections = (sectionsResult.data ?? []).map((row) => {
+    const chapters = (chaptersResult.data ?? []).map((row) => {
         const record = row as Row;
         return {
-            id: pickString(record, ["id", "section_id"]),
-            title: pickString(record, ["title", "name"], "Untitled section"),
-            position: pickNumber(record, ["position", "sort_order"]),
+            id: pickString(record, ["id", "chapter_id"]),
+            title: pickString(record, ["title", "name"], "Untitled chapter"),
+            position: pickNumber(record, ["sort_order", "position"]),
         };
     });
 
-    const sectionIds = sections.map((section) => section.id);
-    const lecturesResult = sectionIds.length
+    const chapterIds = chapters.map((chapter) => chapter.id);
+    const lecturesResult = chapterIds.length
         ? await supabase
             .from("lectures")
             .select("*")
-            .in("section_id", sectionIds)
-            .order("position", { ascending: true })
+            .in("chapter_id", chapterIds)
+            .order("sort_order", { ascending: true })
         : { data: [], error: null };
 
     if (lecturesResult.error) {
@@ -269,12 +269,12 @@ export async function GET(
         const record = row as Row;
         return {
             id: pickString(record, ["id", "lecture_id"]),
-            sectionId: pickString(record, ["section_id"]),
+            chapterId: pickString(record, ["chapter_id"]),
             title: pickString(record, ["title", "name"], "Untitled lecture"),
             description: pickString(record, ["description", "summary"], ""),
             videoUrl: pickString(record, ["video_url", "videoUrl"], ""),
             durationSec: pickNumber(record, ["duration_sec", "durationSec"], 0),
-            position: pickNumber(record, ["position", "sort_order"]),
+            position: pickNumber(record, ["sort_order", "position"]),
             isPreview: pickBoolean(record, ["is_preview", "isPreview"]),
         };
     });
@@ -310,19 +310,19 @@ export async function GET(
         resourcesByLecture.set(resource.lectureId, bucket);
     }
 
-    const lecturesBySection = new Map<string, Array<(typeof lectures)[number] & { resources: typeof resources }>>();
+    const lecturesByChapter = new Map<string, Array<(typeof lectures)[number] & { resources: typeof resources }>>();
     for (const lecture of lectures) {
-        const bucket = lecturesBySection.get(lecture.sectionId) ?? [];
+        const bucket = lecturesByChapter.get(lecture.chapterId) ?? [];
         bucket.push({
             ...lecture,
             resources: resourcesByLecture.get(lecture.id) ?? [],
         });
-        lecturesBySection.set(lecture.sectionId, bucket);
+        lecturesByChapter.set(lecture.chapterId, bucket);
     }
 
-    const enrichedSections = sections.map((section) => ({
-        ...section,
-        lectures: lecturesBySection.get(section.id) ?? [],
+    const enrichedChapters = chapters.map((chapter) => ({
+        ...chapter,
+        lectures: lecturesByChapter.get(chapter.id) ?? [],
     }));
 
     const totalLectures = lectures.length;
@@ -349,12 +349,14 @@ export async function GET(
                 email: instructor?.email ?? "",
             },
             stats: {
-                totalSections: enrichedSections.length,
+                totalChapters: enrichedChapters.length,
                 totalLectures,
                 totalResources,
                 totalDurationSec,
             },
-            sections: enrichedSections,
+            chapters: enrichedChapters,
+            // Legacy alias for backward compatibility
+            sections: enrichedChapters,
         },
     });
 }
@@ -483,16 +485,18 @@ export async function PUT(
         return NextResponse.json({ error: courseError.message }, { status: 500 });
     }
 
-    const incomingSectionIds = (body.sections ?? []).map((s: any) => s.id).filter(Boolean);
-    const incomingLectureIds = (body.sections ?? []).flatMap((s: any) => (s.lectures ?? []).map((l: any) => l.id)).filter(Boolean);
-    const incomingResourceIds = (body.sections ?? []).flatMap((s: any) => (s.lectures ?? []).flatMap((l: any) => (l.resources ?? []).map((r: any) => r.id))).filter(Boolean);
+    // Support both body.chapters and body.sections (legacy)
+    const chaptersData = body.chapters ?? body.sections ?? [];
+    const incomingChapterIds = chaptersData.map((c: any) => c.id).filter(Boolean);
+    const incomingLectureIds = chaptersData.flatMap((c: any) => (c.lectures ?? []).map((l: any) => l.id)).filter(Boolean);
+    const incomingResourceIds = chaptersData.flatMap((c: any) => (c.lectures ?? []).flatMap((l: any) => (l.resources ?? []).map((r: any) => r.id))).filter(Boolean);
 
     // Fetch existing hierarchy to delete orphaned records safely
-    const { data: existingSections } = await supabase.from('sections').select('id').eq('course_id', courseId);
-    const existingSectionIds = (existingSections || []).map((s: any) => s.id);
+    const { data: existingChapters } = await supabase.from('chapters').select('id').eq('course_id', courseId);
+    const existingChapterIds = (existingChapters || []).map((c: any) => c.id);
     
-    if (existingSectionIds.length > 0) {
-        const { data: existingLectures } = await supabase.from('lectures').select('id').in('section_id', existingSectionIds);
+    if (existingChapterIds.length > 0) {
+        const { data: existingLectures } = await supabase.from('lectures').select('id').in('chapter_id', existingChapterIds);
         const existingLectureIds = (existingLectures || []).map((l: any) => l.id);
         
         if (existingLectureIds.length > 0) {
@@ -511,54 +515,54 @@ export async function PUT(
         }
     }
     
-    const sectionsToDelete = existingSectionIds.filter((id: string) => !incomingSectionIds.includes(id));
-    if (sectionsToDelete.length > 0) {
-        await supabase.from('sections').delete().in('id', sectionsToDelete);
+    const chaptersToDelete = existingChapterIds.filter((id: string) => !incomingChapterIds.includes(id));
+    if (chaptersToDelete.length > 0) {
+        await supabase.from('chapters').delete().in('id', chaptersToDelete);
     }
 
     // Upsert remaining hierarchy
-    for (const section of body.sections ?? []) {
-        const sectionId = section.id || crypto.randomUUID();
-        const { data: upsertedSection, error: sectionError } = await supabase
-            .from("sections")
+    for (const chapter of chaptersData) {
+        const chapterId = chapter.id || crypto.randomUUID();
+        const { data: upsertedChapter, error: chapterError } = await supabase
+            .from("chapters")
             .upsert({
-                id: sectionId,
+                id: chapterId,
                 course_id: courseId,
-                title: section.title,
-                position: section.position,
+                title: chapter.title,
+                sort_order: chapter.position ?? chapter.sort_order ?? 0,
             })
             .select("id")
             .single();
 
-        if (sectionError || !upsertedSection) {
-            console.error(`Section upsert error for course ${courseId}:`, sectionError);
-            if (isIntegerIdTypeError(sectionError)) {
+        if (chapterError || !upsertedChapter) {
+            console.error(`Chapter upsert error for course ${courseId}:`, chapterError);
+            if (isIntegerIdTypeError(chapterError)) {
                 return NextResponse.json(
                     {
                         error:
-                            "Supabase still has an integer id/foreign-key column. sections.id and sections.course_id must be uuid.",
+                            "Supabase still has an integer id/foreign-key column. chapters.id and chapters.course_id must be uuid.",
                     },
                     { status: 500 },
                 );
             }
             return NextResponse.json(
-                { error: `${sectionError?.message || "Failed to update sections"} (Course ID: ${courseId})` },
+                { error: `${chapterError?.message || "Failed to update chapters"} (Course ID: ${courseId})` },
                 { status: 500 },
             );
         }
 
-        for (const lecture of section.lectures ?? []) {
+        for (const lecture of chapter.lectures ?? []) {
             const lectureId = lecture.id || crypto.randomUUID();
             const { data: upsertedLecture, error: lectureError } = await supabase
                 .from("lectures")
                 .upsert({
                     id: lectureId,
-                    section_id: upsertedSection.id,
+                    chapter_id: upsertedChapter.id,
                     title: lecture.title,
                     video_url: lecture.videoUrl || null,
                     description: lecture.description || null,
                     duration_sec: lecture.durationSec || 0,
-                    position: lecture.position,
+                    sort_order: lecture.position ?? lecture.sort_order ?? 0,
                     is_preview: lecture.isPreview || false,
                 })
                 .select("id")
@@ -569,7 +573,7 @@ export async function PUT(
                     return NextResponse.json(
                         {
                             error:
-                                "Supabase still has an integer id/foreign-key column. lectures.id and lectures.section_id must be uuid.",
+                                "Supabase still has an integer id/foreign-key column. lectures.id and lectures.chapter_id must be uuid.",
                         },
                         { status: 500 },
                     );
