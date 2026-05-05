@@ -1,290 +1,480 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ClipboardList, SlidersHorizontal } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
+import Link from "next/link";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { ClipboardList, Eye, TrendingUp, Trophy } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  useStudentQuizzes,
-  useTestAnalytics,
-  useTestStats,
-  useRealtimeAttempts,
-} from "@/features/tests/hooks";
-import { StatsCards } from "@/features/tests/components/stats-cards";
-import { ScoreChart } from "@/features/tests/components/score-chart";
-import { AccuracyChart } from "@/features/tests/components/accuracy-chart";
-import { RecentAttemptsList } from "@/features/tests/components/recent-attempts-list";
-import { QuizCard } from "@/features/tests/components/quiz-card";
-import type { QuizSummaryItem, StatusFilter } from "@/features/tests/types";
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import { useTestAnalytics } from "@/features/tests/hooks";
+import type { StudentAttemptAnalytics } from "@/features/tests/types";
 
-// ── Loading Skeleton ──────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────
 
-function DashboardSkeleton() {
-  return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-6 py-6">
-      {/* Header */}
-      <div className="space-y-1.5">
-        <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-4 w-64" />
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[88px] rounded-xl" />
-        ))}
-      </div>
-
-      {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-[290px] rounded-xl" />
-        <Skeleton className="h-[290px] rounded-xl" />
-      </div>
-
-      {/* Test List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-5 w-24" />
-          <Skeleton className="h-9 w-36" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-[200px] rounded-xl" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+function getScorePercent(a: StudentAttemptAnalytics) {
+  if (a.totalMarks === 0) return 0;
+  return Math.round((a.score / a.totalMarks) * 100);
 }
 
-// ── Empty State ───────────────────────────────────────────────
+function isPassed(a: StudentAttemptAnalytics) {
+  return a.status === "submitted" && a.score >= a.passingMarks;
+}
 
-function EmptyState({
-  title,
-  description,
+function formatDate(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getStatusLabel(a: StudentAttemptAnalytics) {
+  if (a.status === "in_progress") return "In Progress";
+  if (a.status === "timed_out") return "Timed Out";
+  return isPassed(a) ? "Passed" : "Failed";
+}
+
+function getStatusClasses(a: StudentAttemptAnalytics) {
+  if (a.status === "in_progress")
+    return "border-amber-500/40 text-amber-600 bg-amber-500/10 dark:text-amber-400";
+  if (a.status === "timed_out")
+    return "border-border text-muted-foreground bg-muted";
+  if (isPassed(a))
+    return "border-emerald-500/40 text-emerald-600 bg-emerald-500/10 dark:text-emerald-400";
+  return "border-red-500/40 text-red-600 bg-red-500/10 dark:text-red-400";
+}
+
+function getTypeBadgeClasses(type: string | undefined) {
+  switch (type) {
+    case "practice":
+      return "border-border text-muted-foreground";
+    case "graded":
+      return "border-blue-500/40 text-blue-600 bg-blue-500/10 dark:text-blue-400";
+    case "final":
+      return "border-violet-500/40 text-violet-600 bg-violet-500/10 dark:text-violet-400";
+  }
+}
+
+// ── Chart Config ─────────────────────────────────────────────────
+
+const chartConfig = {
+  scorePercent: {
+    label: "Score %",
+    color: "oklch(0.723 0.148 155.995)",
+  },
+} satisfies ChartConfig;
+
+// ── Stat Card ────────────────────────────────────────────────────
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconBgClass,
+  iconClass,
 }: {
-  title: string;
-  description: string;
+  label: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconBgClass: string;
+  iconClass: string;
 }) {
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-6">
-      <Card className="rounded-xl border-border/50 shadow-none">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-16">
-          <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
-            <ClipboardList className="size-6 text-muted-foreground" />
+    <Card className="border-border/50 shadow-none">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {label}
+            </p>
+            <p className="text-2xl font-semibold leading-none tracking-tight text-foreground">
+              {value}
+            </p>
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">{title}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          <div
+            className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${iconBgClass}`}
+          >
+            <Icon className={`size-5 ${iconClass}`} />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-// ── Main Dashboard ────────────────────────────────────────────
+// ── Attempt Card ─────────────────────────────────────────────────
 
-export function TestDashboardPage() {
-  const { data: quizData, isLoading: quizzesLoading, error: quizzesError } = useStudentQuizzes();
-  const { data: analyticsData, isLoading: analyticsLoading } = useTestAnalytics();
+function AttemptCard({ attempt }: { attempt: StudentAttemptAnalytics }) {
+  const percent = getScorePercent(attempt);
+  const passed = isPassed(attempt);
+  const isSubmitted = attempt.status === "submitted";
 
-  // Realtime subscription — invalidates queries on quiz_attempts INSERT/UPDATE
-  useRealtimeAttempts();
+  return (
+    <Card className="border-border/50 shadow-none transition-colors hover:border-border">
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-4">
+          {/* Title Row */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-sm font-semibold text-foreground">
+                  {attempt.quizTitle}
+                </h3>
+                <Badge
+                  variant="outline"
+                  className={`shrink-0 text-[10px] capitalize ${getTypeBadgeClasses(attempt.quizType)}`}
+                >
+                  {attempt.quizType}
+                </Badge>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {attempt.courseName}
+              </p>
+            </div>
+          </div>
 
-  // Filter state
-  const [courseFilter, setCourseFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+          {/* Score + Progress */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                Score:{" "}
+                <span className="font-semibold text-foreground">
+                  {isSubmitted ? attempt.score : "—"}
+                </span>
+                <span className="text-muted-foreground/60">
+                  {" "}
+                  / {attempt.totalMarks}
+                </span>
+              </span>
+              {isSubmitted && (
+                <span
+                  className={`text-xs font-medium ${passed
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
+                    }`}
+                >
+                  {percent}%
+                </span>
+              )}
+            </div>
+            <Progress
+              value={isSubmitted ? percent : 0}
+              className={`h-1.5 bg-muted ${isSubmitted
+                  ? passed
+                    ? "[&>[data-slot=progress-indicator]]:bg-emerald-500"
+                    : "[&>[data-slot=progress-indicator]]:bg-red-500"
+                  : "[&>[data-slot=progress-indicator]]:bg-muted-foreground/30"
+                }`}
+            />
+          </div>
 
-  // Raw data
-  const allQuizzes = quizData?.quizzes ?? [];
-  const enrollmentCount = quizData?.enrollmentCount ?? 0;
-  const allAttempts = analyticsData?.attempts ?? [];
+          {/* Footer: Status + Date + Action */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Badge
+                variant="outline"
+                className={`text-[10px] font-medium ${getStatusClasses(attempt)}`}
+              >
+                {getStatusLabel(attempt)}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {formatDate(attempt.submittedAt ?? attempt.startedAt)}
+              </span>
+            </div>
 
-  // Derive unique courses for filter dropdown
-  const courseOptions = useMemo(() => {
-    const courseMap = new Map<string, string>();
-    for (const q of allQuizzes) {
-      if (!courseMap.has(q.courseId)) {
-        courseMap.set(q.courseId, q.courseName);
-      }
-    }
-    return Array.from(courseMap.entries()).map(([id, name]) => ({ id, name }));
-  }, [allQuizzes]);
+            {isSubmitted && (
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Link href={`/dashboard/tests/result/${attempt.id}`}>
+                  <Eye className="size-3" />
+                  Review Answers
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  // Apply filters
-  const filteredQuizzes = useMemo(() => {
-    let result = allQuizzes;
+// ── Score Trend Chart ────────────────────────────────────────────
 
-    if (courseFilter !== "all") {
-      result = result.filter((q) => q.courseId === courseFilter);
-    }
+function ScoreTrendChart({ attempts }: { attempts: StudentAttemptAnalytics[] }) {
+  const chartData = useMemo(() => {
+    const submitted = attempts
+      .filter((a) => a.status === "submitted")
+      .sort(
+        (a, b) =>
+          new Date(a.submittedAt!).getTime() -
+          new Date(b.submittedAt!).getTime()
+      )
+      .slice(-7);
 
-    if (statusFilter !== "all") {
-      result = result.filter((q) => q.status === statusFilter);
-    }
+    return submitted.map((a, i) => ({
+      attempt: i + 1,
+      scorePercent: getScorePercent(a),
+      quiz: a.quizTitle,
+    }));
+  }, [attempts]);
 
-    return result;
-  }, [allQuizzes, courseFilter, statusFilter]);
-
-  const filteredAttempts = useMemo(() => {
-    if (courseFilter === "all") return allAttempts;
-    return allAttempts.filter((a) => a.courseId === courseFilter);
-  }, [allAttempts, courseFilter]);
-
-  // Compute stats from filtered data
-  const stats = useTestStats(filteredQuizzes, filteredAttempts);
-
-  // Determine last attempted quiz for highlight
-  const lastAttemptedQuizId = useMemo(() => {
-    if (!filteredAttempts.length) return null;
-    const sorted = [...filteredAttempts].sort((a, b) => {
-      const da = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
-      const db = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
-      return db - da;
-    });
-    return sorted[0]?.quizId ?? null;
-  }, [filteredAttempts]);
-
-  // Loading state
-  if (quizzesLoading || analyticsLoading) {
-    return <DashboardSkeleton />;
-  }
-
-  // Error state
-  if (quizzesError) {
+  if (chartData.length === 0) {
     return (
-      <div className="mx-auto w-full max-w-7xl px-6 py-6">
-        <Card className="rounded-xl border-border/50 shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-medium">Unable to load tests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{quizzesError.message}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // No enrollment state
-  if (enrollmentCount === 0) {
-    return (
-      <EmptyState
-        title="No courses enrolled"
-        description="Enroll in a course to access tests and track your performance."
-      />
-    );
-  }
-
-  // No quizzes state
-  if (allQuizzes.length === 0) {
-    return (
-      <EmptyState
-        title="No tests available"
-        description="Published tests from your enrolled courses will appear here."
-      />
+      <Card className="border-border/50 shadow-none">
+        <CardContent className="flex h-[320px] items-center justify-center">
+          <p className="text-sm text-muted-foreground">
+            Complete a test to see your score trend.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 px-6 py-6">
-      {/* ─── 1. Header ────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Tests</h1>
-          <p className="text-sm text-muted-foreground">
-            Track your performance and attempts
-          </p>
+    <Card className="border-border/50 shadow-none">
+      <CardContent className="p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <TrendingUp className="size-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">
+            Score Trend
+          </h3>
+          <span className="text-xs text-muted-foreground">
+            — Last 7 attempts
+          </span>
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="size-4 text-muted-foreground hidden sm:block" />
-
-          {courseOptions.length > 1 && (
-            <Select value={courseFilter} onValueChange={setCourseFilter}>
-              <SelectTrigger className="h-9 w-[160px] text-sm">
-                <SelectValue placeholder="All Courses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Courses</SelectItem>
-                {courseOptions.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
+          <AreaChart
+            data={chartData}
+            margin={{ top: 8, right: 12, bottom: 0, left: -16 }}
           >
-            <SelectTrigger className="h-9 w-[140px] text-sm">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="not_attempted">Pending</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <defs>
+              <linearGradient id="greenFill" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--color-scorePercent)"
+                  stopOpacity={0.15}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--color-scorePercent)"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              className="stroke-border/40"
+            />
+            <XAxis
+              dataKey="attempt"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(v) => `#${v}`}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              domain={[0, 100]}
+              tickFormatter={(v) => `${v}%`}
+            />
+            <ReferenceLine
+              y={60}
+              strokeDasharray="6 4"
+              strokeWidth={1}
+              className="stroke-muted-foreground/40"
+              label={{
+                value: "Pass 60%",
+                position: "insideTopRight",
+                fontSize: 10,
+                className: "fill-muted-foreground",
+              }}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(_, payload) => {
+                    const item = payload?.[0]?.payload;
+                    return item?.quiz ?? "";
+                  }}
+                />
+              }
+            />
+            <Area
+              type="monotone"
+              dataKey="scorePercent"
+              stroke="var(--color-scorePercent)"
+              strokeWidth={2}
+              fill="url(#greenFill)"
+              dot={{
+                r: 3.5,
+                fill: "var(--color-scorePercent)",
+                strokeWidth: 0,
+              }}
+              activeDot={{
+                r: 5,
+                strokeWidth: 2,
+                stroke: "var(--background)",
+                fill: "var(--color-scorePercent)",
+              }}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Empty State ──────────────────────────────────────────────────
+
+function EmptyTabState() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-16">
+      <div className="flex size-12 items-center justify-center rounded-xl bg-muted">
+        <ClipboardList className="size-6 text-muted-foreground" />
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-medium text-foreground">No tests found</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Tests matching this filter will appear here.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────────
+
+export function TestDashboardPage() {
+  const { data: analytics, isLoading } = useTestAnalytics();
+
+  // ── Compute stats from real data ───────────────────────────────
+  const stats = useMemo(() => {
+    if (!analytics) return { totalAttempts: 0, avgScore: 0, testsPassed: 0 };
+    
+    const attempts = analytics.attempts || [];
+    const submitted = attempts.filter((a) => a.status === "submitted");
+    const totalAttempts = attempts.length;
+
+    const avgScore =
+      submitted.length > 0
+        ? Math.round(
+          submitted.reduce((sum, a) => sum + getScorePercent(a), 0) /
+          submitted.length
+        )
+        : 0;
+
+    const testsPassed = submitted.filter((a) => isPassed(a)).length;
+
+    return { totalAttempts, avgScore, testsPassed };
+  }, [analytics]);
+
+  // ── Filter by quiz type ────────────────────────────────────────
+  const filterAttempts = (type: string) => {
+    if (!analytics) return [];
+    const attempts = analytics.attempts || [];
+    if (type === "all") return attempts;
+    return attempts.filter((a) => a.quizType === type);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-center p-16">
+        <div className="text-sm text-muted-foreground">Loading tests dashboard...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      {/* ── Page Header ───────────────────────────────────────── */}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          My Tests
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Track your practice, graded, and final exams
+        </p>
       </div>
 
-      {/* ─── 2. Stats Overview ────────────────────────────── */}
-      <StatsCards stats={stats} />
-
-      {/* ─── 3. Performance Analytics ─────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ScoreChart attempts={filteredAttempts} />
-        <AccuracyChart attempts={filteredAttempts} />
+      {/* ── Stats Row ─────────────────────────────────────────── */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Total Attempts"
+          value={String(stats.totalAttempts)}
+          icon={ClipboardList}
+          iconBgClass="bg-muted"
+          iconClass="text-muted-foreground"
+        />
+        <StatCard
+          label="Average Score"
+          value={`${stats.avgScore}%`}
+          icon={TrendingUp}
+          iconBgClass="bg-emerald-50 dark:bg-emerald-950/40"
+          iconClass="text-emerald-600 dark:text-emerald-400"
+        />
+        <StatCard
+          label="Tests Passed"
+          value={String(stats.testsPassed)}
+          icon={Trophy}
+          iconBgClass="bg-amber-50 dark:bg-amber-950/40"
+          iconClass="text-amber-600 dark:text-amber-400"
+        />
       </div>
 
-      {/* ─── 4. Test List ─────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">
-            All Tests
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({filteredQuizzes.length})
-            </span>
-          </h2>
-        </div>
+      {/* ── Tabs ──────────────────────────────────────────────── */}
+      <Tabs defaultValue="all">
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="practice">Practice</TabsTrigger>
+          <TabsTrigger value="graded">Graded</TabsTrigger>
+          <TabsTrigger value="final">Final</TabsTrigger>
+        </TabsList>
 
-        {filteredQuizzes.length === 0 ? (
-          <Card className="rounded-xl border-border/50 shadow-none">
-            <CardContent className="flex h-32 items-center justify-center">
-              <p className="text-sm text-muted-foreground">
-                No tests match the current filters.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredQuizzes.map((quiz: QuizSummaryItem) => (
-              <QuizCard
-                key={quiz.id}
-                quiz={quiz}
-                isLastAttempted={quiz.id === lastAttemptedQuizId}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        {["all", "practice", "graded", "final"].map((tab) => {
+          const filtered = filterAttempts(tab);
+          return (
+            <TabsContent key={tab} value={tab} className="mt-6">
+              {filtered.length === 0 ? (
+                <EmptyTabState />
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
+                  {filtered.map((attempt) => (
+                    <AttemptCard key={attempt.id} attempt={attempt} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          );
+        })}
+      </Tabs>
 
-      {/* ─── 5. Recent Attempts ────────────────────────────── */}
-      <RecentAttemptsList attempts={filteredAttempts} />
+      {/* ── Score Trend Chart ─────────────────────────────────── */}
+      <ScoreTrendChart attempts={analytics?.attempts || []} />
     </div>
   );
 }

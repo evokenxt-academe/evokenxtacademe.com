@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { requireAdmin } from "@/features/admin/lib/admin-route"
 import type { PDFExtractionResult, ParsedQuestion, QuestionType, DifficultyLevel } from "@/features/admin/quiz-builder/types"
-import pdfParse from "pdf-parse"
+import { PDFParse } from "pdf-parse"
 
 // ─────────────────────────────────────────────────────────────
 // Deterministic PDF question extractor — NO AI required
@@ -75,21 +75,6 @@ function parseQuestionBlock(block: string): ParsedQuestion | null {
         const questionType = parseLabelValue(line, "type")
         if (questionType && isQuestionType(questionType)) {
             type = questionType
-            continue
-        }
-
-        const marksValue = parseLabelValue(line, "marks")
-        if (marksValue) {
-            const parsedMarks = Number(marksValue)
-            if (!Number.isNaN(parsedMarks) && parsedMarks > 0) {
-                marks = parsedMarks
-            }
-            continue
-        }
-
-        const difficultyValue = parseLabelValue(line, "difficulty")
-        if (difficultyValue && isDifficulty(difficultyValue)) {
-            difficulty = difficultyValue
             continue
         }
 
@@ -245,8 +230,15 @@ export async function POST(request: NextRequest) {
     try {
         // Use pdf-parse to extract text — no API key needed
         const buffer = Buffer.from(await file.arrayBuffer())
-        const pdf = await pdfParse(buffer)
-        const text = pdf.text?.trim()
+        const parser = new PDFParse({ data: buffer })
+        let text: string
+
+        try {
+            const pdf = await parser.getText()
+            text = pdf.text?.trim() ?? ""
+        } finally {
+            await parser.destroy()
+        }
 
         if (!text) {
             return NextResponse.json(

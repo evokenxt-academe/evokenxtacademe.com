@@ -1,241 +1,268 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
-import {
-  IconCash,
-  IconDownload,
-  IconSearch,
-  IconReceipt,
-} from "@tabler/icons-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ColumnDef } from "@tanstack/react-table";
+import { MoreHorizontal } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AdminPageShell } from "@/features/admin/components/admin-page-shell";
-import { AdminResourceTable } from "@/features/admin/components/admin-resource-table";
-import { adminApi } from "@/features/admin/lib/admin-api";
-import { type AdminPayment } from "@/features/admin/data/admin-sample-data";
+import { AdminDataTable } from "@/features/admin/components/admin-data-table";
+import { createClient } from "@/lib/supabase/client";
 import {
-  currencyFormatter,
-  formatDateTime,
-} from "@/features/admin/lib/formatters";
+  getAllPayments,
+  getPaymentSummary,
+  type PaymentRow,
+} from "@/lib/supabase/queries/payments";
+import { CreditCard, AlertCircle, CheckCircle } from "lucide-react";
 
-const paymentStyles: Record<AdminPayment["status"], string> = {
-  pending:
-    "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  paid: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  failed: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
-  refunded: "border-muted-foreground/20 bg-muted text-muted-foreground",
-};
+interface SummaryCard {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  trend?: string;
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
 
 export default function PaymentsPage() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-payments"],
-    queryFn: adminApi.getPayments,
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = React.useState<string>("all");
+
+  // ──────────────────────────────────────────
+  // QUERIES
+  // ──────────────────────────────────────────
+
+  const { data: payments = [], isLoading: paymentsLoading } = useQuery({
+    queryKey: ["admin-payments", statusFilter],
+    queryFn: () =>
+      getAllPayments(supabase, {
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      }),
   });
 
-  const payments = data?.payments ?? [];
-  const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<
-    "all" | AdminPayment["status"]
-  >("all");
+  const { data: summary } = useQuery({
+    queryKey: ["admin-payment-summary"],
+    queryFn: () => getPaymentSummary(supabase),
+  });
 
-  const filteredPayments = React.useMemo(() => {
-    const query = search.trim().toLowerCase();
+  // ──────────────────────────────────────────
+  // REAL-TIME SUBSCRIPTIONS
+  // ──────────────────────────────────────────
 
-    return payments.filter((payment) => {
-      const matchesQuery =
-        !query ||
-        payment.user.toLowerCase().includes(query) ||
-        payment.course.toLowerCase().includes(query) ||
-        payment.gateway.toLowerCase().includes(query);
-
-      const matchesStatus =
-        statusFilter === "all" || payment.status === statusFilter;
-
-      return matchesQuery && matchesStatus;
-    });
-  }, [payments, search, statusFilter]);
-
-  const totalRevenue = React.useMemo(
-    () =>
-      filteredPayments
-        .filter((payment) => payment.status === "paid")
-        .reduce((sum, payment) => sum + payment.amount, 0),
-    [filteredPayments],
-  );
-
-  const columns = React.useMemo<ColumnDef<AdminPayment>[]>(
-    () => [
-      { accessorKey: "user", header: "User" },
-      { accessorKey: "course", header: "Course" },
-      {
-        accessorKey: "amount",
-        header: "Amount",
-        cell: ({ row }) => (
-          <span className="font-medium">
-            {currencyFormatter.format(row.original.amount)}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => {
-          const status = row.original.status;
-          return (
-            <Badge
-              className={`rounded-full border px-2.5 py-1 capitalize ${paymentStyles[status]}`}
-            >
-              {status}
-            </Badge>
-          );
+  React.useEffect(() => {
+    const channel = supabase
+      .channel("admin-payments")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payments" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
+          queryClient.invalidateQueries({
+            queryKey: ["admin-payment-summary"],
+          });
         },
-      },
-      { accessorKey: "gateway", header: "Gateway" },
-      {
-        accessorKey: "createdAt",
-        header: "Created",
-        cell: ({ row }) => (
-          <span className="text-sm text-muted-foreground">
-            {formatDateTime(row.original.createdAt)}
-          </span>
-        ),
-      },
-      {
-        id: "actions",
-        header: "",
-        cell: () => (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 rounded-lg"
-            onClick={() => toast.info("Open payment receipt")}
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, queryClient]);
+
+  // ──────────────────────────────────────────
+  // TABLE COLUMNS
+  // ──────────────────────────────────────────
+
+  const columns: ColumnDef<PaymentRow>[] = [
+    {
+      accessorKey: "id",
+      header: "Transaction ID",
+      cell: ({ row }) => (
+        <span className="text-xs font-mono">
+          {row.getValue("id")?.slice(0, 8)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "student_name",
+      header: "Student",
+      cell: ({ row }) => (
+        <div className="font-medium text-sm">
+          {row.getValue("student_name")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "course_title",
+      header: "Course",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {row.getValue("course_title")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "amount_paid",
+      header: "Amount",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium">
+          {formatCurrency(row.getValue("amount_paid"))}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "gateway",
+      header: "Gateway",
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="rounded-sm text-xs">
+          {row.getValue("gateway")}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string;
+        return (
+          <Badge
+            variant={
+              status === "successful"
+                ? "default"
+                : status === "pending"
+                  ? "secondary"
+                  : "destructive"
+            }
+            className="rounded-sm text-xs"
           >
-            <IconReceipt />
-          </Button>
-        ),
+            {status}
+          </Badge>
+        );
       },
-    ],
-    [],
-  );
+    },
+    {
+      accessorKey: "created_at",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground">
+          {row.getValue("created_at")}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>View Invoice</DropdownMenuItem>
+            <DropdownMenuItem>Download Receipt</DropdownMenuItem>
+            {row.original.status === "pending" && (
+              <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
+            )}
+            {row.original.status === "successful" && (
+              <DropdownMenuItem className="text-red-600">
+                Refund
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  // ──────────────────────────────────────────
+  // SUMMARY CARDS
+  // ──────────────────────────────────────────
+
+  const summaryCards: SummaryCard[] = [
+    {
+      label: "Total Paid",
+      value: summary ? formatCurrency(summary.total_paid) : "₹0",
+      icon: <IconCheckCircle className="size-5 text-green-600" />,
+    },
+    {
+      label: "Pending",
+      value: summary ? formatCurrency(summary.total_pending) : "₹0",
+      icon: <IconAlertCircle className="size-5 text-yellow-600" />,
+    },
+    {
+      label: "Failed/Refunded",
+      value: summary ? formatCurrency(summary.total_failed) : "₹0",
+      icon: <CreditCard className="size-5 text-red-600" />,
+    },
+  ];
 
   return (
     <AdminPageShell
       title="Payments"
-      description="Track payment status, gateway resolution, and live revenue flow."
-      actions={
-        <Button
-          variant="outline"
-          className="rounded-xl"
-          onClick={() => toast.success("Export queued")}
-        >
-          <IconDownload />
-          Export
-        </Button>
-      }
+      description="Manage student payments and transactions"
     >
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-2xl border-border/70 shadow-sm">
-          <CardHeader>
-            <CardDescription>Total revenue</CardDescription>
-            <CardTitle className="text-3xl tracking-tight">
-              {currencyFormatter.format(totalRevenue)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="rounded-2xl border-border/70 shadow-sm">
-          <CardHeader>
-            <CardDescription>Paid transactions</CardDescription>
-            <CardTitle className="text-3xl tracking-tight">
-              {
-                filteredPayments.filter((payment) => payment.status === "paid")
-                  .length
-              }
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="rounded-2xl border-border/70 shadow-sm">
-          <CardHeader>
-            <CardDescription>Pending review</CardDescription>
-            <CardTitle className="text-3xl tracking-tight">
-              {
-                filteredPayments.filter(
-                  (payment) => payment.status === "pending",
-                ).length
-              }
-            </CardTitle>
-          </CardHeader>
-        </Card>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {summaryCards.map((card, i) => (
+          <Card key={i}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                {card.icon}
+                {card.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold">{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <AdminResourceTable
-        columns={columns}
-        data={filteredPayments}
-        emptyTitle="No payments found"
-        emptyDescription="Try another status filter or search for a specific user or course."
-        isLoading={isLoading}
-        toolbar={
-          <>
-            <div className="flex flex-1 flex-wrap items-center gap-3">
-              <div className="relative w-full flex-1 md:max-w-md">
-                <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  className="h-10 rounded-xl pl-9"
-                  placeholder="Search payments"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                />
-              </div>
-              <Select
-                value={statusFilter}
-                onValueChange={(value) =>
-                  setStatusFilter(value as typeof statusFilter)
-                }
-              >
-                <SelectTrigger className="h-10 rounded-xl md:w-44">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Filter Bar */}
+      <div className="flex gap-2">
+        {["all", "successful", "pending", "failed"].map((status) => (
+          <Button
+            key={status}
+            variant={statusFilter === status ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter(status)}
+            className="rounded-lg"
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Button>
+        ))}
+      </div>
 
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              onClick={() =>
-                toast.info(
-                  "Reconciliation report coming from the finance pipeline",
-                )
-              }
-            >
-              <IconCash />
-              Reconcile
-            </Button>
-          </>
-        }
+      {/* Data Table */}
+      <AdminDataTable
+        columns={columns}
+        data={payments}
+        isLoading={paymentsLoading}
+        searchPlaceholder="Search payments..."
       />
     </AdminPageShell>
   );

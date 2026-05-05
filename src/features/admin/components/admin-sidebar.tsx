@@ -66,7 +66,7 @@ const ADMIN_SIDEBAR_SECTIONS = [
     items: [
       {
         title: "Courses",
-        href: "/admin/course",
+        href: "/admin/courses",
         icon: IconBook,
       },
       {

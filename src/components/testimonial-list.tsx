@@ -193,8 +193,8 @@ export function TestimonialList({
       <MarqueeFade side="right" />
 
       <MarqueeContent direction={direction}>
-        {data.map((item) => (
-          <MarqueeItem key={item.url} className="mx-1 h-full w-xs">
+        {data.map((item, index) => (
+          <MarqueeItem key={`${item.authorName}-${index}`} className="mx-1 h-full w-xs">
             <a
               className="block h-full"
               href={item.url}

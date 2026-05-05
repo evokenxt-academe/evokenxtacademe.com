@@ -13,6 +13,7 @@ interface AttemptAnalyticsRow {
   quiz: {
     id: string;
     title: string;
+    type: string;
     total_marks: number | null;
     passing_marks: number | null;
     section: {
@@ -127,6 +128,7 @@ export async function GET() {
       quiz:quizzes!inner (
         id,
         title,
+        type,
         total_marks,
         passing_marks,
         section:sections!inner (
@@ -164,6 +166,7 @@ export async function GET() {
         id: a.id,
         quizId: a.quiz_id,
         quizTitle: a.quiz!.title,
+        quizType: a.quiz!.type as "practice" | "graded" | "final",
         courseName: a.quiz!.section!.course!.name,
         courseId: a.quiz!.section!.course!.id,
         score,
