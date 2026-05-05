@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DashboardShell } from "@/components/student/dashboard/DashboardShell";
+import { DashboardShell } from "@/features/student/components/dashboard/dashboard-shell";
+import { fetchDashboardPageData } from "@/features/student/lib/dashboard-queries";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -25,5 +26,7 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  return <DashboardShell userId={user.id} />;
+  const initialData = await fetchDashboardPageData(supabase, user.id);
+
+  return <DashboardShell initialData={initialData} />;
 }
