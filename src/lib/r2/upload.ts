@@ -5,12 +5,17 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } fro
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export function getR2Client() {
+  const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID;
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
+  const endpoint = process.env.R2_ENDPOINT || `https://${accountId}.r2.cloudflarestorage.com`;
+
   return new S3Client({
     region: "auto",
-    endpoint: process.env.R2_ENDPOINT!,
+    endpoint,
     credentials: {
-      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      accessKeyId: accessKeyId!,
+      secretAccessKey: secretAccessKey!,
     },
   });
 }
@@ -18,7 +23,7 @@ export function getR2Client() {
 export async function generatePresignedUrl(fileName: string, fileType: string, folder: string) {
   const client = getR2Client();
   const key = `${folder}/${crypto.randomUUID()}-${fileName}`;
-  const bucket = process.env.R2_BUCKET_NAME!;
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
 
   const command = new PutObjectCommand({
     Bucket: bucket,
@@ -27,23 +32,48 @@ export async function generatePresignedUrl(fileName: string, fileType: string, f
   });
 
   const uploadUrl = await getSignedUrl(client, command, { expiresIn: 300 });
-  const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+  const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
 
   return { uploadUrl, publicUrl, key };
 }
 
 export async function deleteR2Object(key: string) {
   const client = getR2Client();
-  await client.send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
+  await client.send(new DeleteObjectCommand({ Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!, Key: key }));
 }
 
 export async function getR2Object(key: string): Promise<Buffer> {
-  const client = getR2Client();
-  const response = await client.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
-  const chunks: Uint8Array[] = [];
-  const stream = response.Body as any;
-  for await (const chunk of stream) {
-    chunks.push(chunk);
+  try {
+    const client = getR2Client();
+    const response = await client.send(new GetObjectCommand({ 
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME!, 
+      Key: key 
+    }));
+
+    if (!response.Body) {
+      throw new Error("Empty response body from R2");
+    }
+
+    // Handle different stream types (Node.js vs Web Stream)
+    const chunks: Uint8Array[] = [];
+    const body = response.Body as any;
+
+    if (body.getReader) {
+      const reader = body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+    } else {
+      for await (const chunk of body) {
+        chunks.push(chunk);
+      }
+    }
+    
+    return Buffer.concat(chunks);
+  } catch (error: any) {
+    console.error(`[getR2Object] Error fetching ${key}:`, error.message);
+    throw error;
   }
-  return Buffer.concat(chunks);
 }

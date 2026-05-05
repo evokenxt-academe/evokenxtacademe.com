@@ -69,7 +69,7 @@ export default function NewQuizPage() {
         title, description: description || null, instructions: instructions || null,
         course_id: courseId, chapter_id: chapterId === "none" ? null : (chapterId || null),
         type: quizType,
-        passing_marks: passingMarks || null,
+        passing_marks: passingMarks || 0,
         time_limit_sec: timeLimitEnabled ? timeLimitMin * 60 : null,
         shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
         max_attempts: maxAttemptsEnabled ? maxAttempts : null,

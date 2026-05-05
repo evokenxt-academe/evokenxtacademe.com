@@ -69,7 +69,7 @@ export async function saveQuestion(
   questionId: string | null,
   data: QuestionFormData
 ): Promise<{ id: string }> {
-  const { options, ...questionData } = data;
+  const { options, model_answer, ...questionData } = data;
 
   if (questionId) {
     // Update existing question
@@ -199,7 +199,7 @@ export async function batchInsertQuestions(
   const inserted: string[] = [];
 
   for (let i = 0; i < questions.length; i++) {
-    const { options, ...qData } = questions[i];
+    const { options, model_answer, ...qData } = questions[i];
 
     const { data: newQ, error: qErr } = await supabase
       .from("questions")
@@ -283,7 +283,6 @@ export async function addQuestionsFromBank(
           reason_text: bq.reason_text,
           numerical_answer: bq.numerical_answer,
           numerical_tolerance: bq.numerical_tolerance,
-          model_answer: bq.model_answer,
         },
       ])
       .select("id")

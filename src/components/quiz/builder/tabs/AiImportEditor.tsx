@@ -44,7 +44,11 @@ export function AiImportEditor({ quizId, subjectId }: { quizId: string; subjectI
 
       // 3. Create dummy job record for processing
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication required");
+
       const { data: newJob, error } = await supabase.from("bank_import_jobs").insert([{
+        created_by: user.id,
         subject_id: subjectId,
         original_file_name: file.name,
         file_type: file.name.split(".").pop()?.toLowerCase() ?? "txt",
@@ -61,7 +65,10 @@ export function AiImportEditor({ quizId, subjectId }: { quizId: string; subjectI
       const extractRes = await fetch("/api/quiz/import/extract", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId: newJob.id })
       });
-      if (!extractRes.ok) throw new Error("Extraction failed");
+      if (!extractRes.ok) {
+        const errorData = await extractRes.json().catch(() => ({}));
+        throw new Error(errorData.error || "Extraction failed");
+      }
 
       setJobStatus("parsing");
 

@@ -41,10 +41,14 @@ export function useBankImport() {
 
       // 3. Create import job
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication required");
+
       const ext = fileData.file.name.split(".").pop()?.toLowerCase() ?? "txt";
       const { data: newJob, error } = await supabase
         .from("bank_import_jobs")
         .insert([{
+          created_by: user.id,
           subject_id: fileData.subject_id,
           topic_id: fileData.topic_id ?? null,
           sub_topic_id: fileData.sub_topic_id ?? null,
@@ -61,11 +65,16 @@ export function useBankImport() {
       setJobId(newJob.id);
 
       // 4. Trigger extraction
-      await fetch("/api/bank/import/extract", {
+      const extractRes = await fetch("/api/bank/import/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId: newJob.id }),
       });
+
+      if (!extractRes.ok) {
+        const errorData = await extractRes.json().catch(() => ({}));
+        throw new Error(errorData.error || "Extraction failed");
+      }
 
       toast.success("Import started");
       return newJob.id;

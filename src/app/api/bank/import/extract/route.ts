@@ -23,10 +23,17 @@ export async function POST(request: NextRequest) {
 
     // Extract the R2 key from the URL
     const r2Url = job.r2_file_url as string;
-    const publicUrlBase = process.env.R2_PUBLIC_URL || "";
-    const key = r2Url.replace(publicUrlBase + "/", "");
+    let key = "";
+    try {
+      const url = new URL(r2Url);
+      key = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+    } catch (e) {
+      // Fallback for non-URL keys
+      key = r2Url;
+    }
 
     // Fetch file from R2
+    console.log("[bank/import/extract] Fetching from R2:", key);
     const buffer = await getR2Object(key);
 
     // Extract text based on file type

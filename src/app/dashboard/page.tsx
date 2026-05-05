@@ -1,26 +1,29 @@
-import { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { fetchDashboardPageData } from "@/features/student/lib/dashboard-queries";
-import { DashboardShell } from "@/features/student/components/dashboard/dashboard-shell";
-
-export const metadata: Metadata = {
-  title: "Dashboard — Evoke Edu Global",
-  description:
-    "Track your learning progress, upcoming sessions, certificates, and recent activity.",
-};
+import { DashboardShell } from "@/components/student/dashboard/DashboardShell";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/login");
+    redirect("/login");
   }
 
-  const dashboardData = await fetchDashboardPageData(supabase, user.id);
-
-  return <DashboardShell initialData={dashboardData} />;
+  return <DashboardShell userId={user.id} />;
 }
