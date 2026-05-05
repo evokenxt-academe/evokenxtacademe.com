@@ -1,19 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { QuizEngine, type PreviousAttempt, type QuizMeta, type QuizQuestion } from "./QuizEngine";
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ quizId: string }> },
-) {
+export const dynamic = "force-dynamic";
+
+interface Props {
+  params: Promise<{ quizId: string }>;
+}
+
+export default async function QuizPage({ params }: Props) {
   const { quizId } = await params;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!user) redirect("/auth/login");
 
   const { data: quiz, error: quizError } = await supabase
     .from("quizzes")
@@ -28,9 +30,7 @@ export async function GET(
     .eq("is_published", true)
     .maybeSingle();
 
-  if (quizError || !quiz) {
-    return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
-  }
+  if (quizError || !quiz) redirect("/dashboard");
 
   const { data: enrollment } = await supabase
     .from("enrollments")
@@ -40,9 +40,7 @@ export async function GET(
     .eq("status", "active")
     .maybeSingle();
 
-  if (!enrollment) {
-    return NextResponse.json({ error: "Enrollment required" }, { status: 403 });
-  }
+  if (!enrollment) redirect("/courses");
 
   const [{ data: questions }, { data: attempts }] = await Promise.all([
     supabase
@@ -67,5 +65,15 @@ export async function GET(
       .order("attempt_number", { ascending: false }),
   ]);
 
-  return NextResponse.json({ quiz, questions: questions ?? [], attempts: attempts ?? [] });
+  return (
+    <div className="px-4 py-6 md:px-6">
+      <QuizEngine
+        userId={user.id}
+        quiz={quiz as unknown as QuizMeta}
+        questions={(questions ?? []) as unknown as QuizQuestion[]}
+        attempts={(attempts ?? []) as unknown as PreviousAttempt[]}
+      />
+    </div>
+  );
 }
+

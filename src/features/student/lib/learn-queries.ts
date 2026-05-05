@@ -1,11 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database.types";
+import type { Database } from "@/types/supabase";
 import type {
   CourseWithContent,
   LectureProgressRecord,
 } from "@/features/student/types/learn";
 
-// ─── Fetch full course content (sections → lectures → resources) ──
+// ─── Fetch full course content (chapters → lectures → resources) ──
 
 export async function getCourseContent(
   supabase: SupabaseClient<Database>,
@@ -14,12 +14,12 @@ export async function getCourseContent(
   const { data, error } = await supabase
     .from("courses")
     .select(
-      `*,
-       sections (
-         *,
+      `id, title, slug, description, thumbnail_url, language,
+       chapters (
+         id, title, position,
          lectures (
-           *,
-           resources (*)
+           id, title, description, duration_sec, yt_video_id, video_provider, position, is_preview,
+           resources:lecture_resources ( id, lecture_id, title, file_url, file_type, file_size_kb, position )
          )
        )`
     )
@@ -33,15 +33,20 @@ export async function getCourseContent(
 
   if (!data) return null;
 
-  // Sort sections by position, then sort lectures within each section
+  // Sort chapters by position, then sort lectures within each chapter
   const course = data as unknown as CourseWithContent;
-  course.sections = (course.sections ?? [])
+  course.chapters = (course.chapters ?? [])
     .sort((a, b) => a.position - b.position)
-    .map((section) => ({
-      ...section,
-      lectures: (section.lectures ?? []).sort(
-        (a, b) => a.position - b.position
-      ),
+    .map((chapter) => ({
+      ...chapter,
+      lectures: (chapter.lectures ?? [])
+        .sort((a, b) => a.position - b.position)
+        .map((l) => ({
+          ...l,
+          resources: (l.resources ?? []).sort(
+            (x, y) => (x.position ?? 0) - (y.position ?? 0),
+          ),
+        })),
     }));
 
   return course;
@@ -78,7 +83,7 @@ export async function getCourseLectureProgress(
 
   const { data, error } = await supabase
     .from("lecture_progress")
-    .select("lecture_id, is_completed, watched_seconds, last_watched_at")
+    .select("lecture_id, is_completed, watched_seconds, resume_at_seconds, last_watched_at")
     .eq("user_id", userId)
     .in("lecture_id", lectureIds);
 
@@ -90,7 +95,7 @@ export async function getCourseLectureProgress(
   return (data ?? []) as LectureProgressRecord[];
 }
 
-// ─── Mark a lecture as completed (upsert) ──────────────────────────
+// ─── Update lecture progress (upsert) ──────────────────────────────
 
 export async function upsertLectureProgress(
   supabase: SupabaseClient<Database>,
@@ -98,13 +103,16 @@ export async function upsertLectureProgress(
   lectureId: string,
   isCompleted: boolean,
   watchedSeconds?: number,
+  resumeAtSeconds?: number,
 ): Promise<boolean> {
   const payload = {
     user_id: userId,
     lecture_id: lectureId,
     is_completed: isCompleted,
     watched_seconds: watchedSeconds ?? 0,
+    resume_at_seconds: resumeAtSeconds ?? watchedSeconds ?? 0,
     last_watched_at: new Date().toISOString(),
+    completed_at: isCompleted ? new Date().toISOString() : null,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase SDK upsert type inference bug
