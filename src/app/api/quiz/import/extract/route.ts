@@ -22,8 +22,16 @@ export async function POST(request: NextRequest) {
     if (error || !job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
     const r2Url = job.r2_file_url as string;
-    const publicUrlBase = process.env.R2_PUBLIC_URL || "";
-    const key = r2Url.replace(publicUrlBase + "/", "");
+    let key = "";
+    try {
+      const url = new URL(r2Url);
+      key = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+    } catch (e) {
+      // Fallback for non-URL keys
+      key = r2Url;
+    }
+    
+    console.log("[quiz/import/extract] Fetching from R2:", key);
     const buffer = await getR2Object(key);
 
     let extractedText = "";

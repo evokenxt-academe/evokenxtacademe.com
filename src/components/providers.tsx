@@ -2,6 +2,7 @@
 import * as React from "react";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 
 // Workaround for next-themes injecting a script tag that React 19 complains about
 // This is a known false-positive warning during development.
@@ -25,7 +26,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <Toaster position="top-right" richColors />
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

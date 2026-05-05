@@ -145,3 +145,15 @@ export function useUpdateQuiz() {
     },
   });
 }
+
+export function useQuizRanking(quizId: string) {
+  return useQuery({
+    queryKey: ["quiz-ranking", quizId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/tests/${quizId}/ranking`);
+      if (!res.ok) throw new Error("Failed to fetch ranking");
+      return res.json();
+    },
+    enabled: !!quizId,
+  });
+}

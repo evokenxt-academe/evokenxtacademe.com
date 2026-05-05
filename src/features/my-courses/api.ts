@@ -216,3 +216,55 @@ export async function fetchMyCourses(): Promise<MyCourse[]> {
 
   return courses;
 }
+          duration_sec,
+          position,
+          lecture_progress (
+            user_id,
+            is_completed,
+            watched_seconds,
+            last_watched_at
+          )
+        )
+      )
+    `
+    )
+    .eq("instructor_id", userId);
+
+  if (instError) throw new Error(`fetchMyCourses (instructor): ${instError.message}`);
+
+  // Combine and deduplicate
+  const combinedMap = new Map<string, EnrollmentWithCourse>();
+
+  (enrollmentData || []).forEach((e: any) => {
+    combinedMap.set(e.course_id, e as unknown as EnrollmentWithCourse);
+  });
+
+  (instructorData || []).forEach((c: any) => {
+    if (!combinedMap.has(c.id)) {
+      combinedMap.set(c.id, {
+        id: `inst-${c.id}`,
+        user_id: userId,
+        course_id: c.id,
+        status: "active",
+        enrolled_at: c.created_at,
+        expires_at: null,
+        course: c,
+      } as unknown as EnrollmentWithCourse);
+    }
+  });
+
+  const validRows = Array.from(combinedMap.values());
+
+  // Post-process: calculate progress and resolve resume lecture titles
+  const courses = calculateProgress(validRows, userId);
+
+  // Sort: most recently accessed first, then by enrolled_at
+  courses.sort((a, b) => {
+    const aMs = a.lastAccessedAt ? Date.parse(a.lastAccessedAt) : 0;
+    const bMs = b.lastAccessedAt ? Date.parse(b.lastAccessedAt) : 0;
+    if (aMs !== bMs) return bMs - aMs;
+    return 0; // keep DB order (enrolled_at desc)
+  });
+
+  return courses;
+}
