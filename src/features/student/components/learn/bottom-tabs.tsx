@@ -1,27 +1,69 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { IconDownload, IconFile, IconNotes } from "@tabler/icons-react";
-import type { ResourceRow } from "@/features/student/types/learn";
+import type { LectureWithResources } from "@/features/student/types/learn";
 
 interface BottomTabsProps {
-  resources: ResourceRow[];
+  userId: string;
+  lectureId: string | null;
+  resources: LectureWithResources["resources"];
   lectureDescription: string | null;
 }
 
-export function BottomTabs({ resources, lectureDescription }: BottomTabsProps) {
+export function BottomTabs({
+  userId,
+  lectureId,
+  resources,
+  lectureDescription,
+}: BottomTabsProps) {
+  const storageKey = useMemo(() => {
+    if (!lectureId) return null;
+    return `evoke_notes_${userId}_${lectureId}`;
+  }, [lectureId, userId]);
+
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = window.localStorage.getItem(storageKey);
+    setNotes(saved ?? "");
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    window.localStorage.setItem(storageKey, notes);
+  }, [notes, storageKey]);
+
   return (
-    <Tabs defaultValue="resources" className="w-full">
+    <Tabs defaultValue="overview" className="w-full">
       <TabsList>
+        <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="resources">
           Resources{resources.length > 0 && ` (${resources.length})`}
         </TabsTrigger>
         <TabsTrigger value="notes">Notes</TabsTrigger>
-        <TabsTrigger value="discussion">Discussion</TabsTrigger>
       </TabsList>
+
+      <TabsContent value="overview" className="mt-4">
+        <Card>
+          <CardContent className="p-4">
+            {lectureDescription ? (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {lectureDescription}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No overview provided for this lecture.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
 
       <TabsContent value="resources" className="mt-4">
         {resources.length === 0 ? (
@@ -69,26 +111,19 @@ export function BottomTabs({ resources, lectureDescription }: BottomTabsProps) {
 
       <TabsContent value="notes" className="mt-4">
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <IconNotes className="size-10 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Notes feature coming soon
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Take personal notes while watching lectures
-            </p>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="discussion" className="mt-4">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Discussion feature coming soon
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ask questions and interact with peers
+          <CardContent className="flex flex-col gap-3 p-4">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <IconNotes data-icon="inline-start" />
+              Personal notes
+            </div>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Write your notes here…"
+              rows={8}
+            />
+            <p className="text-xs text-muted-foreground">
+              Saved locally on this device.
             </p>
           </CardContent>
         </Card>

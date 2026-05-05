@@ -1,5 +1,7 @@
-import { MyCoursesPage } from "@/features/my-courses";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MyCoursesPage />;
+  // Legacy route: the new schema uses courses → chapters (not sections).
+  // Redirect to the rewritten student route.
+  redirect("/dashboard/my-courses");
 }

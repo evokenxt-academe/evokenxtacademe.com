@@ -13,13 +13,13 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LectureItem } from "./lecture-item";
 import type {
-  SectionWithLectures,
+  ChapterWithLectures,
   LectureWithResources,
   ProgressMap,
 } from "@/features/student/types/learn";
 
 interface CurriculumSidebarProps {
-  sections: SectionWithLectures[];
+  chapters: ChapterWithLectures[];
   currentLectureId: string | null;
   progressMap: ProgressMap;
   onSelectLecture: (lecture: LectureWithResources) => void;
@@ -28,7 +28,7 @@ interface CurriculumSidebarProps {
 }
 
 export function CurriculumSidebar({
-  sections,
+  chapters,
   currentLectureId,
   progressMap,
   onSelectLecture,
@@ -39,8 +39,8 @@ export function CurriculumSidebar({
   const progressPercent =
     totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
 
-  // Find which section the current lecture belongs to
-  const currentSectionId = sections.find((s) =>
+  // Find which chapter the current lecture belongs to
+  const currentChapterId = chapters.find((s) =>
     s.lectures.some((l) => l.id === currentLectureId)
   )?.id;
 
@@ -84,33 +84,33 @@ export function CurriculumSidebar({
       <ScrollArea className="flex-1" ref={scrollRef}>
         <Accordion
           type="multiple"
-          defaultValue={currentSectionId ? [currentSectionId] : [sections[0]?.id]}
+          defaultValue={currentChapterId ? [currentChapterId] : [chapters[0]?.id]}
           className="px-2 py-2"
         >
-          {sections.map((section) => {
-            const sectionCompleted = section.lectures.filter((l) =>
+          {chapters.map((chapter) => {
+            const chapterCompleted = chapter.lectures.filter((l) =>
               progressMap.get(l.id)?.is_completed
             ).length;
 
             return (
               <AccordionItem
-                key={section.id}
-                value={section.id}
+                key={chapter.id}
+                value={chapter.id}
                 className="border-b-0"
               >
                 <AccordionTrigger className="px-2 py-3 text-sm hover:no-underline">
                   <div className="flex flex-1 flex-col items-start gap-1 text-left">
                     <span className="font-medium leading-tight">
-                      {section.title}
+                      {chapter.title}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {sectionCompleted}/{section.lectures.length} lectures
+                      {chapterCompleted}/{chapter.lectures.length} lectures
                     </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-1">
                   <div className="flex flex-col gap-0.5">
-                    {section.lectures.map((lecture, lectureIndex) => (
+                    {chapter.lectures.map((lecture, lectureIndex) => (
                       <LectureItem
                         key={lecture.id}
                         lecture={lecture}
