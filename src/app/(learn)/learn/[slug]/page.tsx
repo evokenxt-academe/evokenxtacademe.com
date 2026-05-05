@@ -1,6 +1,14 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 
+type LearnRedirectSectionRow = {
+  position: number | null;
+  lectures: Array<{
+    id: string;
+    position: number | null;
+  }> | null;
+};
+
 interface Props {
   params: Promise<{
     slug: string;
@@ -48,7 +56,9 @@ export default async function LearnRedirectPage({ params }: Props) {
     .eq("course_id", courseId)
     .order("position", { ascending: true });
 
-  const allLectures = (sectionsData ?? [])
+  const allSections = (sectionsData ?? []) as LearnRedirectSectionRow[];
+
+  const allLectures = allSections
     .flatMap((section) =>
       (section.lectures ?? []).map((lecture) => ({
         id: lecture.id,

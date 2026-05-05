@@ -1,4 +1,4 @@
-import { EnterpriseCourseEditor } from "@/features/admin/course/components/enterprise-course-editor";
+import { redirect } from "next/navigation";
 
 export default async function EditCoursePage({
   params,
@@ -6,6 +6,5 @@ export default async function EditCoursePage({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = await params;
-
-  return <EnterpriseCourseEditor courseId={courseId} />;
+  redirect(`/admin/courses/${courseId}/edit`);
 }

@@ -4,6 +4,42 @@ import { createAdminClient } from "@/utils/supabase/adminClient";
 
 export const dynamic = "force-dynamic";
 
+async function resolveUserRole(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userId: string,
+  email?: string,
+) {
+  const byId = await adminClient
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (byId.error) {
+    return null;
+  }
+
+  if (byId.data?.role) {
+    return byId.data.role;
+  }
+
+  if (!email) {
+    return null;
+  }
+
+  const byEmail = await adminClient
+    .from("users")
+    .select("role")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (byEmail.error) {
+    return null;
+  }
+
+  return byEmail.data?.role ?? null;
+}
+
 function toNumber(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
@@ -51,7 +87,7 @@ export async function GET(
     const { attemptId } = await params;
     const supabase = await createClient();
     const adminClient = createAdminClient();
-    
+
     const {
       data: { user },
       error: authError,
@@ -60,6 +96,9 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const role = await resolveUserRole(adminClient, user.id, user.email ?? undefined);
+    const isAdmin = role === "admin" || role === "instructor";
 
     // Fetch attempt with administrative privileges to ensure we get all details
     const { data: attemptData, error: attemptError } = await adminClient
@@ -74,7 +113,7 @@ export async function GET(
     }
 
     const attempt = attemptData as AttemptRow | null;
-    if (!attempt || attempt.user_id !== user.id) {
+    if (!attempt || (!isAdmin && attempt.user_id !== user.id)) {
       return NextResponse.json({ error: "Result not found or access denied." }, { status: 404 });
     }
 

@@ -1,5 +1,5 @@
-import { AddCourse } from "@/features/admin/course/components/add-course"
+import { redirect } from "next/navigation";
 
 export default function NewCoursePage() {
-    return <AddCourse />
+  redirect("/admin/courses/new");
 }

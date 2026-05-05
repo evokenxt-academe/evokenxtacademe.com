@@ -169,6 +169,7 @@ export interface StudentAttemptAnalytics {
   id: string;
   quizId: string;
   quizTitle: string;
+  quizType: "practice" | "graded" | "final";
   courseName: string;
   courseId: string;
   score: number;

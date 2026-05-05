@@ -19,3 +19,12 @@ This project is built using Next.js (App Router) and follows a feature-driven ar
 *   `src/lib/`: Core library configurations and third-party integrations (e.g., `supabase/`, `brevo.ts`, `utils.ts`).
 *   `src/types/`: Global TypeScript definitions, including Supabase database types.
 *   `src/utils/`: Utility functions and helpers.
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
