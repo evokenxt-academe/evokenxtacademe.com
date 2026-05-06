@@ -11,7 +11,7 @@ type Tables = Database["public"]["Tables"];
 
 export type EnrollmentRow = Tables["enrollments"]["Row"];
 export type CourseRow = Tables["courses"]["Row"];
-export type SectionRow = Tables["sections"]["Row"];
+export type ChapterRow = Tables["chapters"]["Row"];
 export type LectureRow = Tables["lectures"]["Row"];
 export type LectureProgressRow = Tables["lecture_progress"]["Row"];
 export type UserRow = Tables["users"]["Row"];
@@ -21,8 +21,8 @@ export type UserRow = Tables["users"]["Row"];
 export interface EnrollmentWithCourse extends EnrollmentRow {
   course: CourseRow & {
     instructor: Pick<UserRow, "name" | "avatar"> | null;
-    sections: Array<
-      SectionRow & {
+    chapters: Array<
+      ChapterRow & {
         lectures: Array<
           Pick<LectureRow, "id" | "title" | "duration_sec" | "position"> & {
             lecture_progress: Array<

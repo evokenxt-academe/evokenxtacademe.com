@@ -27,7 +27,7 @@ export async function GET() {
             .order("created_at", { ascending: false }),
         supabase
             .from("courses")
-            .select("id, name, slug, status")
+            .select("id, title, slug, status")
             .order("created_at", { ascending: false }),
     ]);
 
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     // Validate course exists
     const { data: course, error: courseError } = await supabase
         .from("courses")
-        .select("id, name")
+        .select("id, title")
         .eq("id", courseId)
         .single();
 
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
     if (existing?.status === "active") {
         return NextResponse.json(
             {
-                error: `${user.name} is already actively enrolled in ${course.name}`,
+                error: `${user.name} is already actively enrolled in ${course.title}`,
             },
             { status: 409 },
         );
@@ -180,6 +180,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
         success: true,
-        message: `${user.name} enrolled in ${course.name}`,
+        message: `${user.name} enrolled in ${course.title}`,
     });
 }
