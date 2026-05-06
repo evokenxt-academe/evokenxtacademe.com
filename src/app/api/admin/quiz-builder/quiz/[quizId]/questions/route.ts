@@ -14,8 +14,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const { supabase } = auth
 
     const { data, error } = await supabase
-        .from("questions")
-        .select("*, options(*)")
+        .from("quiz_questions")
+        .select("id, quiz_id, question_id, position, marks_override")
         .eq("quiz_id", quizId)
         .order("position", { ascending: true })
 
@@ -23,37 +23,52 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const questions = (data ?? []).map((row) => {
-        const opts = (row.options as Array<Record<string, unknown>>) ?? []
+    const questionIds = (data ?? []).map((row) => row.question_id)
+    const { data: bankRows, error: bankError } = await supabase
+        .from("question_bank")
+        .select("*, question_bank_options(*)")
+        .in("id", questionIds)
 
-        return {
+    if (bankError) {
+        return NextResponse.json({ error: bankError.message }, { status: 500 })
+    }
+
+    const bankMap = new Map((bankRows ?? []).map((row) => [row.id, row]))
+
+    const questions = (data ?? []).flatMap((row) => {
+        const bank = bankMap.get(row.question_id)
+        if (!bank) return []
+
+        const opts = ((bank as Record<string, unknown>).question_bank_options as Array<Record<string, unknown>> | undefined) ?? []
+
+        return [{
             id: row.id,
             quizId: row.quiz_id,
-            questionId: row.id, // for backwards compatibility with the UI
+            questionId: row.question_id,
             position: row.position,
-            marksOverride: null, // No longer supported in schema
+            marksOverride: row.marks_override,
             question: {
-                id: row.id as string,
-                question: row.question as string,
-                type: "mcq", // Defaults
-                explanation: row.source as string | null,
-                difficulty: "medium",
-                tags: [],
-                marks: row.marks as number,
-                createdBy: null,
-                createdAt: row.id as string,
-                updatedAt: row.id as string,
+                id: bank.id,
+                question: bank.question,
+                type: bank.type,
+                explanation: bank.explanation,
+                difficulty: bank.difficulty,
+                tags: bank.tags ?? [],
+                marks: bank.marks,
+                createdBy: bank.created_by,
+                createdAt: bank.created_at,
+                updatedAt: bank.updated_at,
                 options: opts
                     .sort((a, b) => (a.position as number) - (b.position as number))
-                    .map((opt, idx) => ({
+                    .map((opt) => ({
                         id: opt.id as string,
-                        questionId: row.id as string,
+                        questionId: bank.id,
                         text: opt.text as string,
                         isCorrect: opt.is_correct as boolean,
-                        position: idx,
+                        position: opt.position as number,
                     })),
             },
-        }
+        }]
     })
 
     return NextResponse.json({ questions })
@@ -77,7 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Get current max position
     const { data: maxRow } = await supabase
-        .from("questions")
+        .from("quiz_questions")
         .select("position")
         .eq("quiz_id", quizId)
         .order("position", { ascending: false })
@@ -86,65 +101,52 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     let nextPosition = (maxRow?.position ?? -1) + 1
 
-    // Fetch original questions with options
-    const { data: originalQuestions, error: fetchError } = await supabase
-        .from("questions")
-        .select("*, options(*)")
-        .in("id", questionIds)
-
-    if (fetchError) {
-        return NextResponse.json({ error: fetchError.message }, { status: 500 })
-    }
-
-    let addedCount = 0
-
-    for (const original of originalQuestions ?? []) {
-        // Create duplicate
-        const { data: duplicate, error: dupError } = await supabase
-            .from("questions")
-            .insert({
-                quiz_id: quizId,
-                question: original.question,
-                source: original.source,
-                marks: original.marks,
-                position: nextPosition++,
-            })
-            .select()
-            .single()
-
-        if (dupError || !duplicate) {
-            continue
-        }
-
-        // Duplicate options
-        const originalOptions = (original.options as Array<Record<string, unknown>>) ?? []
-
-        if (originalOptions.length > 0) {
-            await supabase
-                .from("options")
-                .insert(
-                    originalOptions.map((opt) => ({
-                        question_id: duplicate.id,
-                        text: opt.text as string,
-                        is_correct: opt.is_correct as boolean,
-                    }))
-                )
-        }
-        addedCount++
-    }
-
-    // Recalculate total marks
-    const { data: allQ } = await supabase
-        .from("questions")
-        .select("marks")
+    const existingQuestionRows = await supabase
+        .from("quiz_questions")
+        .select("question_id")
         .eq("quiz_id", quizId)
+        .in("question_id", questionIds)
 
-    const totalMarks = (allQ ?? []).reduce((sum, q) => sum + (q.marks ?? 1), 0)
+    if (existingQuestionRows.error) {
+        return NextResponse.json({ error: existingQuestionRows.error.message }, { status: 500 })
+    }
+
+    const existingSet = new Set((existingQuestionRows.data ?? []).map((row) => row.question_id))
+    const toInsert = questionIds.filter((id) => !existingSet.has(id))
+    if (toInsert.length === 0) {
+        return NextResponse.json({ added: 0 })
+    }
+
+    const { error: insertError } = await supabase
+        .from("quiz_questions")
+        .insert(
+            toInsert.map((questionId) => ({
+                quiz_id: quizId,
+                question_id: questionId,
+                position: nextPosition++,
+            }))
+        )
+
+    if (insertError) {
+        return NextResponse.json({ error: insertError.message }, { status: 500 })
+    }
+
+    const { data: allQ, error: marksError } = await supabase
+        .from("quiz_questions")
+        .select("question_bank(marks)")
+        .eq("quiz_id", quizId)
+    if (marksError) {
+        return NextResponse.json({ error: marksError.message }, { status: 500 })
+    }
+    const totalMarks = (allQ ?? []).reduce((sum, row) => {
+        const marks = (row.question_bank as { marks?: number } | null)?.marks ?? 1
+        return sum + marks
+    }, 0)
 
     await supabase
         .from("quizzes")
         .update({ total_marks: totalMarks })
         .eq("id", quizId)
 
-    return NextResponse.json({ added: addedCount })
+    return NextResponse.json({ added: toInsert.length })
 }

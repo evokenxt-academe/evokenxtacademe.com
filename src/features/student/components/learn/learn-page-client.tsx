@@ -246,13 +246,13 @@ export function LearnPageClient({
   );
 
   return (
-    <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-65px)]">
+    <div className="flex w-full flex-col bg-background lg:h-[calc(100vh-65px)] lg:flex-row">
       {/* ─── Main content area ─────────────────────────────────── */}
-      <div className="flex flex-1 flex-col overflow-y-auto">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <div className="flex flex-col gap-0">
           {/* Mobile curriculum trigger */}
-          <div className="flex items-center justify-between border-b border-border px-4 py-2 lg:hidden">
-            <h1 className="text-sm font-semibold truncate">
+          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/95 px-3 py-2 backdrop-blur sm:px-4 lg:hidden">
+            <h1 className="truncate text-sm font-semibold">
               {course.title}
             </h1>
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -262,7 +262,7 @@ export function LearnPageClient({
                   Curriculum
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[340px] p-0 sm:w-[380px]">
+              <SheetContent side="right" className="w-screen max-w-none p-0">
                 <SheetTitle className="sr-only">Course Curriculum</SheetTitle>
                 {sidebarContent}
               </SheetContent>
@@ -284,7 +284,7 @@ export function LearnPageClient({
           />
 
           {/* Lecture info + controls below player */}
-          <div className="flex flex-col gap-4 px-4 py-4 lg:px-6">
+          <div className="flex flex-col gap-4 px-3 py-4 sm:px-4 lg:px-8">
             {/* Section + title */}
             {currentLecture && (
               <div className="flex flex-col gap-1">
@@ -292,7 +292,7 @@ export function LearnPageClient({
                   {currentFlat?.chapterTitle}
                 </p>
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h2 className="text-lg font-semibold leading-tight">
+                  <h2 className="text-base font-semibold leading-tight sm:text-lg">
                     {currentLecture.title}
                   </h2>
                   <div className="flex items-center gap-2 shrink-0">
@@ -318,8 +318,8 @@ export function LearnPageClient({
             )}
 
             {/* Navigation + Mark Complete */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
                 <Button
                   variant="outline"
                   size="sm"
@@ -343,6 +343,7 @@ export function LearnPageClient({
               {!isCurrentCompleted && (
                 <Button
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={handleMarkComplete}
                   disabled={updateProgress.isPending}
                 >
@@ -366,7 +367,7 @@ export function LearnPageClient({
       </div>
 
       {/* ─── Desktop sidebar ───────────────────────────────────── */}
-      <aside className="hidden lg:flex lg:w-[360px] lg:shrink-0 lg:border-l lg:border-border">
+      <aside className="hidden lg:flex lg:w-[420px] lg:shrink-0 lg:border-l lg:border-border xl:w-[460px]">
         {sidebarContent}
       </aside>
     </div>

@@ -19,11 +19,11 @@ function calculateProgress(
   userId: string,
 ): MyCourse[] {
   return rows.map((enrollment) => {
-    const sections = [...(enrollment.course.sections ?? [])].sort(
+    const chapters = [...(enrollment.course.chapters ?? [])].sort(
       (a, b) => a.position - b.position,
     );
-    const lectures = sections.flatMap((section) =>
-      [...(section.lectures ?? [])].sort((a, b) => a.position - b.position),
+    const lectures = chapters.flatMap((chapter) =>
+      [...(chapter.lectures ?? [])].sort((a, b) => a.position - b.position),
     );
     const totalLessons = lectures.length;
 
@@ -75,7 +75,6 @@ function calculateProgress(
       }
     }
 
-    // Sort lectures by section position then lecture position (already ordered by DB query)
     // Find last-watched lecture
     let lastWatchedLectureId: string | null = null;
     let lastWatchedAt: string | null = null;
@@ -118,7 +117,7 @@ function calculateProgress(
       enrollmentId: enrollment.id,
       courseId: enrollment.course.id,
       slug: enrollment.course.slug,
-      title: enrollment.course.name,
+      title: enrollment.course.title,
       thumbnailUrl: enrollment.course.thumbnail_url,
       instructorName: enrollment.course.instructor?.name || "Instructor",
       instructorAvatar: enrollment.course.instructor?.avatar ?? null,
@@ -150,7 +149,7 @@ export async function fetchMyCourses(): Promise<MyCourse[]> {
     throw new Error("fetchMyCourses: not authenticated");
   }
 
-  // Single relational query — enrollments → courses → sections → lectures → lecture_progress
+  // Single relational query — enrollments → courses → chapters → lectures → lecture_progress
   const { data, error } = await supabase
     .from("enrollments")
     .select(
@@ -163,14 +162,14 @@ export async function fetchMyCourses(): Promise<MyCourse[]> {
       expires_at,
       course:courses (
         id,
-        name,
+        title,
         slug,
         thumbnail_url,
         instructor:users!instructor_id (
           name,
           avatar
         ),
-        sections (
+        chapters (
           id,
           title,
           position,

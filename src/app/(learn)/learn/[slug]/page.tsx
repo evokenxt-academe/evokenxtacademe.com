@@ -4,7 +4,7 @@ import { LearnPageClient } from "@/features/student/components/learn/learn-page-
 
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams?: { lecture?: string; t?: string };
+  searchParams?: Promise<{ lecture?: string; t?: string }>;
 }
 
 function toSafeInt(value: string | undefined): number | null {
@@ -15,8 +15,9 @@ function toSafeInt(value: string | undefined): number | null {
 
 export default async function LearnPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const lectureId = searchParams?.lecture ?? null;
-  const t = toSafeInt(searchParams?.t);
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const lectureId = resolvedSearchParams?.lecture ?? null;
+  const t = toSafeInt(resolvedSearchParams?.t);
 
   const supabase = await createClient();
   const {

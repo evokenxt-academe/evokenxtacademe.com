@@ -6,7 +6,15 @@ import { parseFormattedText } from "@/lib/parsers/formattedTextParser";
 
 async function getSupabase() {
   const cookieStore = await cookies();
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase environment variables are missing");
+  }
+
+  return createServerClient(supabaseUrl, supabaseKey, {
     cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} },
   });
 }
@@ -18,7 +26,24 @@ export async function POST(request: NextRequest) {
     const { data: job } = await supabase.from("bank_import_jobs").select("*").eq("id", jobId).single();
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 });
 
-    const text = job.extracted_text as string;
+    const text = (job.extracted_text ?? "") as string;
+    if (!text.trim()) {
+      const message = "No extractable text found in uploaded file";
+      await supabase.from("bank_import_jobs").update({
+        status: "failed",
+        error_message: message,
+        total_found: 0,
+        updated_at: new Date().toISOString(),
+      }).eq("id", jobId);
+
+      return NextResponse.json({
+        success: false,
+        status: "failed",
+        total_found: 0,
+        error: message,
+      });
+    }
+
     let result = await parseWithGemini(text);
     let status = "completed";
     let errorMessage: string | null = null;

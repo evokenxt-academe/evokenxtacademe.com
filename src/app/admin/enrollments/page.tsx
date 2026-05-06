@@ -74,7 +74,7 @@ interface User {
 
 interface Course {
   id: string;
-  name: string;
+  title: string;
   slug: string;
 }
 
@@ -127,8 +127,8 @@ function useCourses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, name, slug")
-        .order("name");
+        .select("id, title, slug")
+        .order("title");
 
       if (error) throw new Error(error.message);
       return data as Course[];
@@ -465,7 +465,7 @@ export default function EnrollmentsPage() {
                                   }}
                                 />
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-medium">{course.name}</span>
+                                  <span className="text-sm font-medium">{course.title}</span>
                                   <span className="text-xs text-muted-foreground font-mono">{course.slug}</span>
                                 </div>
                               </label>

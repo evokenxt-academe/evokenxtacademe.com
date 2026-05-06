@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import type { PlayerState } from "./use-youtube-player";
+import type { PlayerState, YouTubeQuality } from "./use-youtube-player";
 import {
   IconPlayerPlayFilled,
   IconPlayerPauseFilled,
@@ -225,10 +225,21 @@ interface VideoControlsProps {
   onVolumeChange: (vol: number) => void;
   onToggleMute: () => void;
   onSpeedChange: (rate: PlaybackSpeed) => void;
+  onQualityChange: (quality: YouTubeQuality) => void;
   onToggleFullscreen: () => void;
   isFullscreen: boolean;
   visible: boolean;
 }
+
+const QUALITY_LABELS: Record<YouTubeQuality, string> = {
+  auto: "Auto",
+  small: "240p",
+  medium: "360p",
+  large: "420p",
+  hd720: "720p",
+  hd1080: "1080p",
+  highres: "4K",
+};
 
 export function VideoControls({
   state,
@@ -237,10 +248,19 @@ export function VideoControls({
   onVolumeChange,
   onToggleMute,
   onSpeedChange,
+  onQualityChange,
   onToggleFullscreen,
   isFullscreen,
   visible,
 }: VideoControlsProps) {
+  const visibleQualities = state.availableQualities.filter(
+    (quality) => quality === "auto" || quality === "large" || quality === "hd720" || quality === "hd1080"
+  );
+
+  const selectedQuality = visibleQualities.includes(state.quality)
+    ? state.quality
+    : "auto";
+
   return (
     <div
       className={cn(
@@ -249,7 +269,7 @@ export function VideoControls({
       )}
     >
       {/* Gradient overlay */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
 
       {/* Progress bar */}
       <div className="relative z-10 px-3">
@@ -257,7 +277,7 @@ export function VideoControls({
       </div>
 
       {/* Controls row */}
-      <div className="relative z-10 flex items-center gap-1 px-3 pb-2.5 pt-1.5">
+      <div className="relative z-10 flex items-center gap-1 px-2 pb-2 pt-1.5 sm:px-3 sm:pb-2.5">
         {/* Left group */}
         <div className="flex items-center gap-1">
           {/* Play/Pause */}
@@ -282,7 +302,7 @@ export function VideoControls({
           />
 
           {/* Time display */}
-          <span className="ml-1.5 select-none text-xs tabular-nums text-white/80">
+          <span className="ml-1 select-none text-[10px] tabular-nums text-white/80 sm:ml-1.5 sm:text-xs">
             {formatTime(state.currentTime)} / {formatTime(state.duration)}
           </span>
         </div>
@@ -292,6 +312,39 @@ export function VideoControls({
 
         {/* Right group */}
         <div className="flex items-center gap-0.5">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="flex items-center gap-1 rounded-sm px-1.5 py-1 text-[10px] font-medium text-white transition-colors hover:bg-white/10 sm:text-xs"
+                aria-label="Video quality"
+              >
+                <span>{QUALITY_LABELS[selectedQuality]}</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              align="center"
+              className="w-auto border-border/50 bg-card/95 p-1 backdrop-blur-md"
+            >
+              <div className="flex flex-col gap-0.5">
+                <p className="px-2 py-1 text-xs text-muted-foreground">Quality</p>
+                {visibleQualities.map((quality) => (
+                  <button
+                    key={quality}
+                    onClick={() => onQualityChange(quality)}
+                    className={cn(
+                      "rounded-sm px-3 py-1.5 text-left text-sm transition-colors hover:bg-accent",
+                      selectedQuality === quality
+                        ? "bg-primary/10 font-semibold text-primary"
+                        : "text-foreground"
+                    )}
+                  >
+                    {QUALITY_LABELS[quality]}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <SpeedControl playbackRate={state.playbackRate} onSpeedChange={onSpeedChange} />
           <button
             onClick={onToggleFullscreen}

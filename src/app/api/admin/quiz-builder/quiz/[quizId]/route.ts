@@ -26,7 +26,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         .from("quizzes")
         .update(updateData)
         .eq("id", quizId)
-        .select("*, questions(id)")
+        .select("*, quiz_questions(id)")
         .single()
 
     if (error || !data) {
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             timeLimitSec: data.time_limit_sec,
             isPublished: data.is_published,
             createdAt: data.created_at,
-            questionCount: ((data.questions as unknown[]) ?? []).length,
+            questionCount: ((data.quiz_questions as unknown[]) ?? []).length,
         },
     })
 }

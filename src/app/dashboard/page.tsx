@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { WatchHoursChart } from "./_components/watch-hours-chart";
 import { StudyStreakHeatmap } from "./_components/study-streak-heatmap";
+import { LiveStreamList } from "@/components/live-stream/LiveStreamList";
 import {
   IconArrowRight,
   IconCertificate,
@@ -433,6 +434,16 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Live classes</h2>
+          <p className="text-sm text-muted-foreground">
+            Join live sessions now or plan upcoming classes.
+          </p>
+        </div>
+        <LiveStreamList />
       </section>
 
       {/* RECENT QUIZ RESULTS */}

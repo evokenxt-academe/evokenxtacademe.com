@@ -16,7 +16,7 @@ export async function GET() {
             .from("live_streams")
             .select("id, title, course_id, yt_video_id, status, started_at, ended_at")
             .order("started_at", { ascending: false }),
-        supabase.from("courses").select("id, name, slug").order("created_at", { ascending: false }),
+        supabase.from("courses").select("id, title, slug").order("created_at", { ascending: false }),
     ]);
 
     const errors = [streamsResult.error, coursesResult.error].filter(Boolean)

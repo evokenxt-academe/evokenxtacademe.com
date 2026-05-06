@@ -10,7 +10,8 @@ export type AdminUser = {
 export type AdminCourse = {
     id: string
     slug?: string
-    name: string
+    name?: string
+    title?: string
     instructor: string
     price: number
     status: "draft" | "published" | "archived"

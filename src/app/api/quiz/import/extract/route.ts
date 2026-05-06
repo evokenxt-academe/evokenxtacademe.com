@@ -2,19 +2,41 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getR2Object } from "@/lib/r2/upload";
-const pdfParse = require("pdf-parse");
 import mammoth from "mammoth";
+import { extractTextFromPdf } from "@/lib/pdf/extract";
+
+function decodeR2Key(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  return extractTextFromPdf(buffer);
+}
 
 async function getSupabase() {
   const cookieStore = await cookies();
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Supabase environment variables are missing");
+  }
+
+  return createServerClient(supabaseUrl, supabaseKey, {
     cookies: { getAll() { return cookieStore.getAll(); }, setAll() {} },
   });
 }
 
 export async function POST(request: NextRequest) {
+  let jobId: string | null = null;
   try {
-    const { jobId } = await request.json();
+    const body = await request.json();
+    jobId = body?.jobId ?? null;
     if (!jobId) return NextResponse.json({ error: "jobId is required" }, { status: 400 });
 
     const supabase = await getSupabase();
@@ -25,10 +47,11 @@ export async function POST(request: NextRequest) {
     let key = "";
     try {
       const url = new URL(r2Url);
-      key = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+      const pathKey = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+      key = decodeR2Key(pathKey);
     } catch (e) {
       // Fallback for non-URL keys
-      key = r2Url;
+      key = decodeR2Key(r2Url);
     }
     
     console.log("[quiz/import/extract] Fetching from R2:", key);
@@ -38,8 +61,7 @@ export async function POST(request: NextRequest) {
     const fileType = (job.file_type as string).toLowerCase();
 
     if (fileType === "pdf") {
-      const data = await pdfParse(buffer);
-      extractedText = data.text;
+      extractedText = await extractPdfText(buffer);
     } else if (fileType === "docx" || fileType === "doc") {
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
@@ -62,6 +84,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, wordCount: extractedText.split(/\s+/).length });
   } catch (error: any) {
     console.error("[quiz/import/extract] Error:", error.message);
+    if (jobId) {
+      try {
+        const supabase = await getSupabase();
+        await supabase
+          .from("bank_import_jobs")
+          .update({
+            status: "failed",
+            error_message: error?.message || "Extraction failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", jobId);
+      } catch (updateError: any) {
+        console.error("[quiz/import/extract] Failed to update job status:", updateError.message);
+      }
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

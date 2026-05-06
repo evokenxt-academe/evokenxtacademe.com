@@ -179,6 +179,26 @@ export function useExtractQuestions() {
     })
 }
 
+export function useImportPdfToQuiz() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (payload: { quizId: string; file: File; selectedIndices: number[] }) =>
+            quizBuilderApi.importPdfToQuiz(payload.quizId, payload.file, payload.selectedIndices),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: quizBuilderKeys.quizQuestions(variables.quizId),
+            })
+            queryClient.invalidateQueries({
+                queryKey: [...quizBuilderKeys.all, "question-bank"],
+            })
+            toast.success(`${_data.total} question(s) imported from PDF`)
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || "Failed to import PDF questions")
+        },
+    })
+}
+
 // ── Quiz ──────────────────────────────────────────────────────
 
 export function useQuizForSection(sectionId: string | null) {

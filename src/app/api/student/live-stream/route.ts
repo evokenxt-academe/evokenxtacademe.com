@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
 
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     const courseResult = uuidPattern.test(courseParam)
-        ? await supabase.from("courses").select("id, name, slug").eq("id", courseParam).maybeSingle()
-        : await supabase.from("courses").select("id, name, slug").eq("slug", courseParam).maybeSingle()
+        ? await supabase.from("courses").select("id, title, slug").eq("id", courseParam).maybeSingle()
+        : await supabase.from("courses").select("id, title, slug").eq("slug", courseParam).maybeSingle()
 
     const course = courseResult.data
 

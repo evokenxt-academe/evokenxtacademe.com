@@ -8,7 +8,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LectureItem } from "./lecture-item";
@@ -65,11 +64,11 @@ export function CurriculumSidebar({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col bg-card/40">
       {/* Progress header */}
-      <div className="flex flex-col gap-2 border-b border-border p-4">
+      <div className="sticky top-0 z-10 flex flex-col gap-2 border-b border-border bg-background/95 p-4 backdrop-blur">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Course Content</h3>
+          <h3 className="text-sm font-semibold tracking-tight">Course Content</h3>
           <span className="text-xs text-muted-foreground">
             {completedCount}/{totalLectures} lectures
           </span>
@@ -81,11 +80,11 @@ export function CurriculumSidebar({
       </div>
 
       {/* Sections accordion */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
+      <ScrollArea className="flex-1 w-full" ref={scrollRef}>
         <Accordion
           type="multiple"
           defaultValue={currentChapterId ? [currentChapterId] : [chapters[0]?.id]}
-          className="px-2 py-2"
+          className="space-y-1 px-2 py-2"
         >
           {chapters.map((chapter) => {
             const chapterCompleted = chapter.lectures.filter((l) =>
@@ -96,9 +95,9 @@ export function CurriculumSidebar({
               <AccordionItem
                 key={chapter.id}
                 value={chapter.id}
-                className="border-b-0"
+                className="overflow-hidden rounded-lg border border-transparent bg-background/60 transition-colors data-[state=open]:border-border"
               >
-                <AccordionTrigger className="px-2 py-3 text-sm hover:no-underline">
+                <AccordionTrigger className="px-3 py-3 text-sm hover:bg-muted/50 hover:no-underline">
                   <div className="flex flex-1 flex-col items-start gap-1 text-left">
                     <span className="font-medium leading-tight">
                       {chapter.title}

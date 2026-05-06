@@ -19,7 +19,7 @@ export async function GET() {
     const [reviewsResult, usersResult, coursesResult] = await Promise.all([
         supabase.from("reviews").select("*").order("created_at", { ascending: false }),
         supabase.from("users").select("id, name, email").order("created_at", { ascending: false }),
-        supabase.from("courses").select("id, name").order("created_at", { ascending: false }),
+        supabase.from("courses").select("id, title").order("created_at", { ascending: false }),
     ]);
 
     const errors = [reviewsResult.error, usersResult.error, coursesResult.error].filter(Boolean);

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const auth = await requireAdmin(["admin", "instructor"])
     if ("error" in auth) return auth.error
 
-    const { supabase } = auth
+    const { supabase, userId } = auth
 
     try {
         const body = await request.json()
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
                 .insert({
                     title,
                     course_id: courseId,
+                    instructor_id: userId,
                     yt_video_id: resolvedVideoId || null,
                     status: "live",
                     started_at: new Date().toISOString(),

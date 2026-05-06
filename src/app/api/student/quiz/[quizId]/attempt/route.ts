@@ -141,7 +141,7 @@ export async function POST(
     // Verify attempt belongs to user and is in progress
     const { data: attempt, error: attemptError } = await supabase
       .from("quiz_attempts")
-      .select("id, quiz_id, status")
+      .select("id, quiz_id, status, score, total_marks, passed, time_spent_sec, submitted_at")
       .eq("id", attemptId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -149,10 +149,6 @@ export async function POST(
     if (attemptError || !attempt) {
       return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
     }
-    if (attempt.status !== "in_progress") {
-      return NextResponse.json({ error: "Attempt is not in progress" }, { status: 409 });
-    }
-
     const { data: quiz, error: quizError } = await admin
       .from("quizzes")
       .select("id, total_marks, passing_marks, show_answers_after")
@@ -161,6 +157,28 @@ export async function POST(
 
     if (quizError || !quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    if (attempt.status !== "in_progress") {
+      const totalMarks = safeNum(attempt.total_marks) || safeNum(quiz.total_marks);
+      const score = safeNum(attempt.score);
+      const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
+      const passed =
+        typeof attempt.passed === "boolean"
+          ? attempt.passed
+          : score >= safeNum(quiz.passing_marks);
+
+      return NextResponse.json({
+        attemptId: attempt.id,
+        score,
+        totalMarks,
+        percentage,
+        passed,
+        status: attempt.status,
+        timeSpentSec: safeNum(attempt.time_spent_sec),
+        canReview: false,
+        review: undefined,
+      });
     }
 
     const { data: questions, error: qError } = await admin
@@ -355,7 +373,6 @@ export async function POST(
         status: finalStatus,
         score,
         total_marks: totalMarks,
-        percentage,
         passed,
         time_spent_sec: safeNum(body.timeSpentSec),
         submitted_at: new Date().toISOString(),
@@ -377,8 +394,7 @@ export async function POST(
         .from("quiz_answers")
         .select(
           `question_id, selected_option_id, selected_option_ids, text_answer, blank_answer, numerical_answer, marks_awarded, is_correct,
-           question:questions(question_text, explanation),
-           options:question_options(id, option_text, is_correct)`,
+           question:questions(question_text, explanation, options:question_options(id, option_text, is_correct))`,
         )
         .eq("attempt_id", attemptId);
 
@@ -386,7 +402,12 @@ export async function POST(
         return NextResponse.json({ error: reviewError.message }, { status: 500 });
       }
 
-      review = (reviewData ?? []).map((r: any) => ({
+      review = (reviewData ?? []).map((r: any) => {
+        const optionList = Array.isArray(r?.question?.options)
+          ? r.question.options
+          : [];
+
+        return {
         question_id: r.question_id,
         question_text: r.question?.question_text ?? "",
         explanation: r.question?.explanation ?? null,
@@ -397,12 +418,13 @@ export async function POST(
         blank_answer: r.blank_answer ?? null,
         text_answer: r.text_answer ?? null,
         numerical_answer: r.numerical_answer ?? null,
-        options: (r.options ?? []).map((o: any) => ({
+        options: optionList.map((o: any) => ({
           id: o.id,
           option_text: o.option_text,
           option_is_correct: o.is_correct ?? null,
         })),
-      }));
+      };
+      });
     }
 
     return NextResponse.json({

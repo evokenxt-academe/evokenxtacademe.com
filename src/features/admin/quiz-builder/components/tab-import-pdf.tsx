@@ -5,25 +5,13 @@ import { IconFileTypePdf, IconUpload, IconFileCheck, IconX, IconListCheck } from
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import type { CreateQuestionPayload, ParsedQuestion } from "../types";
-import { useBulkCreateQuestions, useExtractQuestions } from "../hooks/use-quiz-builder";
+import type { ParsedQuestion } from "../types";
+import { useExtractQuestions, useImportPdfToQuiz } from "../hooks/use-quiz-builder";
 import { QuestionPreviewList } from "./question-preview-list";
 
 interface TabImportPdfProps {
   quizId: string | null;
   onImported?: () => void;
-}
-
-function toCreatePayload(q: ParsedQuestion): CreateQuestionPayload {
-  return {
-    question: q.question,
-    type: q.type,
-    explanation: q.explanation,
-    difficulty: q.difficulty,
-    tags: q.tags ?? [],
-    marks: q.marks,
-    options: (q.options ?? []).map((o, i) => ({ text: o.text, isCorrect: o.isCorrect, position: i })),
-  };
 }
 
 export function TabImportPdf({ quizId, onImported }: TabImportPdfProps) {
@@ -34,7 +22,7 @@ export function TabImportPdf({ quizId, onImported }: TabImportPdfProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const extractMutation = useExtractQuestions();
-  const importMutation = useBulkCreateQuestions();
+  const importMutation = useImportPdfToQuiz();
 
   function toggle(i: number) {
     setSelected((prev) => {
@@ -83,9 +71,12 @@ export function TabImportPdf({ quizId, onImported }: TabImportPdfProps) {
   }
 
   async function handleImport() {
-    const qs = parsed.filter((_, i) => selected.has(i));
-    if (qs.length === 0) return;
-    await importMutation.mutateAsync({ quizId: quizId ?? undefined, questions: qs.map(toCreatePayload) });
+    if (!quizId) return;
+    const selectedIndices = parsed
+      .map((_, i) => i)
+      .filter((i) => selected.has(i));
+    if (selectedIndices.length === 0 || !file) return;
+    await importMutation.mutateAsync({ quizId, file, selectedIndices });
     removeFile();
     onImported?.();
   }
