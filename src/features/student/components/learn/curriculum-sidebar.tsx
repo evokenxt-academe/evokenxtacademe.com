@@ -8,18 +8,17 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LectureItem } from "./lecture-item";
 import type {
-  SectionWithLectures,
+  ChapterWithLectures,
   LectureWithResources,
   ProgressMap,
 } from "@/features/student/types/learn";
 
 interface CurriculumSidebarProps {
-  sections: SectionWithLectures[];
+  chapters: ChapterWithLectures[];
   currentLectureId: string | null;
   progressMap: ProgressMap;
   onSelectLecture: (lecture: LectureWithResources) => void;
@@ -28,7 +27,7 @@ interface CurriculumSidebarProps {
 }
 
 export function CurriculumSidebar({
-  sections,
+  chapters,
   currentLectureId,
   progressMap,
   onSelectLecture,
@@ -39,8 +38,8 @@ export function CurriculumSidebar({
   const progressPercent =
     totalLectures > 0 ? Math.round((completedCount / totalLectures) * 100) : 0;
 
-  // Find which section the current lecture belongs to
-  const currentSectionId = sections.find((s) =>
+  // Find which chapter the current lecture belongs to
+  const currentChapterId = chapters.find((s) =>
     s.lectures.some((l) => l.id === currentLectureId)
   )?.id;
 
@@ -65,11 +64,11 @@ export function CurriculumSidebar({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col bg-card/40">
       {/* Progress header */}
-      <div className="flex flex-col gap-2 border-b border-border p-4">
+      <div className="sticky top-0 z-10 flex flex-col gap-2 border-b border-border bg-background/95 p-4 backdrop-blur">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Course Content</h3>
+          <h3 className="text-sm font-semibold tracking-tight">Course Content</h3>
           <span className="text-xs text-muted-foreground">
             {completedCount}/{totalLectures} lectures
           </span>
@@ -81,36 +80,36 @@ export function CurriculumSidebar({
       </div>
 
       {/* Sections accordion */}
-      <ScrollArea className="flex-1" ref={scrollRef}>
+      <ScrollArea className="flex-1 w-full" ref={scrollRef}>
         <Accordion
           type="multiple"
-          defaultValue={currentSectionId ? [currentSectionId] : [sections[0]?.id]}
-          className="px-2 py-2"
+          defaultValue={currentChapterId ? [currentChapterId] : [chapters[0]?.id]}
+          className="space-y-1 px-2 py-2"
         >
-          {sections.map((section) => {
-            const sectionCompleted = section.lectures.filter((l) =>
+          {chapters.map((chapter) => {
+            const chapterCompleted = chapter.lectures.filter((l) =>
               progressMap.get(l.id)?.is_completed
             ).length;
 
             return (
               <AccordionItem
-                key={section.id}
-                value={section.id}
-                className="border-b-0"
+                key={chapter.id}
+                value={chapter.id}
+                className="overflow-hidden rounded-lg border border-transparent bg-background/60 transition-colors data-[state=open]:border-border"
               >
-                <AccordionTrigger className="px-2 py-3 text-sm hover:no-underline">
+                <AccordionTrigger className="px-3 py-3 text-sm hover:bg-muted/50 hover:no-underline">
                   <div className="flex flex-1 flex-col items-start gap-1 text-left">
                     <span className="font-medium leading-tight">
-                      {section.title}
+                      {chapter.title}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {sectionCompleted}/{section.lectures.length} lectures
+                      {chapterCompleted}/{chapter.lectures.length} lectures
                     </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-1">
                   <div className="flex flex-col gap-0.5">
-                    {section.lectures.map((lecture, lectureIndex) => (
+                    {chapter.lectures.map((lecture, lectureIndex) => (
                       <LectureItem
                         key={lecture.id}
                         lecture={lecture}

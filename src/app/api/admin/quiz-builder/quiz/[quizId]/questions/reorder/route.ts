@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // Update positions based on index
     const updates = orderedIds.map((id, index) =>
         supabase
-            .from("questions")
+            .from("quiz_questions")
             .update({ position: index })
             .eq("id", id)
             .eq("quiz_id", quizId)

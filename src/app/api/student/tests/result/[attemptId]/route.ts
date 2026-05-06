@@ -67,14 +67,14 @@ type QuizRow = {
 
 type OptionRow = {
   id: string;
-  text: string | null;
+  option_text: string | null;
   is_correct: boolean | null;
 };
 
 type QuestionRow = {
   id: string;
-  question: string | null;
-  source: string | null;
+  question_text: string | null;
+  explanation: string | null;
   marks: number | null;
   options: OptionRow[] | null;
 };
@@ -140,7 +140,7 @@ export async function GET(
     // Fetch questions and options
     const { data: questionsData, error: questionsError } = await adminClient
       .from("questions")
-      .select("id, question, source, marks, options(id, text, is_correct)")
+      .select("id, question_text, explanation, marks, options:question_options(id, option_text, is_correct)")
       .eq("quiz_id", attempt.quiz_id)
       .order("position", { ascending: true });
 
@@ -192,13 +192,13 @@ export async function GET(
 
       return {
         questionId: question.id,
-        question: question.question ?? "Question unavailable",
-        explanation: question.source?.trim() ? question.source : null,
+        question: question.question_text ?? "Question unavailable",
+        explanation: question.explanation?.trim() ? question.explanation : null,
         marks: toNumber(question.marks),
         selectedOptionId,
-        selectedOptionText: selectedOption?.text ?? null,
+        selectedOptionText: selectedOption?.option_text ?? null,
         correctOptionId: correctOption?.id ?? null,
-        correctOptionText: correctOption?.text ?? null,
+        correctOptionText: correctOption?.option_text ?? null,
         isCorrect,
       };
     });

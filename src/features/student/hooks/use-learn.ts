@@ -73,10 +73,12 @@ export function useUpdateProgress(userId: string | null) {
       lectureId,
       isCompleted,
       watchedSeconds,
+      resumeAtSeconds,
     }: {
       lectureId: string;
       isCompleted: boolean;
       watchedSeconds?: number;
+      resumeAtSeconds?: number;
     }) => {
       if (!userId) throw new Error("Not authenticated");
       
@@ -88,6 +90,7 @@ export function useUpdateProgress(userId: string | null) {
         body: JSON.stringify({
           isCompleted,
           watchedSeconds,
+          resumeAtSeconds,
         }),
       });
 
@@ -96,7 +99,7 @@ export function useUpdateProgress(userId: string | null) {
         throw new Error(error.error || "Failed to update progress");
       }
 
-      return { lectureId, isCompleted, watchedSeconds };
+      return { lectureId, isCompleted, watchedSeconds, resumeAtSeconds };
     },
     onSuccess: () => {
       // Invalidate progress queries so UI reflects the change

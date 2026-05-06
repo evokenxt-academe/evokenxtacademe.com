@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getR2Object } from "@/lib/r2/upload";
-const pdfParse = require("pdf-parse");
 import mammoth from "mammoth";
+import { extractTextFromPdf } from "@/lib/pdf/extract";
+
+function decodeR2Key(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -26,10 +34,11 @@ export async function POST(request: NextRequest) {
     let key = "";
     try {
       const url = new URL(r2Url);
-      key = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+      const pathKey = url.pathname.startsWith("/") ? url.pathname.slice(1) : url.pathname;
+      key = decodeR2Key(pathKey);
     } catch (e) {
       // Fallback for non-URL keys
-      key = r2Url;
+      key = decodeR2Key(r2Url);
     }
 
     // Fetch file from R2
@@ -41,8 +50,7 @@ export async function POST(request: NextRequest) {
     const fileType = (job.file_type as string).toLowerCase();
 
     if (fileType === "pdf") {
-      const data = await pdfParse(buffer);
-      extractedText = data.text;
+      extractedText = await extractTextFromPdf(buffer);
     } else if (fileType === "docx" || fileType === "doc") {
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;

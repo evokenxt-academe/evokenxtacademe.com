@@ -5,6 +5,7 @@ import {
   IconBook,
   IconLogout,
   IconBook2,
+  IconLivePhoto,
   IconCertificate,
   IconCreditCard,
   IconUser,
@@ -31,6 +32,7 @@ import type { StudentProfile } from "@/features/student/lib/lms-data";
 const mainNav = [
   { title: "Dashboard", href: "/dashboard", icon: IconLayoutDashboard },
   { title: "My Courses", href: "/my-courses", icon: IconBook },
+  { title: "Live Classes", href: "/dashboard/student/live", icon: IconLivePhoto },
   { title: "Tests", href: "/dashboard/tests", icon: IconChecklist },
   { title: "Certificates", href: "/dashboard/certificates", icon: IconCertificate },
   { title: "Payments", href: "/dashboard/payments", icon: IconCreditCard },

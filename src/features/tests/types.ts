@@ -29,6 +29,8 @@ export interface QuizSummaryItem {
   id: string;
   title: string;
   description: string | null;
+  /** New schema: quizzes.type (practice | graded | mock_exam | final_exam) */
+  quizType?: "practice" | "graded" | "final";
   totalMarks: number;
   passingMarks: number;
   timeLimitSec: number | null;

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Try to find existing quiz
     const { data, error: findError } = await supabase
         .from("quizzes")
-        .select("*, questions(id)")
+        .select("*, quiz_questions(id)")
         .eq("section_id", sectionId)
         .limit(1)
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
                 timeLimitSec: existing.time_limit_sec,
                 isPublished: existing.is_published,
                 createdAt: existing.created_at,
-                questionCount: ((existing.questions as unknown[]) ?? []).length,
+                questionCount: ((existing.quiz_questions as unknown[]) ?? []).length,
             },
         })
     }

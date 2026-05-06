@@ -16,12 +16,9 @@ interface AttemptAnalyticsRow {
     type: string;
     total_marks: number | null;
     passing_marks: number | null;
-    section: {
+    course: {
       id: string;
-      course: {
-        id: string;
-        name: string;
-      } | null;
+      title: string;
     } | null;
   } | null;
 }
@@ -74,31 +71,12 @@ export async function GET() {
     return NextResponse.json({ attempts: [] });
   }
 
-  // 2. Resolve section IDs for enrolled courses
-  const { data: sectionRows, error: sectionError } = await adminClient
-    .from("sections")
-    .select("id")
-    .in("course_id", enrolledCourseIds);
-
-  if (sectionError) {
-    return NextResponse.json(
-      { error: "Failed to resolve sections." },
-      { status: 500 },
-    );
-  }
-
-  const sectionIds = (sectionRows ?? []).map((r) => r.id).filter(Boolean);
-
-  if (sectionIds.length === 0) {
-    return NextResponse.json({ attempts: [] });
-  }
-
-  // 3. Get quiz IDs from enrolled sections
+  // 2. Get quiz IDs from enrolled courses
   const { data: quizIdRows, error: quizIdError } = await adminClient
     .from("quizzes")
     .select("id")
     .eq("is_published", true)
-    .in("section_id", sectionIds);
+    .in("course_id", enrolledCourseIds);
 
   if (quizIdError) {
     return NextResponse.json(
@@ -113,7 +91,7 @@ export async function GET() {
     return NextResponse.json({ attempts: [] });
   }
 
-  // 4. Fetch all submitted attempts for these quizzes
+  // 3. Fetch all submitted attempts for these quizzes
   const { data: attemptRows, error: attemptError } = await adminClient
     .from("quiz_attempts")
     .select(
@@ -131,13 +109,7 @@ export async function GET() {
         type,
         total_marks,
         passing_marks,
-        section:sections!inner (
-          id,
-          course:courses!inner (
-            id,
-            name
-          )
-        )
+        course:courses!inner ( id, title )
       )
     `,
     )
@@ -156,19 +128,27 @@ export async function GET() {
   const safeAttempts = (attemptRows ?? []) as unknown as AttemptAnalyticsRow[];
 
   const attempts = safeAttempts
-    .filter((a) => a.quiz?.section?.course)
+    .filter((a) => a.quiz?.course)
     .map((a) => {
       const quizTotalMarks = toNum(a.quiz!.total_marks) || toNum(a.total_marks);
       const score = toNum(a.score);
       const passingMarks = toNum(a.quiz!.passing_marks);
 
+      const quizTypeRaw = String(a.quiz!.type ?? "");
+      const quizType =
+        quizTypeRaw === "mock_exam"
+          ? "graded"
+          : quizTypeRaw === "final_exam"
+            ? "final"
+            : quizTypeRaw;
+
       return {
         id: a.id,
         quizId: a.quiz_id,
         quizTitle: a.quiz!.title,
-        quizType: a.quiz!.type as "practice" | "graded" | "final",
-        courseName: a.quiz!.section!.course!.name,
-        courseId: a.quiz!.section!.course!.id,
+        quizType: quizType as "practice" | "graded" | "final",
+        courseName: a.quiz!.course!.title,
+        courseId: a.quiz!.course!.id,
         score,
         totalMarks: quizTotalMarks,
         passingMarks,

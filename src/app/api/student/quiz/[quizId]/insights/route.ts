@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/adminClient";
 import { createClient } from "@/utils/supabase/server";
-import { fetchQuizForAttempt } from "@/features/student/lib/quiz-data";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +17,27 @@ type AttemptRow = {
 type UserRow = {
   id: string;
   name: string | null;
+};
+
+type QuizAccessRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  total_marks: number | null;
+  passing_marks: number | null;
+  time_limit_sec: number | null;
+  section:
+    | {
+        id: string;
+        title: string | null;
+        course:
+          | {
+              id: string;
+              name: string | null;
+            }
+          | null;
+      }
+    | null;
 };
 
 function toNumber(value: unknown): number {
@@ -65,9 +85,45 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const quiz = await fetchQuizForAttempt(adminClient, user.id, quizId);
-  if (!quiz) {
+  const { data: quizRow, error: quizError } = await adminClient
+    .from("quizzes")
+    .select(
+      "id, title, description, total_marks, passing_marks, time_limit_sec, section:sections(id, title, course:courses(id, name))",
+    )
+    .eq("id", quizId)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (quizError || !quizRow) {
     return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+  }
+
+  const quiz = quizRow as QuizAccessRow;
+  const courseId = quiz.section?.course?.id ?? null;
+
+  if (!courseId) {
+    return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+  }
+
+  const { data: enrollment } = await adminClient
+    .from("enrollments")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("course_id", courseId)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!enrollment) {
+    return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+  }
+
+  const { data: quizQuestions, error: questionCountError } = await adminClient
+    .from("questions")
+    .select("id")
+    .eq("quiz_id", quizId);
+
+  if (questionCountError) {
+    return NextResponse.json({ error: "Failed to load quiz questions." }, { status: 500 });
   }
 
   const { data: attemptRows, error: attemptsError } = await adminClient
@@ -128,7 +184,7 @@ export async function GET(
       displayRank = index + 1;
       previousScore = score;
     }
-    const totalMarks = toNumber(attempt.total_marks) || quiz.totalMarks;
+    const totalMarks = toNumber(attempt.total_marks) || toNumber(quiz.total_marks);
     const name = usersById.get(attempt.user_id)?.name?.trim() || "Student";
 
     return {
@@ -159,7 +215,7 @@ export async function GET(
 
   const history = ((historyRows ?? []) as AttemptRow[]).map((attempt) => {
     const score = toNumber(attempt.score);
-    const totalMarks = toNumber(attempt.total_marks) || quiz.totalMarks;
+    const totalMarks = toNumber(attempt.total_marks) || toNumber(quiz.total_marks);
     return {
       attemptId: attempt.id,
       status: attempt.status,
@@ -184,7 +240,7 @@ export async function GET(
     0,
   );
   const passCount = allSubmittedAttempts.reduce((count, attempt) => {
-    return toNumber(attempt.score) >= quiz.passingMarks ? count + 1 : count;
+    return toNumber(attempt.score) >= toNumber(quiz.passing_marks) ? count + 1 : count;
   }, 0);
 
   const distribution = [
@@ -195,7 +251,7 @@ export async function GET(
   ];
 
   for (const attempt of allSubmittedAttempts) {
-    const totalMarks = toNumber(attempt.total_marks) || quiz.totalMarks;
+    const totalMarks = toNumber(attempt.total_marks) || toNumber(quiz.total_marks);
     const percentage = totalMarks > 0 ? Math.round((toNumber(attempt.score) / totalMarks) * 100) : 0;
     if (percentage <= 40) distribution[0].count += 1;
     else if (percentage <= 60) distribution[1].count += 1;
@@ -208,12 +264,12 @@ export async function GET(
       quizId: quiz.id,
       title: quiz.title,
       description: quiz.description,
-      courseName: quiz.courseName,
-      sectionTitle: quiz.sectionTitle,
-      totalMarks: quiz.totalMarks,
-      passingMarks: quiz.passingMarks,
-      timeLimitSec: quiz.timeLimitSec,
-      questionCount: quiz.questions.length,
+      courseName: quiz.section?.course?.name ?? "",
+      sectionTitle: quiz.section?.title ?? "",
+      totalMarks: toNumber(quiz.total_marks),
+      passingMarks: toNumber(quiz.passing_marks),
+      timeLimitSec: quiz.time_limit_sec,
+      questionCount: (quizQuestions ?? []).length,
     },
     report: {
       participants,
@@ -222,8 +278,8 @@ export async function GET(
       highestScore,
       passRate: attemptCount > 0 ? Math.round((passCount / attemptCount) * 100) : 0,
       averageAccuracy:
-        attemptCount > 0 && quiz.totalMarks > 0
-          ? Math.round((totalScore / (attemptCount * quiz.totalMarks)) * 100)
+        attemptCount > 0 && toNumber(quiz.total_marks) > 0
+          ? Math.round((totalScore / (attemptCount * toNumber(quiz.total_marks))) * 100)
           : 0,
       distribution,
     },

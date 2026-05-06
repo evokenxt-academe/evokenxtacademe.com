@@ -31,9 +31,19 @@ export interface PlayerState {
   isBuffering: boolean;
   isReady: boolean;
   hasError: boolean;
+  quality: YouTubeQuality;
+  availableQualities: YouTubeQuality[];
 }
 
 export type PlaybackSpeed = 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
+export type YouTubeQuality =
+  | "auto"
+  | "small"
+  | "medium"
+  | "large"
+  | "hd720"
+  | "hd1080"
+  | "highres";
 
 // ─── Extract YouTube video ID from URL ────────────────────────────
 
@@ -113,7 +123,28 @@ export function useYouTubePlayer({
     isBuffering: false,
     isReady: false,
     hasError: false,
+    quality: "auto",
+    availableQualities: ["auto"],
   });
+
+  const syncQualityState = useCallback(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    try {
+      const available = player.getAvailableQualityLevels?.() ?? [];
+      const current = (player.getPlaybackQuality?.() as YouTubeQuality | undefined) ?? "auto";
+      setState((prev) => ({
+        ...prev,
+        quality: current,
+        availableQualities: [
+          "auto",
+          ...available.filter((q): q is YouTubeQuality => Boolean(q && q !== "auto")),
+        ],
+      }));
+    } catch {
+      // ignore read errors while player transitions
+    }
+  }, []);
 
   // ── Time update polling ──
   const startTimePolling = useCallback(() => {
@@ -182,6 +213,8 @@ export function useYouTubePlayer({
           rel: 0,                // No related videos at end
           showinfo: 0,           // Hide title bar
           fs: 0,                 // Hide default fullscreen button
+          cc_load_policy: 0,     // Captions off by default
+          controlslist: "nodownload noplaybackrate",
           playsinline: 1,
           origin: typeof window !== "undefined" ? window.location.origin : undefined,
         },
@@ -195,9 +228,11 @@ export function useYouTubePlayer({
               isBuffering: false,
               duration: dur,
             }));
+            syncQualityState();
           },
           onStateChange: (event: YT.OnStateChangeEvent) => {
             if (destroyed) return;
+            syncQualityState();
             switch (event.data) {
               case YT_PLAYING:
                 setState((prev) => ({ ...prev, isPlaying: true, isBuffering: false }));
@@ -296,6 +331,18 @@ export function useYouTubePlayer({
     setState((prev) => ({ ...prev, playbackRate: rate }));
   }, []);
 
+  const setQuality = useCallback((quality: YouTubeQuality) => {
+    const player = playerRef.current;
+    if (!player) return;
+    if (quality === "auto") {
+      player.setPlaybackQuality?.("default");
+      setState((prev) => ({ ...prev, quality: "auto" }));
+      return;
+    }
+    player.setPlaybackQuality?.(quality);
+    setState((prev) => ({ ...prev, quality }));
+  }, []);
+
   return {
     state,
     play,
@@ -305,6 +352,7 @@ export function useYouTubePlayer({
     setVolume,
     toggleMute,
     setPlaybackRate,
+    setQuality,
     playerRef,
   };
 }

@@ -142,6 +142,15 @@ export const quizBuilderApi = {
             formData
         )
     },
+    importPdfToQuiz: (quizId: string, file: File, selectedIndices: number[]) => {
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("selectedIndices", selectedIndices.join(","))
+        return apiUpload<{ success: boolean; total: number; questions: ParsedQuestion[]; fileUrl: string }>(
+            `/api/admin/quiz-builder/quiz/${quizId}/import-pdf`,
+            formData
+        )
+    },
 
     // ── Quiz Management
     getOrCreateQuiz: (sectionId: string) =>
