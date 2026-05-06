@@ -9,14 +9,9 @@ type QuizRow = {
   total_marks: number | null;
   passing_marks: number | null;
   time_limit_sec: number | null;
-  section: {
-    id: string;
-    title: string;
-    course: {
-      id: string;
-      name: string;
-    } | null;
-  } | null;
+  type: string;
+  chapter: { id: string; title: string } | null;
+  course: { id: string; title: string } | null;
 };
 
 type AttemptRow = {
@@ -78,40 +73,7 @@ export async function GET(request: Request) {
             debug: {
               userId: user.id,
               enrolledCourseIds: [],
-              enrolledSectionIds: [],
-              publishedQuizCount: 0,
-            },
-          }
-        : {}),
-    });
-  }
-
-  const { data: sectionRows, error: sectionError } = await adminClient
-    .from("sections")
-    .select("id, course_id")
-    .in("course_id", enrolledCourseIds);
-
-  if (sectionError) {
-    return NextResponse.json(
-      { error: "Failed to resolve enrolled sections." },
-      { status: 500 },
-    );
-  }
-
-  const enrolledSectionIds = (sectionRows ?? [])
-    .map((row) => row.id)
-    .filter(Boolean);
-
-  if (enrolledSectionIds.length === 0) {
-    return NextResponse.json({
-      quizzes: [],
-      enrollmentCount: enrolledCourseIds.length,
-      ...(debug
-        ? {
-            debug: {
-              userId: user.id,
-              enrolledCourseIds,
-              enrolledSectionIds: [],
+              enrolledChapterIds: [],
               publishedQuizCount: 0,
             },
           }
@@ -126,22 +88,16 @@ export async function GET(request: Request) {
       id,
       title,
       description,
+      type,
       total_marks,
       passing_marks,
       time_limit_sec,
-      section:sections!inner (
-        id,
-        title,
-        course:courses!inner (
-          id,
-          name,
-          status
-        )
-      )
+      chapter:chapters ( id, title ),
+      course:courses!inner ( id, title )
     `,
     )
     .eq("is_published", true)
-    .in("section_id", enrolledSectionIds);
+    .in("course_id", enrolledCourseIds);
 
   if (quizError) {
     return NextResponse.json(
@@ -151,11 +107,7 @@ export async function GET(request: Request) {
   }
 
   const safeQuizzes = (quizRows ?? []) as unknown as QuizRow[];
-  const visibleQuizzes = safeQuizzes.filter(
-    (quiz) =>
-      quiz.section?.course &&
-      enrolledCourseIds.includes(quiz.section.course.id),
-  );
+  const visibleQuizzes = safeQuizzes.filter((quiz) => quiz.course);
 
   if (visibleQuizzes.length === 0) {
     return NextResponse.json({
@@ -204,17 +156,29 @@ export async function GET(request: Request) {
         : "completed"
       : "not_attempted";
 
+    const chapterId = quiz.chapter?.id ?? quiz.id;
+    const chapterTitle = quiz.chapter?.title ?? "Course Quiz";
+
+    const quizTypeRaw = String(quiz.type ?? "");
+    const quizType =
+      quizTypeRaw === "mock_exam"
+        ? "graded"
+        : quizTypeRaw === "final_exam"
+          ? "final"
+          : quizTypeRaw;
+
     return {
       id: quiz.id,
       title: quiz.title,
       description: quiz.description,
+      quizType,
       totalMarks: toFiniteNumber(quiz.total_marks),
       passingMarks: toFiniteNumber(quiz.passing_marks),
       timeLimitSec: quiz.time_limit_sec,
-      courseId: quiz.section!.course!.id,
-      courseName: quiz.section!.course!.name,
-      sectionId: quiz.section!.id,
-      sectionTitle: quiz.section!.title,
+      courseId: quiz.course!.id,
+      courseName: quiz.course!.title,
+      sectionId: chapterId,
+      sectionTitle: chapterTitle,
       status,
       latestAttemptId: latest?.id ?? null,
       latestScore: latest && latest.status !== "in_progress" ? toFiniteNumber(latest.score) : null,
@@ -229,7 +193,7 @@ export async function GET(request: Request) {
           debug: {
             userId: user.id,
             enrolledCourseIds,
-            enrolledSectionIds,
+            enrolledChapterIds: visibleQuizzes.map((q) => q.chapter?.id).filter(Boolean),
             publishedQuizCount: quizzes.length,
           },
         }

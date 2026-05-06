@@ -34,9 +34,16 @@ import { formatDuration } from "@/lib/supabase/queries";
 interface LearnPageClientProps {
   courseId: string;
   userId: string;
+  initialLectureId?: string | null;
+  initialTimeSeconds?: number | null;
 }
 
-export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
+export function LearnPageClient({
+  courseId,
+  userId,
+  initialLectureId,
+  initialTimeSeconds,
+}: LearnPageClientProps) {
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -45,15 +52,15 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
 
   // Build a flat, ordered list of all lectures
   const flatLectures: FlatLecture[] = useMemo(() => {
-    if (!course?.sections) return [];
+    if (!course?.chapters) return [];
     const list: FlatLecture[] = [];
-    course.sections.forEach((section, sectionIndex) => {
-      section.lectures.forEach((lecture, lectureIndex) => {
+    course.chapters.forEach((chapter, chapterIndex) => {
+      chapter.lectures.forEach((lecture, lectureIndex) => {
         list.push({
-          sectionIndex,
+          chapterIndex,
           lectureIndex,
-          sectionId: section.id,
-          sectionTitle: section.title,
+          chapterId: chapter.id,
+          chapterTitle: chapter.title,
           lecture,
         });
       });
@@ -80,14 +87,22 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
   // Set initial lecture once course loads
   useEffect(() => {
     if (flatLectures.length > 0 && !currentLectureId) {
-      const firstIncomplete = flatLectures.find(
-        (fl) => !progressMap.get(fl.lecture.id)?.is_completed
-      );
-      setCurrentLectureId(
-        firstIncomplete?.lecture.id ?? flatLectures[0].lecture.id
-      );
+      const requested = initialLectureId
+        ? flatLectures.find((fl) => fl.lecture.id === initialLectureId)
+        : null;
+
+      if (requested) {
+        setCurrentLectureId(requested.lecture.id);
+        return;
+      }
+
+      const firstIncomplete = flatLectures.find((fl) => {
+        const p = progressMap.get(fl.lecture.id);
+        return !p?.is_completed;
+      });
+      setCurrentLectureId(firstIncomplete?.lecture.id ?? flatLectures[0].lecture.id);
     }
-  }, [flatLectures, currentLectureId, progressMap]);
+  }, [flatLectures, currentLectureId, progressMap, initialLectureId]);
 
   // Current flat lecture object
   const currentFlatIndex = useMemo(
@@ -107,6 +122,11 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
       setCurrentLectureId(lecture.id);
       if (isMobile) setSheetOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      const url = new URL(window.location.href);
+      url.searchParams.set("lecture", lecture.id);
+      url.searchParams.delete("t");
+      window.history.replaceState({}, "", url.toString());
     },
     [isMobile]
   );
@@ -142,6 +162,7 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
           lectureId: currentLectureId,
           isCompleted: isNearEnd,
           watchedSeconds: Math.floor(currentTime),
+          resumeAtSeconds: Math.floor(currentTime),
         });
       }
     },
@@ -215,7 +236,7 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
   // ─── Sidebar content (shared between desktop & mobile sheet) ──
   const sidebarContent = (
     <CurriculumSidebar
-      sections={course.sections}
+      chapters={course.chapters}
       currentLectureId={currentLectureId}
       progressMap={progressMap}
       onSelectLecture={goToLecture}
@@ -232,7 +253,7 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
           {/* Mobile curriculum trigger */}
           <div className="flex items-center justify-between border-b border-border px-4 py-2 lg:hidden">
             <h1 className="text-sm font-semibold truncate">
-              {course.name}
+              {course.title}
             </h1>
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
@@ -257,8 +278,9 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
             onVideoEnded={handleVideoEnded}
             onPrevious={handlePrevious}
             onNext={handleNext}
-            sectionTitle={currentFlat?.sectionTitle ?? ""}
+            sectionTitle={currentFlat?.chapterTitle ?? ""}
             onTimeUpdate={handleTimeUpdate}
+            initialTimeSeconds={currentLectureId === initialLectureId ? (initialTimeSeconds ?? null) : null}
           />
 
           {/* Lecture info + controls below player */}
@@ -267,7 +289,7 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
             {currentLecture && (
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-muted-foreground">
-                  {currentFlat?.sectionTitle}
+                  {currentFlat?.chapterTitle}
                 </p>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <h2 className="text-lg font-semibold leading-tight">
@@ -334,6 +356,8 @@ export function LearnPageClient({ courseId, userId }: LearnPageClientProps) {
 
             {/* Bottom tabs */}
             <BottomTabs
+              userId={userId}
+              lectureId={currentLectureId}
               resources={currentLecture?.resources ?? []}
               lectureDescription={currentLecture?.description ?? null}
             />

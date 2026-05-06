@@ -24,6 +24,7 @@ interface VideoPlayerProps {
   onNext: (() => void) | null;
   sectionTitle: string;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  initialTimeSeconds?: number | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────
@@ -38,11 +39,12 @@ export function VideoPlayer({
   onNext,
   sectionTitle,
   onTimeUpdate,
+  initialTimeSeconds,
 }: VideoPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerContainerId = "yt-player-container";
 
-  const videoId = extractYouTubeId(lecture?.video_url ?? null);
+  const videoId = lecture?.yt_video_id ?? null;
 
   const {
     state,
@@ -57,6 +59,14 @@ export function VideoPlayer({
     onVideoEnd: onVideoEnded,
     onTimeUpdate,
   });
+
+  // Initial seek (deep links / resume)
+  useEffect(() => {
+    if (!state.isReady) return;
+    if (typeof initialTimeSeconds === "number" && initialTimeSeconds > 0) {
+      seekTo(initialTimeSeconds);
+    }
+  }, [initialTimeSeconds, seekTo, state.isReady]);
 
   // ── Controls visibility (auto-hide) ──
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -203,7 +213,7 @@ export function VideoPlayer({
 
         {/* Center play button when paused */}
         {!state.isPlaying && state.isReady && !state.isBuffering && (
-          <div className="pointer-events-none absolute inset-0 z-[15] flex items-center justify-center">
+          <div className="pointer-events-none absolute inset-0 z-15 flex items-center justify-center">
             <div className="rounded-full bg-black/50 p-4 backdrop-blur-sm">
               <IconPlayerPlayFilled className="size-10 text-white" />
             </div>
@@ -212,14 +222,14 @@ export function VideoPlayer({
 
         {/* Buffering spinner */}
         {state.isBuffering && (
-          <div className="pointer-events-none absolute inset-0 z-[15] flex items-center justify-center">
+          <div className="pointer-events-none absolute inset-0 z-15 flex items-center justify-center">
             <div className="size-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
           </div>
         )}
 
         {/* Loading before player ready */}
         {!state.isReady && !state.hasError && (
-          <div className="absolute inset-0 z-[5] flex items-center justify-center bg-muted">
+          <div className="absolute inset-0 z-5 flex items-center justify-center bg-muted">
             <div className="flex flex-col items-center gap-3">
               <div className="size-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
               <p className="text-sm text-muted-foreground">Loading video…</p>

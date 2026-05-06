@@ -23,7 +23,9 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { useTestAnalytics } from "@/features/tests/hooks";
+import { useStudentQuizzes } from "@/features/tests/hooks";
 import type { StudentAttemptAnalytics } from "@/features/tests/types";
+import { QuizCard } from "@/features/tests/components/quiz-card";
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -178,9 +180,9 @@ function AttemptCard({ attempt }: { attempt: StudentAttemptAnalytics }) {
               value={isSubmitted ? percent : 0}
               className={`h-1.5 bg-muted ${isSubmitted
                   ? passed
-                    ? "[&>[data-slot=progress-indicator]]:bg-emerald-500"
-                    : "[&>[data-slot=progress-indicator]]:bg-red-500"
-                  : "[&>[data-slot=progress-indicator]]:bg-muted-foreground/30"
+                    ? "*:data-[slot=progress-indicator]:bg-emerald-500"
+                    : "*:data-[slot=progress-indicator]:bg-red-500"
+                  : "*:data-[slot=progress-indicator]:bg-muted-foreground/30"
                 }`}
             />
           </div>
@@ -371,6 +373,7 @@ function EmptyTabState() {
 
 export function TestDashboardPage() {
   const { data: analytics, isLoading } = useTestAnalytics();
+  const quizzesQuery = useStudentQuizzes();
 
   // ── Compute stats from real data ───────────────────────────────
   const stats = useMemo(() => {
@@ -399,6 +402,12 @@ export function TestDashboardPage() {
     const attempts = analytics.attempts || [];
     if (type === "all") return attempts;
     return attempts.filter((a) => a.quizType === type);
+  };
+
+  const filterQuizzes = (type: string) => {
+    const quizzes = quizzesQuery.data?.quizzes ?? [];
+    if (type === "all") return quizzes;
+    return quizzes.filter((q) => q.quizType === type);
   };
 
   if (isLoading) {
@@ -457,17 +466,48 @@ export function TestDashboardPage() {
 
         {["all", "practice", "graded", "final"].map((tab) => {
           const filtered = filterAttempts(tab);
+          const available = filterQuizzes(tab);
           return (
             <TabsContent key={tab} value={tab} className="mt-6">
-              {filtered.length === 0 ? (
-                <EmptyTabState />
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2">
-                  {filtered.map((attempt) => (
-                    <AttemptCard key={attempt.id} attempt={attempt} />
-                  ))}
+              <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Available tests</p>
+                      <p className="text-xs text-muted-foreground">
+                        Start a quiz from your enrolled courses.
+                      </p>
+                    </div>
+                  </div>
+                  {available.length === 0 ? (
+                    <EmptyTabState />
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-1">
+                      {available.map((quiz) => (
+                        <QuizCard key={quiz.id} quiz={quiz} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Recent attempts</p>
+                    <p className="text-xs text-muted-foreground">
+                      Your submitted and timed out attempts.
+                    </p>
+                  </div>
+                  {filtered.length === 0 ? (
+                    <EmptyTabState />
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-1">
+                      {filtered.map((attempt) => (
+                        <AttemptCard key={attempt.id} attempt={attempt} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
           );
         })}

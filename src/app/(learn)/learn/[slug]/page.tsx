@@ -1,42 +1,38 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-
-type LearnRedirectSectionRow = {
-  position: number | null;
-  lectures: Array<{
-    id: string;
-    position: number | null;
-  }> | null;
-};
+import { LearnPageClient } from "@/features/student/components/learn/learn-page-client";
 
 interface Props {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
+  searchParams?: { lecture?: string; t?: string };
 }
 
-export default async function LearnRedirectPage({ params }: Props) {
+function toSafeInt(value: string | undefined): number | null {
+  if (!value) return null;
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+export default async function LearnPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const lectureId = searchParams?.lecture ?? null;
+  const t = toSafeInt(searchParams?.t);
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/auth/login");
-  }
+  if (!user) redirect("/auth/login");
 
-  const { data: course } = await supabase
+  const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("id")
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!course) {
-    redirect("/dashboard");
-  }
-
-  const courseId = (course as { id: string }).id;
+  const courseId = (course as unknown as { id?: string } | null)?.id ?? null;
+  if (courseError || !courseId) redirect("/dashboard");
 
   const { data: enrollment } = await supabase
     .from("enrollments")
@@ -46,43 +42,14 @@ export default async function LearnRedirectPage({ params }: Props) {
     .eq("status", "active")
     .maybeSingle();
 
-  if (!enrollment) {
-    redirect("/courses");
-  }
+  if (!enrollment) redirect("/courses");
 
-  const { data: sectionsData } = await supabase
-    .from("sections")
-    .select("id, position, lectures(id, position)")
-    .eq("course_id", courseId)
-    .order("position", { ascending: true });
-
-  const allSections = (sectionsData ?? []) as LearnRedirectSectionRow[];
-
-  const allLectures = allSections
-    .flatMap((section) =>
-      (section.lectures ?? []).map((lecture) => ({
-        id: lecture.id,
-        sectionPosition: section.position ?? 0,
-        lecturePosition: lecture.position ?? 0,
-      })),
-    )
-    .sort((left, right) => {
-      if (left.sectionPosition !== right.sectionPosition) {
-        return left.sectionPosition - right.sectionPosition;
-      }
-
-      return left.lecturePosition - right.lecturePosition;
-    });
-
-  if (allLectures.length === 0) {
-    redirect("/dashboard");
-  }
-
-  const firstLecture = allLectures[0];
-
-  if (!firstLecture) {
-    redirect("/courses");
-  }
-
-  redirect(`/learn/${slug}/${firstLecture.id}`);
+  return (
+    <LearnPageClient
+      courseId={courseId}
+      userId={user.id}
+      initialLectureId={lectureId}
+      initialTimeSeconds={t}
+    />
+  );
 }
