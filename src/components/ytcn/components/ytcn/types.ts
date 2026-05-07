@@ -51,6 +51,8 @@ export interface PlayerState {
   isFullscreen: boolean;
   /** Current playback speed */
   playbackRate: PlaybackSpeed;
+  /** True when player is rendering a live stream */
+  isLive: boolean;
 }
 
 /* ================================================================ */
@@ -62,6 +64,8 @@ export interface YtcnPlayerOptions {
   videoId: string;
   /** Start playback automatically. Browsers require muted audio for this. */
   autoplay?: boolean;
+  /** Enables live mode controls and UI */
+  isLive?: boolean;
   /** Initial playback rate */
   defaultSpeed?: PlaybackSpeed;
   /** Resume from this timestamp (seconds) */

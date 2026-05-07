@@ -134,11 +134,13 @@ export function parseQuestionsFromRawText(rawText: string): ParsedQuestion[] {
 
   const blocks: WorkingQuestion[] = [];
   let current: WorkingQuestion | null = null;
+  let collectingExplanation = false;
 
   for (const line of lines) {
     if (QUESTION_START_RE.test(line)) {
       if (current) blocks.push(current);
       current = { stem: normalizeQuestionStart(line), options: [] };
+      collectingExplanation = false;
       continue;
     }
 
@@ -150,18 +152,32 @@ export function parseQuestionsFromRawText(rawText: string): ParsedQuestion[] {
         key: optionMatch[1].toUpperCase(),
         text: cleanLine(optionMatch[2]),
       });
+      collectingExplanation = false;
       continue;
     }
 
     const answerMatch = line.match(ANSWER_RE);
     if (answerMatch) {
       current.answerRaw = answerMatch[1];
+      collectingExplanation = false;
       continue;
     }
 
     const explanationMatch = line.match(EXPLANATION_RE);
     if (explanationMatch) {
       current.explanation = explanationMatch[1];
+      collectingExplanation = true;
+      continue;
+    }
+
+    if (
+      collectingExplanation &&
+      !QUESTION_START_RE.test(line) &&
+      !OPTION_RE.test(line) &&
+      !ANSWER_RE.test(line) &&
+      !EXPLANATION_RE.test(line)
+    ) {
+      current.explanation = `${current.explanation ?? ""} ${line}`.trim();
       continue;
     }
 

@@ -48,6 +48,7 @@ function createInitialState(
     // SSR guard — document may not exist in server environments
     isFullscreen: typeof document !== "undefined" ? !!document.fullscreenElement : false,
     playbackRate: options.defaultSpeed ?? (prev?.playbackRate ?? 1),
+    isLive: options.isLive ?? false,
   };
 }
 
@@ -81,6 +82,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   const {
     videoId,
     autoplay = false,
+    isLive = false,
     defaultSpeed = 1,
     startAt = 0,
     onEnd,
@@ -258,7 +260,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             setState((prev) => ({
               ...prev,
               isLoading: false,
-              duration: player.getDuration() || prev.duration,
+              duration: isLive ? 0 : (player.getDuration() || prev.duration),
             }));
           },
 
@@ -291,7 +293,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                   isPlaying: true,
                   isLoading: false,
                   isCued: false,
-                  duration: player.getDuration() || prev.duration,
+                  duration: isLive ? 0 : (player.getDuration() || prev.duration),
                 }));
                 break;
               }
@@ -342,7 +344,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     // videoId and suppressCaptions are the only true dependencies.
     // All other values (volumeRef, isMutedRef, etc.) are accessed via refs
     // to avoid stale closures, so they don't need to be in the dep array.
-    [videoId, suppressCaptions]
+    [videoId, isLive, suppressCaptions]
   );
 
   const handleThumbnailClick = useCallback(async () => {
@@ -377,8 +379,15 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       currentTime: 0,
       loadedFraction: 0,
       isLoading: false,
+      duration: 0,
+      isLive,
     }));
-  }, [videoId]);
+  }, [videoId, isLive]);
+
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    setState((prev) => ({ ...prev, isLive }));
+  }, [isLive]);
 
   // Autoplay: skip thumbnail phase and start loading immediately
   useEffect(() => {
@@ -413,8 +422,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
         if (!mountedRef.current) return;
         setState((prev) => ({
           ...prev,
-          currentTime,
-          duration: duration > 0 ? duration : prev.duration,
+          currentTime: isLive ? 0 : currentTime,
+          duration: isLive ? 0 : (duration > 0 ? duration : prev.duration),
           loadedFraction,
         }));
 
@@ -425,7 +434,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     }, 250);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isLive]);
 
   /* ================================================================ */
   /*  Controls — imperative methods exposed to consumers              */
@@ -464,6 +473,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   }, []);
 
   const seekTo = useCallback((seconds: number): void => {
+    if (isLive) return;
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -474,9 +484,10 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     } catch {
       /* noop — player may not be ready */
     }
-  }, []);
+  }, [isLive]);
 
   const seekRelative = useCallback((delta: number): void => {
+    if (isLive) return;
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -490,7 +501,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     } catch {
       /* noop — player may not be ready */
     }
-  }, []);
+  }, [isLive]);
 
   const setVolume = useCallback((vol: number): void => {
     const player = playerRef.current;

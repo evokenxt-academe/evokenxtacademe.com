@@ -17,7 +17,7 @@ export async function createImportJob(supabase: SupabaseClient, jobData: Partial
 }
 
 export async function updateImportJob(supabase: SupabaseClient, id: string, updates: Partial<BankImportJob>) {
-  const { error } = await supabase.from("bank_import_jobs").update({ ...updates, updated_at: new Date().toISOString() }).eq("id", id);
+  const { error } = await supabase.from("bank_import_jobs").update({ ...updates }).eq("id", id);
   if (error) throw new Error(error.message);
 }
 

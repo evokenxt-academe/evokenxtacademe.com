@@ -89,7 +89,6 @@ export async function POST(request: NextRequest) {
         // Update progress
         await supabase.from("bank_import_jobs").update({
           total_imported: imported,
-          updated_at: new Date().toISOString(),
         }).eq("id", jobId);
       } catch (e) {
         failed++;
@@ -103,7 +102,6 @@ export async function POST(request: NextRequest) {
       total_failed: failed,
       total_duplicates: duplicates,
       completed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 
     return NextResponse.json({ imported, duplicates, failed });
