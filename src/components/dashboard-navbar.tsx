@@ -55,7 +55,7 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-xl md:px-6">
-      <SidebarTrigger className="md:hidden" />
+      <SidebarTrigger className="-ml-1" />
 
       {/* Search */}
       <div className="relative flex-1">

@@ -54,10 +54,10 @@ export function styleIframe(player: YT.Player): void {
     if (iframe) {
       iframe.style.pointerEvents = "none";
       iframe.style.position = "absolute";
-      iframe.style.top = "-60px";
+      iframe.style.top = "-80px";
       iframe.style.left = "-1%";
       iframe.style.width = "102%";
-      iframe.style.height = "calc(100% + 120px)";
+      iframe.style.height = "calc(100% + 160px)";
     }
   } catch {
     /* player.getIframe() can throw if player is in a destroyed state */

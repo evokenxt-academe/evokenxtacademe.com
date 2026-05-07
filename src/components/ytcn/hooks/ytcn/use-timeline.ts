@@ -18,6 +18,9 @@ export interface UseTimelineReturn {
     onMouseDown: (e: React.MouseEvent) => void;
     onMouseMove: (e: React.MouseEvent) => void;
     onMouseLeave: () => void;
+    onTouchStart: (e: React.TouchEvent) => void;
+    onTouchMove: (e: React.TouchEvent) => void;
+    onTouchEnd: (e: React.TouchEvent) => void;
   };
 }
 
@@ -90,6 +93,47 @@ export function useTimeline({ duration, onSeek }: UseTimelineOptions): UseTimeli
     }
   }, [isDragging]);
 
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      e.stopPropagation();
+      setIsDragging(true);
+      const touch = e.touches[0];
+      if (!touch) return;
+      const time = getTimeFromPosition(touch.clientX);
+      const fraction = getFractionFromPosition(touch.clientX);
+      setHoverFraction(fraction);
+      onSeek(time);
+    },
+    [getTimeFromPosition, getFractionFromPosition, onSeek]
+  );
+
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      // Prevent scrolling while dragging the timeline
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const time = getTimeFromPosition(touch.clientX);
+      const fraction = getFractionFromPosition(touch.clientX);
+      setHoverTime(time);
+      setHoverFraction(fraction);
+      if (isDragging) {
+        onSeek(time);
+      }
+    },
+    [getTimeFromPosition, getFractionFromPosition, isDragging, onSeek]
+  );
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      e.stopPropagation();
+      setIsDragging(false);
+      setHoverTime(null);
+    },
+    []
+  );
+
   // Window-level listeners for drag continuation outside the bar
   useEffect(() => {
     if (!isDragging) return;
@@ -124,6 +168,9 @@ export function useTimeline({ duration, onSeek }: UseTimelineOptions): UseTimeli
       onMouseDown,
       onMouseMove,
       onMouseLeave,
+      onTouchStart,
+      onTouchMove,
+      onTouchEnd,
     },
   };
 }

@@ -209,7 +209,11 @@ export function YtcnPlayer({
       {state.phase === "thumbnail" && thumbnailLoaded && (
         <button
           onClick={controls.handleThumbnailClick}
-          className="absolute inset-0 z-40 flex items-center justify-center group/play bg-transparent border-0 cursor-pointer"
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            controls.handleThumbnailClick();
+          }}
+          className="absolute inset-0 z-40 flex items-center justify-center group/play bg-transparent border-0 cursor-pointer touch-manipulation"
           aria-label="Play video"
         >
           <div
@@ -235,8 +239,12 @@ export function YtcnPlayer({
       {state.phase === "ready" && (
         <>
           <div
-            className="absolute inset-0 z-[25] cursor-pointer"
+            className="absolute inset-0 z-[25] cursor-pointer touch-manipulation"
             onClick={controls.togglePlay}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              controls.togglePlay();
+            }}
             aria-label="Toggle playback"
             role="button"
             tabIndex={-1}
@@ -248,7 +256,9 @@ export function YtcnPlayer({
             onVolumeChange={controls.setVolume}
             onToggleMute={controls.toggleMute}
             onSpeedChange={controls.setSpeed}
+            onQualityChange={controls.setQuality}
             onToggleFullscreen={controls.toggleFullscreen}
+            onSeekToLive={controls.seekToLive}
             visible={controlsVisible}
             containerRef={containerRef}
             onSettingsOpenChange={setIsSettingsOpen}

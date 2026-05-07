@@ -14,6 +14,8 @@ export interface YtcnProgressProps {
   loadedFraction: number;
   /** Called with the target time in seconds on click or drag */
   onSeek: (seconds: number) => void;
+  /** Whether the stream is live */
+  isLive?: boolean;
   className?: string;
 }
 
@@ -30,6 +32,7 @@ export const YtcnProgress = memo(function YtcnProgress({
   duration,
   loadedFraction,
   onSeek,
+  isLive = false,
   className,
 }: YtcnProgressProps) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -50,6 +53,9 @@ export const YtcnProgress = memo(function YtcnProgress({
       onMouseDown={handlers.onMouseDown}
       onMouseMove={handlers.onMouseMove}
       onMouseLeave={handlers.onMouseLeave}
+      onTouchStart={handlers.onTouchStart}
+      onTouchMove={handlers.onTouchMove}
+      onTouchEnd={handlers.onTouchEnd}
       onClick={(e) => e.stopPropagation()}
       role="slider"
       aria-valuenow={Math.floor(currentTime)}
@@ -69,13 +75,19 @@ export const YtcnProgress = memo(function YtcnProgress({
 
       {/* Filled progress */}
       <div
-        className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-100"
+        className={cn(
+          "absolute inset-y-0 left-0 rounded-full transition-[width] duration-100",
+          isLive ? "bg-green-500" : "bg-primary"
+        )}
         style={{ width: `${progress}%` }}
       />
 
       {/* Scrubber dot — visible on hover */}
       <div
-        className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 size-3 rounded-full bg-primary border-2 border-background shadow-lg opacity-0 transition-opacity group-hover/progress:opacity-100"
+        className={cn(
+          "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 size-3 rounded-full border-2 border-background shadow-lg opacity-0 transition-opacity group-hover/progress:opacity-100",
+          isLive ? "bg-green-500" : "bg-primary"
+        )}
         style={{ left: `${progress}%` }}
       />
 

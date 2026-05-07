@@ -13,6 +13,7 @@ export { YtcnControls } from "./ytcn-controls";
 export { YtcnProgress } from "./ytcn-progress";
 export { YtcnVolume } from "./ytcn-volume";
 export { YtcnSpeed } from "./ytcn-speed";
+export { YtcnQuality } from "./ytcn-quality";
 export { YtcnFullscreen } from "./ytcn-fullscreen";
 export { YtcnOverlay } from "./ytcn-overlay";
 export { YtcnLoader } from "./ytcn-loader";

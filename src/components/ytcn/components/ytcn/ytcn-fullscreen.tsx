@@ -30,7 +30,12 @@ export function YtcnFullscreen({ isFullscreen, onToggle }: YtcnFullscreenProps):
         e.stopPropagation();
         onToggle();
       }}
-      className="flex items-center justify-center rounded-sm p-1.5 text-white transition-colors hover:bg-white/10"
+      onTouchEnd={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onToggle();
+      }}
+      className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-sm p-1.5 text-white transition-colors hover:bg-white/10 touch-manipulation sm:min-h-0 sm:min-w-0"
       aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
     >
       {isFullscreen ? (
