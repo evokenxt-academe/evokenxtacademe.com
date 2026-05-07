@@ -90,6 +90,7 @@ export default function WatchStreamPage() {
             <YtcnPlayer
               videoId={liveVideoId}
               autoplay={isLive}
+              isLive={isLive}
               className="w-full overflow-hidden rounded-2xl border bg-black"
             />
           ) : isUpcoming ? (

@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       error_message: errorMessage,
       total_found: result.questions.length,
       detected_topics: detectedTopics as string[],
-      updated_at: new Date().toISOString(),
     }).eq("id", jobId);
 
     return NextResponse.json({ success: true, total_found: result.questions.length });
@@ -63,10 +62,10 @@ export async function POST(request: NextRequest) {
 
     // Update job as failed
     try {
-      const supabase = getSupabase();
+      const supabase = await getSupabase();
       const { jobId } = await request.clone().json();
       if (jobId) {
-        await supabase.from("bank_import_jobs").update({ status: "failed", error_message: error.message, updated_at: new Date().toISOString() }).eq("id", jobId);
+        await supabase.from("bank_import_jobs").update({ status: "failed", error_message: error.message }).eq("id", jobId);
       }
     } catch {}
 

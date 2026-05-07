@@ -4,11 +4,11 @@ import { useState } from "react";
 import { QuestionList } from "./QuestionList";
 import { ManualEditor } from "./tabs/ManualEditor";
 import { FormattedTextEditor } from "./tabs/FormattedTextEditor";
-import { AiImportEditor } from "./tabs/AiImportEditor";
+import { PdfImportEditor } from "./tabs/PdfImportEditor";
 import { QuestionBankSelector } from "./tabs/QuestionBankSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { PenLine, FileText, Sparkles, Database, Settings } from "lucide-react";
+import { PenLine, FileText, FileUp, Database, Settings } from "lucide-react";
 import { useQuestions } from "@/hooks/useQuestions";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -39,8 +39,8 @@ export function QuizBuilderLayout({ quizId, subjectId }: QuizBuilderLayoutProps)
               <TabsTrigger value="text" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 <FileText className="mr-2 h-4 w-4" />Text Import
               </TabsTrigger>
-              <TabsTrigger value="ai" className="data-[state=active]:bg-background data-[state=active]:shadow-sm" disabled={!subjectId}>
-                <Sparkles className="mr-2 h-4 w-4 text-purple-500" />AI Import
+              <TabsTrigger value="pdf" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <FileUp className="mr-2 h-4 w-4" />PDF Import
               </TabsTrigger>
               <TabsTrigger value="bank" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 <Database className="mr-2 h-4 w-4" />Bank
@@ -69,9 +69,11 @@ export function QuizBuilderLayout({ quizId, subjectId }: QuizBuilderLayoutProps)
               </div>
             </TabsContent>
             
-            <TabsContent value="ai" className="m-0 h-full">
+            <TabsContent value="pdf" className="m-0 h-full">
               <div className="max-w-4xl mx-auto">
-                {subjectId ? <AiImportEditor quizId={quizId} subjectId={subjectId} /> : null}
+                <Card className="p-5">
+                  <PdfImportEditor quizId={quizId} />
+                </Card>
               </div>
             </TabsContent>
             

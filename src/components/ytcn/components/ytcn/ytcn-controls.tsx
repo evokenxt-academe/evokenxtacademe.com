@@ -3,6 +3,7 @@
 import {
   IconPlayerPlayFilled,
   IconPlayerPauseFilled,
+  IconCircleFilled,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/components/ytcn/lib/ytcn/format";
@@ -84,14 +85,16 @@ export function YtcnControls({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
       {/* Progress bar */}
-      <div className="relative z-10 px-3">
-        <YtcnProgress
-          currentTime={state.currentTime}
-          duration={state.duration}
-          loadedFraction={state.loadedFraction}
-          onSeek={onSeek}
-        />
-      </div>
+      {!state.isLive ? (
+        <div className="relative z-10 px-3">
+          <YtcnProgress
+            currentTime={state.currentTime}
+            duration={state.duration}
+            loadedFraction={state.loadedFraction}
+            onSeek={onSeek}
+          />
+        </div>
+      ) : null}
 
       {/* Controls row */}
       <div className="relative z-10 flex items-center gap-1 px-3 pb-2.5 pt-1.5">
@@ -122,11 +125,18 @@ export function YtcnControls({
           />
 
           {/* Time display */}
-          <span className="ml-1.5 select-none text-xs tabular-nums text-white/80 font-mono">
-            {formatTime(state.currentTime)}
-            <span className="text-white/50 mx-1">/</span>
-            <span className="text-white/70">{formatTime(state.duration)}</span>
-          </span>
+          {!state.isLive ? (
+            <span className="ml-1.5 select-none text-xs tabular-nums text-white/80 font-mono">
+              {formatTime(state.currentTime)}
+              <span className="text-white/50 mx-1">/</span>
+              <span className="text-white/70">{formatTime(state.duration)}</span>
+            </span>
+          ) : (
+            <span className="ml-1.5 inline-flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-red-100">
+              <IconCircleFilled className="size-2 animate-pulse text-red-400" />
+              LIVE
+            </span>
+          )}
         </div>
 
         {/* Spacer */}

@@ -1,10 +1,10 @@
-import { QuizBuilderLayout } from "@/components/quiz/builder/QuizBuilderLayout";
+import { QuizBuilderLayoutWithProvider } from "@/components/quiz/builder/QuizBuilderLayoutWithProvider";
 import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { LiveIndicator } from "@/components/quiz/LiveIndicator";
+import { Badge } from "@/components/ui/badge";
 
 async function getQuiz(id: string) {
   const supabase = await createClient();
@@ -48,12 +48,7 @@ export default async function BuilderPage({ params }: { params: Promise<{ quizId
         <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">Builder Mode</Badge>
       </div>
 
-      <QuizBuilderLayout quizId={quiz.id} subjectId={quiz.subject_id} />
+      <QuizBuilderLayoutWithProvider quizId={quiz.id} subjectId={quiz.subject_id} />
     </div>
   );
-}
-
-// Temporary shim badge so it builds if we forgot to import it
-function Badge({ className, children, ...props }: any) {
-  return <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${className}`} {...props}>{children}</span>;
 }

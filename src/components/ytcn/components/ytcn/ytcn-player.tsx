@@ -44,6 +44,7 @@ export interface YtcnPlayerProps extends Omit<YtcnPlayerOptions, "thumbnailFaile
 export function YtcnPlayer({
   videoId,
   autoplay = false,
+  isLive = false,
   defaultSpeed = 1,
   startAt = 0,
   onEnd,
@@ -60,6 +61,7 @@ export function YtcnPlayer({
   const { containerRef, playerDivRef, state, controls } = useYtcnPlayer({
     videoId,
     autoplay,
+    isLive,
     defaultSpeed,
     startAt,
     onEnd,
@@ -85,8 +87,12 @@ export function YtcnPlayer({
     onPlay: controls.togglePlay,
     onMute: controls.toggleMute,
     onFullscreen: controls.toggleFullscreen,
-    onSeekBack: () => controls.seekRelative(-10),
-    onSeekForward: () => controls.seekRelative(10),
+    onSeekBack: () => {
+      if (!state.isLive) controls.seekRelative(-10);
+    },
+    onSeekForward: () => {
+      if (!state.isLive) controls.seekRelative(10);
+    },
     bindings: keyboardBindings,
   });
 
