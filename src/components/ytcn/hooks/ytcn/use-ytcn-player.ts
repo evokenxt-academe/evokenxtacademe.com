@@ -49,6 +49,9 @@ function createInitialState(
     isFullscreen: typeof document !== "undefined" ? !!document.fullscreenElement : false,
     playbackRate: options.defaultSpeed ?? (prev?.playbackRate ?? 1),
     isLive: options.isLive ?? false,
+    isAtLiveEdge: false,
+    currentQuality: "auto",
+    availableQualities: [],
   };
 }
 
@@ -260,7 +263,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             setState((prev) => ({
               ...prev,
               isLoading: false,
-              duration: isLive ? 0 : (player.getDuration() || prev.duration),
+              duration: player.getDuration() || prev.duration,
+              availableQualities: player.getAvailableQualityLevels() || [],
+              currentQuality: player.getPlaybackQuality() || "auto",
             }));
           },
 
@@ -293,7 +298,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                   isPlaying: true,
                   isLoading: false,
                   isCued: false,
-                  duration: isLive ? 0 : (player.getDuration() || prev.duration),
+                  duration: player.getDuration() || prev.duration,
+                  availableQualities: player.getAvailableQualityLevels() || prev.availableQualities,
+                  currentQuality: player.getPlaybackQuality() || prev.currentQuality,
                 }));
                 break;
               }
@@ -381,6 +388,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       isLoading: false,
       duration: 0,
       isLive,
+      isAtLiveEdge: false,
+      currentQuality: "auto",
+      availableQualities: [],
     }));
   }, [videoId, isLive]);
 
@@ -420,11 +430,14 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
         const loadedFraction = player.getVideoLoadedFraction();
 
         if (!mountedRef.current) return;
+        const isAtLiveEdge = isLive ? (duration - currentTime <= 5) : false;
+
         setState((prev) => ({
           ...prev,
-          currentTime: isLive ? 0 : currentTime,
-          duration: isLive ? 0 : (duration > 0 ? duration : prev.duration),
+          currentTime,
+          duration: duration > 0 ? duration : prev.duration,
           loadedFraction,
+          isAtLiveEdge,
         }));
 
         onTimeUpdateRef.current?.(currentTime, duration);
@@ -473,7 +486,6 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   }, []);
 
   const seekTo = useCallback((seconds: number): void => {
-    if (isLive) return;
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -487,7 +499,6 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   }, [isLive]);
 
   const seekRelative = useCallback((delta: number): void => {
-    if (isLive) return;
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -560,6 +571,39 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     }
   }, []);
 
+  const seekToLive = useCallback((): void => {
+    if (!isLive) return;
+    const player = playerRef.current;
+    if (!player) return;
+    try {
+      const duration = player.getDuration();
+      player.seekTo(duration, true);
+      if (mountedRef.current) {
+        setState((prev) => ({ ...prev, currentTime: duration, isAtLiveEdge: true }));
+      }
+    } catch {
+      /* noop */
+    }
+  }, [isLive]);
+
+  const setQuality = useCallback((quality: string): void => {
+    const player = playerRef.current;
+    if (!player) return;
+    try {
+      player.setPlaybackQuality(quality);
+      
+      // Force quality change by seeking to current time
+      const currentTime = player.getCurrentTime();
+      player.seekTo(currentTime, true);
+      
+      if (mountedRef.current) {
+        setState((prev) => ({ ...prev, currentQuality: quality }));
+      }
+    } catch {
+      /* noop */
+    }
+  }, []);
+
   // ── Compose controls object ──
   const controls: PlayerControls = {
     play,
@@ -567,9 +611,11 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     togglePlay,
     seekTo,
     seekRelative,
+    seekToLive,
     setVolume,
     toggleMute,
     setSpeed,
+    setQuality,
     toggleFullscreen,
     handleThumbnailClick,
   };

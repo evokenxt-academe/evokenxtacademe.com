@@ -11,6 +11,7 @@ import type { PlayerState, PlaybackSpeed } from "./types";
 import { YtcnProgress } from "./ytcn-progress";
 import { YtcnVolume } from "./ytcn-volume";
 import { YtcnSpeed } from "./ytcn-speed";
+import { YtcnQuality } from "./ytcn-quality";
 import { YtcnFullscreen } from "./ytcn-fullscreen";
 
 /* ================================================================ */
@@ -30,8 +31,12 @@ export interface YtcnControlsProps {
   onToggleMute: () => void;
   /** Set playback speed */
   onSpeedChange: (rate: PlaybackSpeed) => void;
+  /** Change playback quality */
+  onQualityChange: (quality: string) => void;
   /** Toggle fullscreen */
   onToggleFullscreen: () => void;
+  /** Seek to live edge (live mode only) */
+  onSeekToLive?: () => void;
   /** Whether controls should be visible */
   visible: boolean;
   /**
@@ -64,7 +69,9 @@ export function YtcnControls({
   onVolumeChange,
   onToggleMute,
   onSpeedChange,
+  onQualityChange,
   onToggleFullscreen,
+  onSeekToLive,
   visible,
   containerRef,
   onSettingsOpenChange,
@@ -85,16 +92,15 @@ export function YtcnControls({
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
       {/* Progress bar */}
-      {!state.isLive ? (
-        <div className="relative z-10 px-3">
-          <YtcnProgress
-            currentTime={state.currentTime}
-            duration={state.duration}
-            loadedFraction={state.loadedFraction}
-            onSeek={onSeek}
-          />
-        </div>
-      ) : null}
+      <div className="relative z-10 px-3">
+        <YtcnProgress
+          currentTime={state.currentTime}
+          duration={state.duration}
+          loadedFraction={state.loadedFraction}
+          onSeek={onSeek}
+          isLive={state.isLive}
+        />
+      </div>
 
       {/* Controls row */}
       <div className="relative z-10 flex items-center gap-1 px-3 pb-2.5 pt-1.5">
@@ -132,10 +138,30 @@ export function YtcnControls({
               <span className="text-white/70">{formatTime(state.duration)}</span>
             </span>
           ) : (
-            <span className="ml-1.5 inline-flex items-center gap-1.5 rounded-full border border-red-400/40 bg-red-500/20 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-red-100">
-              <IconCircleFilled className="size-2 animate-pulse text-red-400" />
-              LIVE
-            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSeekToLive?.();
+              }}
+              className={cn(
+                "ml-1.5 inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide transition-colors",
+                state.isAtLiveEdge
+                  ? "border-red-400/40 bg-red-500/20 text-red-100 hover:bg-red-500/30"
+                  : "border-white/20 bg-white/10 text-white hover:bg-white/20"
+              )}
+            >
+              {state.isAtLiveEdge ? (
+                <>
+                  <IconCircleFilled className="size-2 animate-pulse text-red-400" />
+                  LIVE
+                </>
+              ) : (
+                <>
+                  <IconCircleFilled className="size-2 text-white/50" />
+                  GO LIVE
+                </>
+              )}
+            </button>
           )}
         </div>
 
@@ -144,10 +170,16 @@ export function YtcnControls({
 
         {/* Right group */}
         <div className="flex items-center gap-0.5">
-          {/* Settings dropdown (speed only) */}
           <YtcnSpeed
             playbackRate={state.playbackRate}
             onSpeedChange={onSpeedChange}
+            containerRef={containerRef}
+            onOpenChange={onSettingsOpenChange}
+          />
+          <YtcnQuality
+            currentQuality={state.currentQuality}
+            availableQualities={state.availableQualities}
+            onQualityChange={onQualityChange}
             containerRef={containerRef}
             onOpenChange={onSettingsOpenChange}
           />

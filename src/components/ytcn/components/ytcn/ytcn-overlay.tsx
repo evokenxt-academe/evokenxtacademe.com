@@ -25,8 +25,12 @@ export interface YtcnOverlayProps {
 export function YtcnOverlay({ onClick }: YtcnOverlayProps): React.JSX.Element {
   return (
     <div
-      className="absolute inset-0 z-[25] cursor-pointer"
+      className="absolute inset-0 z-[25] cursor-pointer touch-manipulation"
       onClick={onClick}
+      onTouchEnd={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
       aria-label="Toggle playback"
       role="button"
       tabIndex={-1}
