@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Upload, FileText, Info, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, RefreshCw } from "lucide-react";
+import { Upload, FileText, Info, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, RefreshCw, Database } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function BankImportWorkflow() {

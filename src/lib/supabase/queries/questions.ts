@@ -317,13 +317,14 @@ export async function addQuestionsFromBank(
     ]);
 
     // Increment usage count
-    await supabase.rpc("increment_usage_count", { bq_id: bankId }).catch(() => {
-      // Fallback if RPC doesn't exist
-      supabase
+    const { error: rpcErr } = await supabase.rpc("increment_usage_count", { bq_id: bankId });
+    if (rpcErr) {
+      // Fallback if RPC doesn't exist or fails
+      await supabase
         .from("bank_questions")
         .update({ usage_count: (bq.usage_count ?? 0) + 1 })
         .eq("id", bankId);
-    });
+    }
 
     inserted.push(newQ.id);
   }

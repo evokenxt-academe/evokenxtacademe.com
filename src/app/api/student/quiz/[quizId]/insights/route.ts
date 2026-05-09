@@ -98,7 +98,7 @@ export async function GET(
     return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
   }
 
-  const quiz = quizRow as QuizAccessRow;
+  const quiz = quizRow as any as QuizAccessRow;
   const courseId = quiz.section?.course?.id ?? null;
 
   if (!courseId) {

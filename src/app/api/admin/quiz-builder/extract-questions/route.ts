@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/features/admin/lib/admin-route"
 import type { PDFExtractionResult } from "@/features/admin/quiz-builder/types"
 import { parseQuestionsFromRawText } from "@/lib/parsers/regexQuizPdfParser"
-import { PDFParse } from "pdf-parse"
+import { extractTextFromPdf } from "@/lib/pdf/extract"
 
 // ─────────────────────────────────────────────────────────────
 // Deterministic PDF question extractor — NO AI required
@@ -30,15 +30,7 @@ export async function POST(request: NextRequest) {
     try {
         // Use pdf-parse to extract text — no API key needed
         const buffer = Buffer.from(await file.arrayBuffer())
-        const parser = new PDFParse({ data: buffer })
-        let text: string
-
-        try {
-            const pdf = await parser.getText()
-            text = pdf.text?.trim() ?? ""
-        } finally {
-            await parser.destroy()
-        }
+        const text = (await extractTextFromPdf(buffer)).trim()
 
         if (!text) {
             return NextResponse.json(

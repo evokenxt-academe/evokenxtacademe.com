@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -84,106 +83,82 @@ export function BottomTabs({
     window.localStorage.setItem(storageKey, notes);
   }, [notes, storageKey]);
 
+  if (!lectureId) {
+    return null;
+  }
+
   return (
-    <Tabs defaultValue="overview" className="w-full">
-      <TabsList className="grid h-auto w-full grid-cols-3">
-        <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
-        <TabsTrigger value="resources">
-          Resources{resources.length > 0 && ` (${resources.length})`}
-        </TabsTrigger>
-        <TabsTrigger value="notes" className="text-xs sm:text-sm">Notes</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="overview" className="mt-4">
-        <Card>
-          <CardContent className="p-4">
-            {lectureDescription ? (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {lectureDescription}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No overview provided for this lecture.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="resources" className="mt-4">
-        {resources.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-              <IconFile className="size-10 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                No resources available for this lecture
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="p-0">
-              <div className="flex flex-col divide-y divide-border">
-                {resources.map((resource) => (
-                  <div
-                    key={resource.id}
-                    className="flex flex-col items-start justify-between gap-2 px-4 py-3 sm:flex-row sm:items-center"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <IconFile className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="text-sm truncate">
-                        {resource.title}
-                      </span>
-                    </div>
-                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto"
-                        onClick={() => setSelectedResource(resource)}
-                      >
-                        <IconEye data-icon="inline-start" />
-                        Preview
-                      </Button>
-                      <Button variant="ghost" size="sm" className="w-full sm:w-auto" asChild>
-                        <a
-                          href={resource.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                        >
-                          <IconDownload data-icon="inline-start" />
-                          Download
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </TabsContent>
-
-      <TabsContent value="notes" className="mt-4">
-        <Card>
-          <CardContent className="flex flex-col gap-3 p-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <IconNotes data-icon="inline-start" />
-              Personal notes
-            </div>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Write your notes here…"
-              rows={8}
-            />
-            <p className="text-xs text-muted-foreground">
-              Saved locally on this device.
+    <div className="flex flex-col gap-4">
+      <Card className="border-border/70">
+        <CardContent className="space-y-2 p-4">
+          <p className="text-sm font-semibold">About this lecture</p>
+          {lectureDescription ? (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {lectureDescription}
             </p>
-          </CardContent>
-        </Card>
-      </TabsContent>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No lecture description is available yet.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70">
+        <CardContent className="p-0">
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <p className="text-sm font-semibold">Resources</p>
+            <span className="text-xs text-muted-foreground">
+              {resources.length} file{resources.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          {resources.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <IconFile className="mb-2 size-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                No resources available for this lecture.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col divide-y divide-border">
+              {resources.map((resource) => (
+                <div
+                  key={resource.id}
+                  className="flex justify-between w-full gap-3 px-4 py-3 flex-row "
+                >
+                  <div className="flex min-w-0 w-full items-center gap-3">
+                    <IconFile className="size-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate text-sm">{resource.title}</span>
+                  </div>
+                  <div className="flex w-full items-center gap-2 sm:w-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setSelectedResource(resource)}
+                    >
+                      <IconEye data-icon="inline-start" />
+                      View
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" asChild>
+                      <a
+                        href={resource.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download
+                      >
+                        <IconDownload data-icon="inline-start" />
+                        Download
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog
         open={Boolean(selectedResource)}
@@ -191,7 +166,7 @@ export function BottomTabs({
           if (!open) setSelectedResource(null);
         }}
       >
-        <DialogContent className="my-6 flex h-[calc(100vh-3rem)] w-[95vw] max-w-[95vw] min-h-0 flex-col overflow-hidden rounded-xl p-0 sm:my-8 sm:h-[calc(100vh-4rem)] sm:max-w-6xl">
+        <DialogContent className="my-6 flex h-[calc(100vh-3rem)] w-[95vw] max-w-[95vw] mb-4 flex-col overflow-hidden rounded-xl  sm:h-[calc(100vh-4rem)] sm:max-w-6xl">
           {selectedResource && (
             <>
               <DialogHeader className="border-b px-5 py-4">
@@ -248,6 +223,6 @@ export function BottomTabs({
           )}
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </div>
   );
 }

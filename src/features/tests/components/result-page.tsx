@@ -467,7 +467,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className={cn(
                           "capitalize text-[10px] font-bold tracking-widest px-2",
-                          histAttempt.status === "completed" ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/10" : "bg-muted/20"
+                          histAttempt.status === "submitted" ? "border-emerald-500/20 text-emerald-500 bg-emerald-500/10" : "bg-muted/20"
                         )}>
                           {histAttempt.status.replace("_", " ")}
                         </Badge>

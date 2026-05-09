@@ -2,18 +2,14 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
-  IconMenu2,
   IconChevronLeft,
   IconChevronRight,
   IconCheck,
 } from "@tabler/icons-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   useCourseContent,
   useLectureProgress,
@@ -25,6 +21,7 @@ import {
   CurriculumSidebarSkeleton,
 } from "./curriculum-sidebar";
 import { BottomTabs } from "./bottom-tabs";
+import { DashboardNavbar } from "@/components/dashboard-navbar";
 import type {
   FlatLecture,
   LectureWithResources,
@@ -34,6 +31,12 @@ import { formatDuration } from "@/lib/supabase/queries";
 interface LearnPageClientProps {
   courseId: string;
   userId: string;
+  navbarUser: {
+    id: string;
+    name: string | null;
+    email: string;
+    avatar: string | null;
+  } | null;
   initialLectureId?: string | null;
   initialTimeSeconds?: number | null;
 }
@@ -41,12 +44,10 @@ interface LearnPageClientProps {
 export function LearnPageClient({
   courseId,
   userId,
+  navbarUser,
   initialLectureId,
   initialTimeSeconds,
 }: LearnPageClientProps) {
-  const isMobile = useIsMobile();
-  const [sheetOpen, setSheetOpen] = useState(false);
-
   // ─── Data fetching ─────────────────────────────────────────────
   const { data: course, isLoading: courseLoading } = useCourseContent(courseId);
 
@@ -74,53 +75,47 @@ export function LearnPageClient({
     [flatLectures]
   );
 
-  const {
-    progressMap,
-    isLoading: progressLoading,
-  } = useLectureProgress(userId, allLectureIds);
+  const { progressMap } = useLectureProgress(userId, allLectureIds);
 
   const updateProgress = useUpdateProgress(userId);
 
   // ─── Current lecture state ─────────────────────────────────────
   const [currentLectureId, setCurrentLectureId] = useState<string | null>(null);
 
-  // Set initial lecture once course loads
-  useEffect(() => {
-    if (flatLectures.length > 0 && !currentLectureId) {
-      const requested = initialLectureId
-        ? flatLectures.find((fl) => fl.lecture.id === initialLectureId)
-        : null;
+  const defaultLectureId = useMemo(() => {
+    if (flatLectures.length === 0) return null;
 
-      if (requested) {
-        setCurrentLectureId(requested.lecture.id);
-        return;
-      }
+    const requested = initialLectureId
+      ? flatLectures.find((fl) => fl.lecture.id === initialLectureId)
+      : null;
+    if (requested) return requested.lecture.id;
 
-      const firstIncomplete = flatLectures.find((fl) => {
-        const p = progressMap.get(fl.lecture.id);
-        return !p?.is_completed;
-      });
-      setCurrentLectureId(firstIncomplete?.lecture.id ?? flatLectures[0].lecture.id);
-    }
-  }, [flatLectures, currentLectureId, progressMap, initialLectureId]);
+    const firstIncomplete = flatLectures.find((fl) => {
+      const p = progressMap.get(fl.lecture.id);
+      return !p?.is_completed;
+    });
+
+    return firstIncomplete?.lecture.id ?? flatLectures[0].lecture.id;
+  }, [flatLectures, progressMap, initialLectureId]);
+
+  const activeLectureId = currentLectureId ?? defaultLectureId;
 
   // Current flat lecture object
   const currentFlatIndex = useMemo(
-    () => flatLectures.findIndex((fl) => fl.lecture.id === currentLectureId),
-    [flatLectures, currentLectureId]
+    () => flatLectures.findIndex((fl) => fl.lecture.id === activeLectureId),
+    [flatLectures, activeLectureId]
   );
 
   const currentFlat = flatLectures[currentFlatIndex] ?? null;
   const currentLecture = currentFlat?.lecture ?? null;
 
   const isCurrentCompleted =
-    currentLectureId ? progressMap.get(currentLectureId)?.is_completed ?? false : false;
+    activeLectureId ? progressMap.get(activeLectureId)?.is_completed ?? false : false;
 
   // ─── Navigation handlers ──────────────────────────────────────
   const goToLecture = useCallback(
     (lecture: LectureWithResources) => {
       setCurrentLectureId(lecture.id);
-      if (isMobile) setSheetOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       const url = new URL(window.location.href);
@@ -128,16 +123,24 @@ export function LearnPageClient({
       url.searchParams.delete("t");
       window.history.replaceState({}, "", url.toString());
     },
-    [isMobile]
+    []
   );
 
-  const handlePrevious = currentFlatIndex > 0
-    ? () => goToLecture(flatLectures[currentFlatIndex - 1].lecture)
-    : null;
+  const handlePrevious = useMemo(
+    () =>
+      currentFlatIndex > 0
+        ? () => goToLecture(flatLectures[currentFlatIndex - 1].lecture)
+        : null,
+    [currentFlatIndex, flatLectures, goToLecture]
+  );
 
-  const handleNext = currentFlatIndex < flatLectures.length - 1
-    ? () => goToLecture(flatLectures[currentFlatIndex + 1].lecture)
-    : null;
+  const handleNext = useMemo(
+    () =>
+      currentFlatIndex < flatLectures.length - 1
+        ? () => goToLecture(flatLectures[currentFlatIndex + 1].lecture)
+        : null,
+    [currentFlatIndex, flatLectures, goToLecture]
+  );
 
   // ─── Progress tracking (real-time via onTimeUpdate) ────────────
   const lastSavedTimeRef = useRef(0);
@@ -145,11 +148,11 @@ export function LearnPageClient({
   // Reset saved time when lecture changes
   useEffect(() => {
     lastSavedTimeRef.current = 0;
-  }, [currentLectureId]);
+  }, [activeLectureId]);
 
   const handleTimeUpdate = useCallback(
     (currentTime: number, duration: number) => {
-      if (!currentLectureId) return;
+      if (!activeLectureId) return;
 
       // Save progress every 10 seconds of change
       const timeDelta = Math.abs(currentTime - lastSavedTimeRef.current);
@@ -159,35 +162,35 @@ export function LearnPageClient({
         const isNearEnd = duration > 0 && (duration - currentTime <= 60);
 
         updateProgress.mutate({
-          lectureId: currentLectureId,
+          lectureId: activeLectureId,
           isCompleted: isNearEnd,
           watchedSeconds: Math.floor(currentTime),
           resumeAtSeconds: Math.floor(currentTime),
         });
       }
     },
-    [currentLectureId, updateProgress]
+    [activeLectureId, updateProgress]
   );
 
   // ─── Progress handlers ────────────────────────────────────────
   const handleMarkComplete = useCallback(() => {
-    if (!currentLectureId) return;
+    if (!activeLectureId) return;
     updateProgress.mutate(
-      { lectureId: currentLectureId, isCompleted: true },
+      { lectureId: activeLectureId, isCompleted: true },
       {
         onSuccess: () => toast.success("Lecture marked as complete"),
         onError: () => toast.error("Failed to mark lecture complete"),
       }
     );
-  }, [currentLectureId, updateProgress]);
+  }, [activeLectureId, updateProgress]);
 
   const handleVideoEnded = useCallback(() => {
-    if (!currentLectureId || isCurrentCompleted) {
+    if (!activeLectureId || isCurrentCompleted) {
       if (handleNext) handleNext();
       return;
     }
     updateProgress.mutate(
-      { lectureId: currentLectureId, isCompleted: true },
+      { lectureId: activeLectureId, isCompleted: true },
       {
         onSuccess: () => {
           toast.success("Lecture completed!");
@@ -197,7 +200,7 @@ export function LearnPageClient({
         },
       }
     );
-  }, [currentLectureId, isCurrentCompleted, updateProgress, handleNext]);
+  }, [activeLectureId, isCurrentCompleted, updateProgress, handleNext]);
 
   // ─── Computed values ──────────────────────────────────────────
   const completedCount = useMemo(() => {
@@ -237,7 +240,7 @@ export function LearnPageClient({
   const sidebarContent = (
     <CurriculumSidebar
       chapters={course.chapters}
-      currentLectureId={currentLectureId}
+      currentLectureId={activeLectureId}
       progressMap={progressMap}
       onSelectLecture={goToLecture}
       totalLectures={flatLectures.length}
@@ -246,49 +249,42 @@ export function LearnPageClient({
   );
 
   return (
-    <div className="flex w-full flex-col bg-background lg:h-[calc(100vh-65px)] lg:flex-row">
+    <div className="flex w-full flex-col bg-muted/20">
+      <DashboardNavbar user={navbarUser} />
+
+      <div className="flex w-full flex-col lg:h-[calc(100vh-65px)] lg:flex-row">
       {/* ─── Main content area ─────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <div className="flex flex-col gap-0">
-          {/* Mobile curriculum trigger */}
           <div className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/95 px-3 py-2 backdrop-blur sm:px-4 lg:hidden">
-            <h1 className="truncate text-sm font-semibold">
-              {course.title}
-            </h1>
-            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <IconMenu2 data-icon="inline-start" />
-                  Curriculum
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-screen max-w-none p-0">
-                <SheetTitle className="sr-only">Course Curriculum</SheetTitle>
-                {sidebarContent}
-              </SheetContent>
-            </Sheet>
+            <h1 className="truncate text-sm font-semibold">{course.title}</h1>
+            <Badge variant="secondary" className="text-[11px]">
+              {completedCount}/{flatLectures.length} completed
+            </Badge>
           </div>
 
           {/* Video Player */}
-          <VideoPlayer
-            lecture={currentLecture}
-            isCompleted={isCurrentCompleted}
-            isMarkingComplete={updateProgress.isPending}
-            onMarkComplete={handleMarkComplete}
-            onVideoEnded={handleVideoEnded}
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            sectionTitle={currentFlat?.chapterTitle ?? ""}
-            onTimeUpdate={handleTimeUpdate}
-            initialTimeSeconds={currentLectureId === initialLectureId ? (initialTimeSeconds ?? null) : null}
-          />
+          <div className=" px-0 py-0 sm:px-4 sm:pt-4 lg:px-8 lg:pt-6">
+            <VideoPlayer
+              lecture={currentLecture}
+              isCompleted={isCurrentCompleted}
+              isMarkingComplete={updateProgress.isPending}
+              onMarkComplete={handleMarkComplete}
+              onVideoEnded={handleVideoEnded}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              sectionTitle={currentFlat?.chapterTitle ?? ""}
+              onTimeUpdate={handleTimeUpdate}
+              initialTimeSeconds={activeLectureId === initialLectureId ? (initialTimeSeconds ?? null) : null}
+            />
+          </div>
 
           {/* Lecture info + controls below player */}
-          <div className="flex flex-col gap-4 px-3 py-4 sm:px-4 lg:px-8">
+          <div className="flex flex-col gap-4 bg-background px-3 py-4 sm:px-4 lg:px-8 lg:py-6">
             {/* Section + title */}
             {currentLecture && (
               <div className="flex flex-col gap-1">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {currentFlat?.chapterTitle}
                 </p>
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -343,7 +339,7 @@ export function LearnPageClient({
               {!isCurrentCompleted && (
                 <Button
                   size="sm"
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto sm:min-w-[150px]"
                   onClick={handleMarkComplete}
                   disabled={updateProgress.isPending}
                 >
@@ -358,18 +354,31 @@ export function LearnPageClient({
             {/* Bottom tabs */}
             <BottomTabs
               userId={userId}
-              lectureId={currentLectureId}
+              lectureId={activeLectureId}
               resources={currentLecture?.resources ?? []}
               lectureDescription={currentLecture?.description ?? null}
             />
+          </div>
+
+          <div className="border-t border-border bg-background lg:hidden">
+            <div className="px-3 py-3 sm:px-4">
+              <p className="text-sm font-semibold">Course Content</p>
+              <p className="text-xs text-muted-foreground">
+                Continue from any lecture
+              </p>
+            </div>
+            <div className="h-[58vh] min-h-[360px] border-t border-border">
+              {sidebarContent}
+            </div>
           </div>
         </div>
       </div>
 
       {/* ─── Desktop sidebar ───────────────────────────────────── */}
-      <aside className="hidden lg:flex lg:w-[420px] lg:shrink-0 lg:border-l lg:border-border xl:w-[460px]">
+      <aside className="hidden lg:flex lg:w-[420px] lg:shrink-0 lg:border-l lg:border-border lg:bg-background xl:w-[460px]">
         {sidebarContent}
       </aside>
+      </div>
     </div>
   );
 }

@@ -125,7 +125,7 @@ export async function fetchQuiz(quizId: string): Promise<QuizDetail> {
 }
 
 export async function fetchAttempt(quizId: string): Promise<AttemptWithAnswers | null> {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const userId = await getCurrentUserId();
 
   const { data: attempt, error } = await supabase
@@ -168,7 +168,7 @@ export async function fetchAttempt(quizId: string): Promise<AttemptWithAnswers |
 }
 
 export async function createAttempt(quizId: string): Promise<{ attemptId: string }> {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const userId = await getCurrentUserId();
 
   const existing = await fetchAttempt(quizId);
@@ -190,7 +190,7 @@ export async function createAttempt(quizId: string): Promise<{ attemptId: string
     throw new Error(error?.message ?? "Failed to create attempt.");
   }
 
-  return { attemptId: data.id };
+  return { attemptId: (data as any).id };
 }
 
 export async function saveAnswer(payload: {
@@ -200,7 +200,7 @@ export async function saveAnswer(payload: {
 }) {
   const supabase = createClient();
 
-  const { error } = await supabase.from("quiz_answers").upsert(
+  const { error } = await (supabase as any).from("quiz_answers").upsert(
     {
       attempt_id: payload.attemptId,
       question_id: payload.questionId,
@@ -218,7 +218,7 @@ export async function submitAttempt(payload: {
   attemptId: string;
   timedOut?: boolean;
 }): Promise<SubmitAttemptResult> {
-  const supabase = createClient();
+  const supabase = createClient() as any;
   const userId = await getCurrentUserId();
 
   const { data: attempt, error: attemptError } = await supabase

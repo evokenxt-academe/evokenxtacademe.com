@@ -257,7 +257,7 @@ export function VideoControls({
     (quality) => quality === "auto" || quality === "large" || quality === "hd720" || quality === "hd1080"
   );
 
-  const selectedQuality = visibleQualities.includes(state.quality)
+  const selectedQuality = (visibleQualities as string[]).includes(state.quality)
     ? state.quality
     : "auto";
 

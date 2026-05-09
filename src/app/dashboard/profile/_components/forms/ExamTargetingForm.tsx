@@ -117,7 +117,7 @@ export function ExamTargetingForm({ profile }: ExamTargetingFormProps) {
         exam_attempt_number: normalizeOptionalNumber(
           values.exam_attempt_number,
         ),
-      },
+      } as any,
       { onConflict: "user_id" },
     );
 

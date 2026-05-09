@@ -71,6 +71,7 @@ export function YtcnPlayer({
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   const { controlsVisible, showControls } = useIdleControls({
     isPlaying: state.isPlaying,
@@ -80,6 +81,23 @@ export function YtcnPlayer({
 
   // Controls visibility — handled by useIdleControls and group-hover
   const [isHovering, setIsHovering] = useState(false);
+  const [mobileSurfaceActive, setMobileSurfaceActive] = useState(false);
+  const [lastTouchTs, setLastTouchTs] = useState(0);
+
+  useEffect(() => {
+    const media = window.matchMedia("(hover: none), (pointer: coarse)");
+    const apply = () => setIsTouchDevice(media.matches || navigator.maxTouchPoints > 0);
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (!isTouchDevice || !mobileSurfaceActive) return;
+    if (!state.isPlaying) return;
+    const timeout = window.setTimeout(() => setMobileSurfaceActive(false), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [isTouchDevice, mobileSurfaceActive, state.isPlaying, state.currentTime]);
 
   // Keyboard shortcuts — only active during "ready" phase
   useKeyboardShortcuts({
@@ -95,19 +113,6 @@ export function YtcnPlayer({
     },
     bindings: keyboardBindings,
   });
-
-  // ── Delayed thumbnail unmount — wait for fade before removing from DOM ──
-  const [thumbnailMounted, setThumbnailMounted] = useState(true);
-
-  useEffect(() => {
-    if (state.phase === "ready") {
-      // Wait for fade transition (500ms) + buffer before unmounting
-      const t = setTimeout(() => setThumbnailMounted(false), 600);
-      return () => clearTimeout(t);
-    } else {
-      setThumbnailMounted(true);
-    }
-  }, [state.phase]);
 
   return (
     <div
@@ -130,6 +135,12 @@ export function YtcnPlayer({
       onMouseMove={() => {
         if (!isHovering) setIsHovering(true);
         showControls();
+      }}
+      onTouchStart={() => {
+        showControls();
+        if (isTouchDevice) {
+          setMobileSurfaceActive(true);
+        }
       }}
     >
       {/* ═══════════════════════════════════════════════════════════════
@@ -161,7 +172,7 @@ export function YtcnPlayer({
        *  it. When phase becomes "ready", opacity transitions to 0 over
        *  500ms, creating a seamless reveal of the already-playing video.
        * ═══════════════════════════════════════════════════════════════ */}
-      {thumbnailMounted && thumbnailUrl && (
+      {thumbnailUrl && (
         <div
           className={cn(
             "absolute inset-0 z-20 transition-opacity duration-500",
@@ -175,8 +186,6 @@ export function YtcnPlayer({
             draggable={false}
             aria-hidden="true"
           />
-          {/* Subtle dark gradient at bottom so spinner is readable */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
       )}
 
@@ -209,7 +218,11 @@ export function YtcnPlayer({
       {state.phase === "thumbnail" && thumbnailLoaded && (
         <button
           onClick={controls.handleThumbnailClick}
-          className="absolute inset-0 z-40 flex items-center justify-center group/play bg-transparent border-0 cursor-pointer"
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            controls.handleThumbnailClick();
+          }}
+          className="absolute inset-0 z-40 flex items-center justify-center group/play bg-transparent border-0 cursor-pointer touch-manipulation"
           aria-label="Play video"
         >
           <div
@@ -235,12 +248,63 @@ export function YtcnPlayer({
       {state.phase === "ready" && (
         <>
           <div
-            className="absolute inset-0 z-[25] cursor-pointer"
+            className="absolute inset-0 z-25 cursor-pointer touch-manipulation"
             onClick={controls.togglePlay}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              controls.toggleFullscreen();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              const now = Date.now();
+              const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+              const touch = e.changedTouches[0];
+              const x = touch.clientX - rect.left;
+              const zone = x < rect.width * 0.33 ? "left" : x > rect.width * 0.66 ? "right" : "center";
+              const isDoubleTap = now - lastTouchTs < 280;
+
+              setLastTouchTs(now);
+              showControls();
+              if (isTouchDevice) setMobileSurfaceActive(true);
+
+              if (isTouchDevice && isDoubleTap) {
+                if (zone === "left" && !state.isLive) {
+                  controls.seekRelative(-10);
+                  return;
+                }
+                if (zone === "right" && !state.isLive) {
+                  controls.seekRelative(10);
+                  return;
+                }
+              }
+
+              if (isTouchDevice && !controlsVisible) {
+                return;
+              }
+
+              controls.togglePlay();
+            }}
             aria-label="Toggle playback"
             role="button"
             tabIndex={-1}
           />
+          {isTouchDevice && state.phase === "ready" && !state.isPlaying && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                showControls();
+                setMobileSurfaceActive(true);
+                controls.togglePlay();
+              }}
+              className="absolute inset-0 z-27 flex items-center justify-center"
+              aria-label="Play video"
+            >
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-black/70 text-white shadow-xl ring-1 ring-white/20">
+                <IconPlayerPlayFilled className="h-8 w-8 translate-x-px" fill="currentColor" />
+              </span>
+            </button>
+          )}
           <YtcnControls
             state={state}
             onTogglePlay={controls.togglePlay}
@@ -248,11 +312,14 @@ export function YtcnPlayer({
             onVolumeChange={controls.setVolume}
             onToggleMute={controls.toggleMute}
             onSpeedChange={controls.setSpeed}
+            onQualityChange={controls.setQuality}
             onToggleFullscreen={controls.toggleFullscreen}
-            visible={controlsVisible}
+            onSeekToLive={controls.seekToLive}
+            visible={isTouchDevice ? controlsVisible || mobileSurfaceActive : controlsVisible}
             containerRef={containerRef}
             onSettingsOpenChange={setIsSettingsOpen}
             onInteraction={showControls}
+            isTouchDevice={isTouchDevice}
           />
         </>
       )}

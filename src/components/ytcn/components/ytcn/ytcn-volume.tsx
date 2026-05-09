@@ -53,7 +53,12 @@ export function YtcnVolume({
           e.stopPropagation();
           onToggleMute();
         }}
-        className="flex items-center justify-center rounded-sm p-1 text-white transition-colors hover:bg-white/10"
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleMute();
+        }}
+        className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-sm p-1 text-white transition-colors hover:bg-white/10 touch-manipulation sm:min-h-0 sm:min-w-0"
         aria-label={isMuted ? "Unmute" : "Mute"}
       >
         <VolumeIcon className="size-5" />

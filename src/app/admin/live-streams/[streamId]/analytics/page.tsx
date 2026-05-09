@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { createBrowserClient } from '@supabase/ssr';
-import { toast } from 'sonner';
-import { StreamStatsCard } from '@/components/live-streams/StreamStatsCard';
-import { format } from 'date-fns';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { createBrowserClient } from "@supabase/ssr";
+import { toast } from "sonner";
+import { StreamStatsCard } from "@/components/live-streams/StreamStatsCard";
+import { format } from "date-fns";
 import {
   LineChart,
   Line,
@@ -19,7 +25,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
+} from "recharts";
 
 interface LiveStream {
   id: string;
@@ -54,7 +60,7 @@ export default function StreamAnalyticsPage() {
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
   // Fetch stream
@@ -63,9 +69,9 @@ export default function StreamAnalyticsPage() {
       try {
         // Fetch stream
         const { data: streamData, error: streamError } = await supabase
-          .from('live_streams')
-          .select('*')
-          .eq('id', streamId)
+          .from("live_streams")
+          .select("*")
+          .eq("id", streamId)
           .single();
 
         if (streamError) throw streamError;
@@ -73,20 +79,21 @@ export default function StreamAnalyticsPage() {
 
         // Fetch analytics snapshots
         const { data: analyticsData, error: analyticsError } = await supabase
-          .from('stream_analytics')
-          .select('*')
-          .eq('live_stream_id', streamId)
-          .order('created_at', { ascending: true });
+          .from("stream_analytics")
+          .select("*")
+          .eq("live_stream_id", streamId)
+          .order("created_at", { ascending: true });
 
         if (analyticsError) throw analyticsError;
         setAnalytics(analyticsData || []);
 
         // Fetch questions count
-        const { count: questionsCountData, error: questionsError } = await supabase
-          .from('chat_messages')
-          .select('*', { count: 'exact', head: 0 })
-          .eq('live_stream_id', streamId)
-          .eq('type', 'question');
+        const { count: questionsCountData, error: questionsError } =
+          await supabase
+            .from("chat_messages")
+            .select("*", { count: "exact", head: true })
+            .eq("live_stream_id", streamId)
+            .eq("type", "question");
 
         if (!questionsError) {
           setQuestionsCount(questionsCountData || 0);
@@ -94,16 +101,16 @@ export default function StreamAnalyticsPage() {
 
         // Fetch poll responses
         const { count: pollResponsesData, error: pollError } = await supabase
-          .from('stream_poll_votes')
-          .select('*', { count: 'exact', head: 0 })
-          .eq('live_stream_id', streamId);
+          .from("stream_poll_votes")
+          .select("*", { count: "exact", head: true })
+          .eq("live_stream_id", streamId);
 
         if (!pollError) {
           setPollResponses(pollResponsesData || 0);
         }
       } catch (error) {
-        console.error('Failed to fetch analytics:', error);
-        toast.error('Failed to load analytics');
+        console.error("Failed to fetch analytics:", error);
+        toast.error("Failed to load analytics");
       } finally {
         setLoading(false);
       }
@@ -116,12 +123,16 @@ export default function StreamAnalyticsPage() {
     return <div className="text-center py-12">Loading analytics...</div>;
   }
 
-  if (!stream || stream.status !== 'ended') {
-    return <div className="text-center py-12">Analytics available only for ended streams</div>;
+  if (!stream || stream.status !== "ended") {
+    return (
+      <div className="text-center py-12">
+        Analytics available only for ended streams
+      </div>
+    );
   }
 
   const formatDuration = (seconds?: number) => {
-    if (!seconds) return '0m';
+    if (!seconds) return "0m";
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
@@ -129,9 +140,11 @@ export default function StreamAnalyticsPage() {
 
   // Calculate average watch time (rough estimate)
   const calculateAvgWatchTime = () => {
-    if (analytics.length === 0) return '0m';
+    if (analytics.length === 0) return "0m";
     const totalMinutes = analytics.length; // 1 minute per snapshot
-    return totalMinutes < 60 ? `${totalMinutes}m` : `${(totalMinutes / 60).toFixed(1)}h`;
+    return totalMinutes < 60
+      ? `${totalMinutes}m`
+      : `${(totalMinutes / 60).toFixed(1)}h`;
   };
 
   // Transform analytics data for charts
@@ -142,23 +155,36 @@ export default function StreamAnalyticsPage() {
   }));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 md:p-10 p-4">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold mb-2">Analytics</h1>
         <p className="text-muted-foreground">{stream.title}</p>
         <p className="text-sm text-muted-foreground mt-2">
-          {format(new Date(stream.scheduled_at), 'PPP p')} · Duration: {formatDuration(stream.duration_sec)} ·
-          Peak: {stream.peak_viewers?.toLocaleString() || 0} viewers
+          {format(new Date(stream.scheduled_at), "PPP p")} · Duration:{" "}
+          {formatDuration(stream.duration_sec)} · Peak:{" "}
+          {stream.peak_viewers?.toLocaleString() || 0} viewers
         </p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StreamStatsCard label="Total Viewers" value={stream.concurrent_viewers || 0} />
-        <StreamStatsCard label="Peak Concurrent" value={stream.peak_viewers || 0} />
-        <StreamStatsCard label="Avg Watch Time" value={calculateAvgWatchTime()} />
-        <StreamStatsCard label="Chat Messages" value={stream.total_chat_msgs || 0} />
+        <StreamStatsCard
+          label="Total Viewers"
+          value={stream.concurrent_viewers || 0}
+        />
+        <StreamStatsCard
+          label="Peak Concurrent"
+          value={stream.peak_viewers || 0}
+        />
+        <StreamStatsCard
+          label="Avg Watch Time"
+          value={calculateAvgWatchTime()}
+        />
+        <StreamStatsCard
+          label="Chat Messages"
+          value={stream.total_chat_msgs || 0}
+        />
         <StreamStatsCard label="Questions Asked" value={questionsCount} />
         <StreamStatsCard label="Poll Responses" value={pollResponses} />
       </div>
@@ -178,9 +204,19 @@ export default function StreamAnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="time"
-                    label={{ value: 'Minutes', position: 'insideBottomRight', offset: -5 }}
+                    label={{
+                      value: "Minutes",
+                      position: "insideBottomRight",
+                      offset: -5,
+                    }}
                   />
-                  <YAxis label={{ value: 'Viewers', angle: -90, position: 'insideLeft' }} />
+                  <YAxis
+                    label={{
+                      value: "Viewers",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
+                  />
                   <Tooltip />
                   <Legend />
                   <Line
@@ -195,7 +231,9 @@ export default function StreamAnalyticsPage() {
               </ResponsiveContainer>
             ) : (
               <div className="h-64 bg-muted/50 rounded flex items-center justify-center">
-                <p className="text-muted-foreground">No analytics data available</p>
+                <p className="text-muted-foreground">
+                  No analytics data available
+                </p>
               </div>
             )}
           </CardContent>
@@ -214,17 +252,33 @@ export default function StreamAnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="time"
-                    label={{ value: 'Minutes', position: 'insideBottomRight', offset: -5 }}
+                    label={{
+                      value: "Minutes",
+                      position: "insideBottomRight",
+                      offset: -5,
+                    }}
                   />
-                  <YAxis label={{ value: 'Messages/min', angle: -90, position: 'insideLeft' }} />
+                  <YAxis
+                    label={{
+                      value: "Messages/min",
+                      angle: -90,
+                      position: "insideLeft",
+                    }}
+                  />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="chatRate" fill="#10b981" name="Chat Rate (msg/min)" />
+                  <Bar
+                    dataKey="chatRate"
+                    fill="#10b981"
+                    name="Chat Rate (msg/min)"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-64 bg-muted/50 rounded flex items-center justify-center">
-                <p className="text-muted-foreground">No engagement data available</p>
+                <p className="text-muted-foreground">
+                  No engagement data available
+                </p>
               </div>
             )}
           </CardContent>
@@ -240,16 +294,25 @@ export default function StreamAnalyticsPage() {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Total Messages</span>
-                <span className="font-semibold">{stream.total_chat_msgs || 0}</span>
+                <span className="text-muted-foreground text-sm">
+                  Total Messages
+                </span>
+                <span className="font-semibold">
+                  {stream.total_chat_msgs || 0}
+                </span>
               </div>
               {stream.duration_sec && (
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-sm">Avg Rate</span>
+                  <span className="text-muted-foreground text-sm">
+                    Avg Rate
+                  </span>
                   <span className="font-semibold">
                     {stream.total_chat_msgs && stream.duration_sec
-                      ? ((stream.total_chat_msgs / (stream.duration_sec / 60)).toFixed(1) + ' msg/min')
-                      : '0 msg/min'}
+                      ? (
+                          stream.total_chat_msgs /
+                          (stream.duration_sec / 60)
+                        ).toFixed(1) + " msg/min"
+                      : "0 msg/min"}
                   </span>
                 </div>
               )}
@@ -257,8 +320,10 @@ export default function StreamAnalyticsPage() {
                 <span className="text-muted-foreground text-sm">Peak Rate</span>
                 <span className="font-semibold">
                   {analytics.length > 0
-                    ? Math.max(...analytics.map((a) => a.chat_rate || 0)).toFixed(1) + ' msg/min'
-                    : '0 msg/min'}
+                    ? Math.max(
+                        ...analytics.map((a) => a.chat_rate || 0),
+                      ).toFixed(1) + " msg/min"
+                    : "0 msg/min"}
                 </span>
               </div>
             </div>
@@ -272,16 +337,24 @@ export default function StreamAnalyticsPage() {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Peak Viewers</span>
-                <span className="font-semibold">{stream.peak_viewers?.toLocaleString() || 0}</span>
+                <span className="text-muted-foreground text-sm">
+                  Peak Viewers
+                </span>
+                <span className="font-semibold">
+                  {stream.peak_viewers?.toLocaleString() || 0}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground text-sm">Duration</span>
-                <span className="font-semibold">{formatDuration(stream.duration_sec)}</span>
+                <span className="font-semibold">
+                  {formatDuration(stream.duration_sec)}
+                </span>
               </div>
               {analytics.length > 0 && (
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-sm">Snapshots</span>
+                  <span className="text-muted-foreground text-sm">
+                    Snapshots
+                  </span>
                   <span className="font-semibold">{analytics.length}</span>
                 </div>
               )}
@@ -300,13 +373,22 @@ export default function StreamAnalyticsPage() {
                 <span className="font-semibold">{questionsCount}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Poll Votes</span>
+                <span className="text-muted-foreground text-sm">
+                  Poll Votes
+                </span>
                 <span className="font-semibold">{pollResponses}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Engagement</span>
+                <span className="text-muted-foreground text-sm">
+                  Engagement
+                </span>
                 <Badge variant="outline">
-                  {((questionsCount + pollResponses) / Math.max(stream.peak_viewers || 1, 1) * 100).toFixed(0)}%
+                  {(
+                    ((questionsCount + pollResponses) /
+                      Math.max(stream.peak_viewers || 1, 1)) *
+                    100
+                  ).toFixed(0)}
+                  %
                 </Badge>
               </div>
             </div>

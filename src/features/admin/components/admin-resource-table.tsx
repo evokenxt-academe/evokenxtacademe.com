@@ -124,7 +124,7 @@ export function AdminResourceTable<TData>({
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {toolbar ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg sm:rounded-2xl border border-border/70 bg-card p-3 sm:p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           {toolbar}
           {selectedCount > 0 ? (
             <Badge
@@ -137,7 +137,7 @@ export function AdminResourceTable<TData>({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+      <div className="overflow-x-auto rounded-lg sm:rounded-2xl border border-border/70 bg-card shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

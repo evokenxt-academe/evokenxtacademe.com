@@ -120,7 +120,7 @@ export async function getCourseById(
         status: data.status,
         total_students: data.total_students,
         avg_rating: data.avg_rating,
-        instructor_name: data.instructor?.name,
+        instructor_name: (data as any).instructor?.name,
         description: data.description,
         thumbnail_url: data.thumbnail_url,
         language: data.language,
@@ -189,7 +189,7 @@ export async function updateCourse(
  * Delete course (archive)
  */
 export async function archiveCourse(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string
 ): Promise<boolean> {
     return updateCourse(supabase, courseId, { status: "archived" });

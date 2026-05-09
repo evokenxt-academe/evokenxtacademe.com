@@ -107,7 +107,7 @@ export function LocationNotifForm({ profile }: LocationNotifFormProps) {
         notification_email: values.notification_email,
         notification_sms: values.notification_sms,
         notification_whatsapp: values.notification_whatsapp,
-      },
+      } as any,
       { onConflict: "user_id" },
     );
 

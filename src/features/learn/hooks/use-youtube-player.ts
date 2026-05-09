@@ -5,12 +5,7 @@ import type { PlayerState, PlaybackSpeed } from "../types";
 
 // ─── YouTube IFrame API typings ───────────────────────────────────
 
-declare global {
-  interface Window {
-    YT: typeof YT;
-    onYouTubeIframeAPIReady: (() => void) | undefined;
-  }
-}
+
 
 // YouTube Player States
 const YT_UNSTARTED = -1;
@@ -77,7 +72,7 @@ export function useYouTubePlayer({
   onVideoEnd,
   onTimeUpdate,
 }: UseYouTubePlayerOptions) {
-  const playerRef = useRef<YT.Player | null>(null);
+  const playerRef = useRef<any>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const onVideoEndRef = useRef(onVideoEnd);
   const onTimeUpdateRef = useRef(onTimeUpdate);
@@ -155,7 +150,7 @@ export function useYouTubePlayer({
         duration: 0,
       }));
 
-      playerRef.current = new window.YT.Player(containerId, {
+      playerRef.current = new (window as any).YT.Player(containerId, {
         videoId,
         width: "100%",
         height: "100%",
@@ -173,7 +168,7 @@ export function useYouTubePlayer({
           origin: typeof window !== "undefined" ? window.location.origin : undefined,
         },
         events: {
-          onReady: (event: YT.PlayerEvent) => {
+          onReady: (event: any) => {
             if (destroyed) return;
             const dur = event.target.getDuration() ?? 0;
             setState((prev) => ({
@@ -183,7 +178,7 @@ export function useYouTubePlayer({
               duration: dur,
             }));
           },
-          onStateChange: (event: YT.OnStateChangeEvent) => {
+          onStateChange: (event: any) => {
             if (destroyed) return;
             const ytState = event.data;
             switch (ytState) {

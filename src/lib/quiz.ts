@@ -321,7 +321,7 @@ export async function submitQuizAnswers(options: QuizSubmission): Promise<{
         const scoreResult = calculateQuizScore(quizDetail, scoredAnswers);
 
         // Update attempt with score
-        await supabase
+        await (supabase as any)
             .from("quiz_attempts")
             .update({
                 status: "submitted",
@@ -379,7 +379,7 @@ export async function getAttemptReview(
 
         // Filter correct answers if not allowed to view
         if (!showCorrectAnswers) {
-            attempt.answers = attempt.answers.map((ans: any) => ({
+            (attempt as any).answers = (attempt as any).answers.map((ans: any) => ({
                 ...ans,
                 is_correct: null,
                 marks_awarded: null,

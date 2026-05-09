@@ -21,7 +21,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
   }
 
   // Resolve slug to course ID
-  const courseId = await getCourseIdBySlug(supabase, slug);
+  const courseId = (await getCourseIdBySlug(supabase, slug)) as string;
 
   // if (!courseId) {
   //   redirect("/dashboard");
@@ -40,5 +40,12 @@ export default async function LearnPage({ params }: LearnPageProps) {
   //   redirect(`/dashboard/courses/${slug}`);
   // }
 
-  return <LearnPageClient courseId={courseId} userId={user.id} />;
+  const navbarUser = {
+    id: user.id,
+    name: user.user_metadata?.full_name ?? null,
+    email: user.email ?? "",
+    avatar: user.user_metadata?.avatar_url ?? null,
+  };
+
+  return <LearnPageClient courseId={courseId} userId={user.id} navbarUser={navbarUser} />;
 }

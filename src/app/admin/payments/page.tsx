@@ -101,7 +101,7 @@ export default function PaymentsPage() {
       header: "Transaction ID",
       cell: ({ row }) => (
         <span className="text-xs font-mono">
-          {row.getValue("id")?.slice(0, 8)}
+          {(row.getValue<string>("id") ?? "").slice(0, 8)}
         </span>
       ),
     },
@@ -128,7 +128,7 @@ export default function PaymentsPage() {
       header: "Amount",
       cell: ({ row }) => (
         <span className="text-sm font-medium">
-          {formatCurrency(row.getValue("amount_paid"))}
+          {formatCurrency(row.getValue<number>("amount_paid") ?? 0)}
         </span>
       ),
     },
@@ -206,12 +206,12 @@ export default function PaymentsPage() {
     {
       label: "Total Paid",
       value: summary ? formatCurrency(summary.total_paid) : "₹0",
-      icon: <IconCheckCircle className="size-5 text-green-600" />,
+      icon: <CheckCircle className="size-5 text-green-600" />,
     },
     {
       label: "Pending",
       value: summary ? formatCurrency(summary.total_pending) : "₹0",
-      icon: <IconAlertCircle className="size-5 text-yellow-600" />,
+      icon: <AlertCircle className="size-5 text-yellow-600" />,
     },
     {
       label: "Failed/Refunded",

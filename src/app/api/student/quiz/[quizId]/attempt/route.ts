@@ -30,7 +30,7 @@ export async function POST(
   { params }: { params: Promise<{ quizId: string }> },
 ) {
   const { quizId } = await params;
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -136,7 +136,7 @@ export async function POST(
     }
 
     const attemptId = body.attemptId;
-    const admin = createAdminClient();
+    const admin = createAdminClient() as any;
 
     // Verify attempt belongs to user and is in progress
     const { data: attempt, error: attemptError } = await supabase
@@ -195,21 +195,10 @@ export async function POST(
       return NextResponse.json({ error: qError.message }, { status: 500 });
     }
 
-    const byId = new Map(
-      (questions ?? []).map((q) => [
+    const byId = new Map<string, any>(
+      (questions ?? []).map((q: any) => [
         q.id,
-        q as unknown as {
-          id: string;
-          type: QuestionType;
-          question_text: string;
-          marks: number;
-          negative_marks: number;
-          blank_placeholder: string | null;
-          numerical_answer: number | null;
-          numerical_tolerance: number | null;
-          explanation: string | null;
-          options: Array<{ id: string; is_correct: boolean; option_text: string }> | null;
-        },
+        q
       ]),
     );
 

@@ -36,7 +36,7 @@ export default async function QuizPage({ params }: Props) {
     .from("enrollments")
     .select("id")
     .eq("user_id", user.id)
-    .eq("course_id", (quiz.course as { id: string }).id)
+    .eq("course_id", (quiz as unknown as QuizMeta).course.id)
     .eq("status", "active")
     .maybeSingle();
 

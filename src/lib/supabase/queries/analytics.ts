@@ -28,7 +28,7 @@ export interface StudentWatchRow {
  * Get watch hours data by date range
  */
 export async function getWatchHoursByDateRange(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     dateFrom: string,
     dateTo: string
 ): Promise<WatchHourRow[]> {
@@ -94,7 +94,7 @@ export async function getWatchHoursByDateRange(
  * Get top students by watch hours
  */
 export async function getTopStudentsByWatchHours(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     limit: number = 20,
     dateFrom?: string,
     dateTo?: string
@@ -180,7 +180,7 @@ export async function getTopStudentsByWatchHours(
  * Get analytics metrics
  */
 export async function getAnalyticsMetrics(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     dateFrom: string,
     dateTo: string
 ): Promise<{

@@ -139,16 +139,34 @@ export interface User {
 /** Extended profile for students (1:1 with users) */
 export interface StudentProfile {
     user_id: string; // UUID (FK: users.id)
-    date_of_birth: string | null; // ISO date
-    country: string | null;
-    city: string | null;
-    timezone: string | null;
-    professional_background: string | null;
-    current_certification_target: ProgramBody | null;
-    target_exam_date: string | null; // ISO date
-    study_hours_per_week: number | null;
-    preferred_language: string | null;
-    notifications_enabled: boolean;
+    date_of_birth?: string | null; // ISO date
+    country?: string | null;
+    city?: string | null;
+    state?: string | null;
+    timezone?: string | null;
+    professional_background?: string | null;
+    current_certification_target?: ProgramBody | null;
+    target_exam_date?: string | null; // ISO date
+    study_hours_per_week?: number | null;
+    preferred_language?: string | null;
+    notifications_enabled?: boolean;
+    college_name?: string | null;
+    university?: string | null;
+    degree?: string | null;
+    graduation_year?: number | null;
+    field_of_study?: string | null;
+    current_employer?: string | null;
+    job_title?: string | null;
+    years_of_experience?: number | null;
+    target_exam_body?: string | null;
+    target_exam_level?: string | null;
+    exam_attempt_number?: number | null;
+    linkedin_url?: string | null;
+    bio?: string | null;
+    gender?: string | null;
+    notification_email?: boolean;
+    notification_sms?: boolean;
+    notification_whatsapp?: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -642,6 +660,18 @@ export interface Database {
             chat_messages: { Row: ChatMessage; Insert: Omit<ChatMessage, "created_at" | "updated_at">; Update: Partial<ChatMessage> };
             reviews: { Row: Review; Insert: Omit<Review, "created_at" | "updated_at">; Update: Partial<Review> };
             youtube_tokens: { Row: YouTubeToken; Insert: Omit<YouTubeToken, "created_at" | "updated_at">; Update: Partial<YouTubeToken> };
+        };
+        Views: {
+            [_ in never]: never
+        };
+        Functions: {
+            [_ in never]: never
+        };
+        Enums: {
+            [_ in never]: never
+        };
+        CompositeTypes: {
+            [_ in never]: never
         };
     };
 }

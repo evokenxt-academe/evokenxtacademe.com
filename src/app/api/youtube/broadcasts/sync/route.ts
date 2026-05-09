@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .single();
 
-    const results = [];
+    const results: any[] = [];
 
     for (const yt of ytBroadcasts) {
       const lifecycle = yt.status?.lifeCycleStatus;

@@ -86,7 +86,7 @@ export const FillBlankSchema = QuestionBaseSchema.extend({
 
 export const NumericalSchema = QuestionBaseSchema.extend({
   type: z.literal("numerical"),
-  numerical_answer: z.coerce.number({ required_error: "Answer is required" }),
+  numerical_answer: z.coerce.number({ message: "Answer is required" }),
   numerical_tolerance: z.coerce.number().min(0).default(0),
 });
 

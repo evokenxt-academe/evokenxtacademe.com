@@ -11,12 +11,7 @@ interface YouTubeLivePlayerProps {
   className?: string;
 }
 
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: (() => void) | undefined;
-  }
-}
+
 
 export function YouTubeLivePlayer({
   videoId,
@@ -32,7 +27,7 @@ export function YouTubeLivePlayer({
   const [error, setError] = useState<string | null>(null);
 
   const initPlayer = useCallback(() => {
-    if (!containerRef.current || !videoId || !window.YT?.Player) return;
+    if (!containerRef.current || !videoId || !(window as any).YT?.Player) return;
 
     const playerId = `yt-player-${videoId}`;
     const div = document.createElement("div");
@@ -40,7 +35,7 @@ export function YouTubeLivePlayer({
     containerRef.current.innerHTML = "";
     containerRef.current.appendChild(div);
 
-    playerRef.current = new window.YT.Player(playerId, {
+    playerRef.current = new (window as any).YT.Player(playerId, {
       videoId,
       playerVars: {
         autoplay: autoplay ? 1 : 0,
@@ -75,7 +70,7 @@ export function YouTubeLivePlayer({
   useEffect(() => {
     if (!videoId) return;
 
-    if (window.YT?.Player) {
+    if ((window as any).YT?.Player) {
       initPlayer();
       return () => {
         playerRef.current?.destroy?.();
@@ -89,8 +84,8 @@ export function YouTubeLivePlayer({
       document.head.appendChild(script);
     }
 
-    const prev = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => {
+    const prev = (window as any).onYouTubeIframeAPIReady;
+    (window as any).onYouTubeIframeAPIReady = () => {
       prev?.();
       initPlayer();
     };

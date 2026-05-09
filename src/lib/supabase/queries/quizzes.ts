@@ -71,6 +71,9 @@ export async function getAllQuizzes(
         ? attempts.reduce((sum: number, a: any) => sum + (a.percentage ?? 0), 0) / attempts.length
         : null;
 
+    const passedCount = attempts.filter((a: any) => a.passed).length;
+    const passRate = attempts.length > 0 ? (passedCount / attempts.length) * 100 : null;
+
     return {
       id: quiz.id,
       title: quiz.title,
@@ -82,6 +85,7 @@ export async function getAllQuizzes(
       question_count: (quiz.questions ?? []).length,
       attempt_count: attempts.length,
       avg_score: avgScore ? Math.round(avgScore * 10) / 10 : null,
+      pass_rate_pct: passRate ? Math.round(passRate * 10) / 10 : null,
       course_title: quiz.course?.title ?? null,
       program_body: quiz.course?.subject?.program_level?.program?.body ?? null,
       level_label: quiz.course?.subject?.program_level?.label ?? null,
@@ -237,4 +241,46 @@ export async function getQuizTypeDistribution(supabase: SupabaseClient) {
   });
 
   return Object.entries(counts).map(([name, value]) => ({ name, value }));
+}
+
+export async function getDailyQuizAttempts(supabase: SupabaseClient) {
+  // Get last 30 days of data
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select("started_at")
+    .gte("started_at", thirtyDaysAgo.toISOString())
+    .order("started_at", { ascending: true });
+
+  if (error) {
+    console.error("[quizzes] getDailyQuizAttempts error:", error.message);
+    return [];
+  }
+
+  // Group by date and count attempts
+  const dailyCounts: Record<string, number> = {};
+
+  (data ?? []).forEach((attempt: any) => {
+    const date = new Date(attempt.started_at);
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    dailyCounts[dateStr] = (dailyCounts[dateStr] || 0) + 1;
+  });
+
+  // Generate all dates in the range to ensure no gaps
+  const allDates: any[] = [];
+  const currentDate = new Date(thirtyDaysAgo);
+
+  while (currentDate <= new Date()) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    allDates.push({
+      date: dateStr,
+      attempts: dailyCounts[dateStr] || 0,
+      displayDate: new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    });
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return allDates;
 }

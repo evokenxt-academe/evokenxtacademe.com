@@ -85,7 +85,7 @@ async function fetchLectureProgress(
   if (!progress) return {};
 
   const map: ProgressMap = {};
-  for (const p of progress) {
+  for (const p of (progress as any[])) {
     map[p.lecture_id] = {
       is_completed: p.is_completed,
       watched_seconds: p.watched_seconds,

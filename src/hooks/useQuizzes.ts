@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { getAllQuizzes, getQuizById, getQuizDashboardStats, getQuizTypeDistribution, getQuizAttempts } from "@/lib/supabase/queries/quizzes";
+import { getAllQuizzes, getQuizById, getQuizDashboardStats, getQuizTypeDistribution, getQuizAttempts, getDailyQuizAttempts } from "@/lib/supabase/queries/quizzes";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { subscribeToTable } from "@/lib/supabase/realtime";
@@ -155,5 +155,14 @@ export function useQuizRanking(quizId: string) {
       return res.json();
     },
     enabled: !!quizId,
+  });
+}
+
+export function useDailyQuizAttempts() {
+  const supabase = createClient();
+  return useQuery({
+    queryKey: ["daily-quiz-attempts"],
+    queryFn: () => getDailyQuizAttempts(supabase),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

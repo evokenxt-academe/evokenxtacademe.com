@@ -40,8 +40,8 @@ export async function GET(
         .order("created_at", { ascending: true })
         .limit(200)
 
-    const courseName = Array.isArray(stream.courses) 
-        ? stream.courses[0]?.name 
+    const courseName = Array.isArray(stream.courses)
+        ? stream.courses[0]?.name
         : (stream.courses as any)?.name ?? "Unknown Course"
 
     const currentStream: LiveStreamSummary = {
@@ -77,7 +77,7 @@ export async function POST(
     if ("error" in auth) return auth.error
 
     const { streamId } = await params
-    const { supabase, user } = auth
+    const { supabase, userId } = auth
 
     const body = await request.json()
     const { message } = body
@@ -106,7 +106,7 @@ export async function POST(
         .from("chat_messages")
         .insert({
             live_stream_id: streamId,
-            user_id: user.id,
+            user_id: userId,
             message: message.trim(),
         })
         .select("id, message, created_at")
@@ -122,7 +122,7 @@ export async function POST(
     const { data: profile } = await supabase
         .from("users")
         .select("name, avatar")
-        .eq("id", user.id)
+        .eq("id", userId)
         .maybeSingle()
 
     return NextResponse.json({
@@ -132,7 +132,7 @@ export async function POST(
             liveStreamId: streamId,
             message: chatMsg.message,
             createdAt: chatMsg.created_at,
-            userId: user.id,
+            userId,
             userName: profile?.name ?? "Anonymous",
             userAvatar: profile?.avatar ?? null,
         },

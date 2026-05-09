@@ -6,6 +6,18 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+type AnalyticsSyncError = {
+    streamId: string;
+    error: string;
+};
+
+type AnalyticsSyncResults = {
+    streamsProcessed: number;
+    analyticsUpdated: number;
+    chatSynced: number;
+    errors: AnalyticsSyncError[];
+};
+
 /**
  * Cron endpoint: Sync live stream analytics
  * Runs every 60 seconds during live broadcasts
@@ -34,7 +46,7 @@ export async function POST(request: NextRequest) {
 
         if (streamError) throw streamError;
 
-        const results = {
+        const results: AnalyticsSyncResults = {
             streamsProcessed: 0,
             analyticsUpdated: 0,
             chatSynced: 0,

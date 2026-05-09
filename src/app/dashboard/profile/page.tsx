@@ -59,7 +59,7 @@ export default async function ProfilePage() {
       )
       .eq("id", user.id)
       .maybeSingle(),
-    supabase.from("watch_hours_daily").select("seconds").eq("user_id", user.id),
+    supabase.from("watch_hours_daily").select("hours_watched").eq("user_id", user.id),
     supabase
       .from("enrollments")
       .select("id", { count: "exact", head: true })
@@ -110,12 +110,10 @@ export default async function ProfilePage() {
 
   const totalWatchHours = Array.isArray(watchHoursResult.data)
     ? Math.round(
-        (watchHoursResult.data.reduce(
-          (sum, row) => sum + (row.seconds ?? 0),
+        (watchHoursResult.data as any[]).reduce(
+          (sum: number, row: any) => sum + (row.hours_watched ?? 0),
           0,
-        ) /
-          3600) *
-          10,
+        ) * 10,
       ) / 10
     : 0;
 

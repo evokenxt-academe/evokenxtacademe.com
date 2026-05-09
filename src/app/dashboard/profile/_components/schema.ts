@@ -32,11 +32,11 @@ export const examTargetingSchema = z.object({
 export const locationNotifSchema = z.object({
     city: z.string().trim().max(100).optional(),
     state: z.string().trim().max(100).optional(),
-    country: z.string().trim().min(2).max(100).default("India"),
-    preferred_language: z.enum(languageOptions).default("en"),
-    notification_email: z.boolean().default(true),
-    notification_sms: z.boolean().default(false),
-    notification_whatsapp: z.boolean().default(false),
+    country: z.string().trim().min(2).max(100),
+    preferred_language: z.enum(languageOptions),
+    notification_email: z.boolean(),
+    notification_sms: z.boolean(),
+    notification_whatsapp: z.boolean(),
 });
 
 export type PersonalInfoValues = z.infer<typeof personalInfoSchema>;

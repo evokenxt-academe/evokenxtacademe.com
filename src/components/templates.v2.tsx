@@ -4,8 +4,12 @@
  * ============================================================
  * React/Next.js + shadcn/ui components
  * Place in: src/components/[page]/[component].tsx
+ * 
+ * NOTE: This file is commented out to prevent TypeScript duplicate 
+ * identifier errors. Copy and uncomment into actual route files.
  */
 
+/*
 // ============================================================
 // 1. COURSE CARD (Catalog)
 // ============================================================
@@ -28,7 +32,6 @@ export function CourseCard({ course }: { course: CourseDetail }) {
   return (
     <Link href={`/courses/${course.slug}`}>
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-        {/* Thumbnail */}
         {course.thumbnail_url && (
           <div className="relative h-48 bg-muted overflow-hidden">
             <Image
@@ -45,7 +48,6 @@ export function CourseCard({ course }: { course: CourseDetail }) {
           </div>
         )}
 
-        {/* Content */}
         <div className="p-4">
           <h3 className="font-semibold line-clamp-2">{course.title}</h3>
 
@@ -53,7 +55,6 @@ export function CourseCard({ course }: { course: CourseDetail }) {
             {course.description}
           </p>
 
-          {/* Instructor */}
           {course.instructor && (
             <div className="flex items-center gap-2 mt-3">
               {course.instructor.avatar && (
@@ -69,14 +70,12 @@ export function CourseCard({ course }: { course: CourseDetail }) {
             </div>
           )}
 
-          {/* Stats */}
           <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
             <span>⭐ {rating}</span>
             <span>📚 {course.total_lectures} lessons</span>
             <span>🎓 {course.chapters?.length || 0} chapters</span>
           </div>
 
-          {/* Pricing */}
           {course.pricing?.[0] && (
             <div className="mt-3 pt-3 border-t">
               <div className="flex items-baseline gap-2">
@@ -116,7 +115,6 @@ export function EnrollmentCard({
   return (
     <Card className="p-4">
       <div className="flex gap-4">
-        {/* Thumbnail */}
         {enrollment.course?.thumbnail_url && (
           <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden flex-shrink-0">
             <img
@@ -127,7 +125,6 @@ export function EnrollmentCard({
           </div>
         )}
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold truncate">
             {enrollment.course?.title || "Course"}
@@ -137,7 +134,6 @@ export function EnrollmentCard({
             Program: {enrollment.course?.subject?.program_level?.program?.body}
           </p>
 
-          {/* Progress */}
           <div className="mt-3">
             <div className="flex items-center justify-between mb-1">
               <span className="text-xs text-muted-foreground">Progress</span>
@@ -146,7 +142,6 @@ export function EnrollmentCard({
             <Progress value={45} className="h-2" />
           </div>
 
-          {/* Payment Status */}
           {enrollment.plan && (
             <p className="text-xs text-muted-foreground mt-2">
               EMI Plan: ₹
@@ -155,7 +150,6 @@ export function EnrollmentCard({
             </p>
           )}
 
-          {/* Actions */}
           <div className="flex gap-2 mt-3">
             <Link href={`/learn/${enrollment.course_id}`}>
               <Button size="sm" variant="default">
@@ -208,7 +202,6 @@ export function LecturePlayer({
       const current = videoRef.current.currentTime;
       setWatchTime(Math.floor(current));
 
-      // Update progress every 30 seconds
       if (Math.floor(current) % 30 === 0) {
         onProgressUpdate({
           resumePosition: current,
@@ -229,7 +222,6 @@ export function LecturePlayer({
 
   return (
     <div className="space-y-4">
-      {/* Video Player */}
       <div className="bg-black rounded-lg overflow-hidden aspect-video">
         <video
           ref={videoRef}
@@ -241,7 +233,6 @@ export function LecturePlayer({
         />
       </div>
 
-      {/* Lecture Info */}
       <div>
         <h2 className="text-2xl font-bold">{lecture.title}</h2>
         <p className="text-muted-foreground mt-2">{lecture.description}</p>
@@ -250,7 +241,6 @@ export function LecturePlayer({
         </p>
       </div>
 
-      {/* Resources */}
       {lecture.resources && lecture.resources.length > 0 && (
         <div>
           <h3 className="font-semibold mb-3">📎 Resources</h3>
@@ -305,7 +295,6 @@ export function QuestionRenderer({
 
   return (
     <div className="space-y-4">
-      {/* Question Text */}
       <div>
         <h3 className="font-semibold text-lg">{question.question_text}</h3>
         <p className="text-sm text-muted-foreground mt-1">
@@ -315,7 +304,6 @@ export function QuestionRenderer({
         </p>
       </div>
 
-      {/* MCQ */}
       {question.question_type === "mcq" && (
         <RadioGroup value={answer || ""} onValueChange={handleChange}>
           <div className="space-y-3">
@@ -332,7 +320,6 @@ export function QuestionRenderer({
         </RadioGroup>
       )}
 
-      {/* Multiple Select */}
       {question.question_type === "multiple_select" && (
         <div className="space-y-3">
           {question.options?.map((option) => (
@@ -359,7 +346,6 @@ export function QuestionRenderer({
         </div>
       )}
 
-      {/* True/False */}
       {question.question_type === "true_false" && (
         <RadioGroup
           value={answer?.toString() || ""}
@@ -378,7 +364,6 @@ export function QuestionRenderer({
         </RadioGroup>
       )}
 
-      {/* Fill in the Blank */}
       {question.question_type === "fill_blank" && (
         <Input
           placeholder="Your answer..."
@@ -388,7 +373,6 @@ export function QuestionRenderer({
         />
       )}
 
-      {/* Numerical */}
       {question.question_type === "numerical" && (
         <Input
           type="number"
@@ -400,7 +384,6 @@ export function QuestionRenderer({
         />
       )}
 
-      {/* Subjective */}
       {question.question_type === "subjective" && (
         <Textarea
           placeholder="Write your answer here..."
@@ -410,7 +393,6 @@ export function QuestionRenderer({
         />
       )}
 
-      {/* Assertion & Reasoning */}
       {question.question_type === "assertion_reasoning" && (
         <RadioGroup value={answer || ""} onValueChange={handleChange}>
           <div className="space-y-3">
@@ -472,7 +454,6 @@ export function PaymentSection({
     setLoading(true);
 
     try {
-      // Step 1: Create order
       const enrollResponse = await fetch("/api/enrollment/enroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -480,8 +461,8 @@ export function PaymentSection({
           courseId: course.id,
           pricingId: selectedPricing,
           planId: selectedPlan,
-          userEmail: "user@example.com", // Get from auth
-          userPhone: "+91XXXXXXXXXX", // Get from form
+          userEmail: "user@example.com",
+          userPhone: "+91XXXXXXXXXX",
         }),
       });
 
@@ -492,7 +473,6 @@ export function PaymentSection({
         return;
       }
 
-      // Step 2: Open Razorpay
       const options = {
         key: razorpayKeyId,
         amount:
@@ -501,7 +481,6 @@ export function PaymentSection({
         currency: "INR",
         order_id: orderId,
         handler: async (response: any) => {
-          // Step 3: Verify
           const verifyResponse = await fetch("/api/enrollment/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -532,7 +511,6 @@ export function PaymentSection({
     <Card className="p-6">
       <h3 className="font-bold text-lg mb-4">Choose Your Plan</h3>
 
-      {/* Pricing Options */}
       <RadioGroup value={selectedPricing} onValueChange={setSelectedPricing}>
         <div className="space-y-3 mb-6">
           {pricing.map((option) => (
@@ -552,7 +530,6 @@ export function PaymentSection({
         </div>
       </RadioGroup>
 
-      {/* Payment Plans */}
       {selectedPricingData?.plans && selectedPricingData.plans.length > 0 && (
         <div className="mb-6">
           <p className="text-sm font-semibold mb-3">Payment Options</p>
@@ -576,7 +553,6 @@ export function PaymentSection({
         </div>
       )}
 
-      {/* Enroll Button */}
       <Button
         onClick={handleEnroll}
         disabled={loading}
@@ -588,3 +564,4 @@ export function PaymentSection({
     </Card>
   );
 }
+*/

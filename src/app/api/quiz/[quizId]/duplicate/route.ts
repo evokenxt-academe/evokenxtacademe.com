@@ -15,9 +15,10 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     if (qErr || !quiz) return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
 
     // Create copy
-    const { id: _id, created_at: _ca, updated_at: _ua, total_marks: _tm, ...quizData } = quiz as any;
-    const { data: newQuiz, error: nErr } = await supabase.from("quizzes")
-      .insert([{ ...quizData, title: `${quiz.title} (Copy)`, is_published: false }])
+    const sourceQuiz = quiz as any;
+    const { id: _id, created_at: _ca, updated_at: _ua, total_marks: _tm, ...quizData } = sourceQuiz;
+    const { data: newQuiz, error: nErr } = await (supabase.from("quizzes") as any)
+      .insert([{ ...quizData, title: `${sourceQuiz.title} (Copy)`, is_published: false }])
       .select("id").single();
     if (nErr) throw new Error(nErr.message);
 
@@ -26,12 +27,12 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
 
     for (const q of questions ?? []) {
       const { id: _qid, quiz_id: _qzid, created_at: _qca, options, ...qData } = q as any;
-      const { data: newQ, error: nqErr } = await supabase.from("questions").insert([{ ...qData, quiz_id: newQuiz.id }]).select("id").single();
+      const { data: newQ, error: nqErr } = await (supabase.from("questions") as any).insert([{ ...qData, quiz_id: newQuiz.id }]).select("id").single();
       if (nqErr || !newQ) continue;
 
       const opts = options ?? [];
       if (opts.length > 0) {
-        await supabase.from("question_options").insert(
+        await (supabase.from("question_options") as any).insert(
           opts.map((o: any) => ({ question_id: newQ.id, option_text: o.option_text, is_correct: o.is_correct, position: o.position, explanation: o.explanation }))
         );
       }

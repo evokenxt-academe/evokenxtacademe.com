@@ -1,10 +1,24 @@
 /* ================================================================ */
-/*  Playback Speed                                                   */
+/*  Playback Speed & Quality                                         */
 /* ================================================================ */
 
-export type PlaybackSpeed = 0.75 | 1 | 1.5 | 2;
+export type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2;
 
-export const PLAYBACK_SPEEDS = [0.75, 1, 1.5, 2] as const;
+export const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+export type PlaybackQuality = "auto" | "1080p" | "720p" | "480p" | "360p" | "240p" | "144p";
+
+export const QUALITY_LABELS: Record<string, PlaybackQuality> = {
+  highres: "1080p",
+  hd1080: "1080p",
+  hd720: "720p",
+  large: "480p",
+  medium: "360p",
+  small: "240p",
+  tiny: "144p",
+  auto: "auto",
+  default: "auto",
+};
 
 /* ================================================================ */
 /*  Player Phase — thumbnail-first state machine                     */
@@ -53,6 +67,12 @@ export interface PlayerState {
   playbackRate: PlaybackSpeed;
   /** True when player is rendering a live stream */
   isLive: boolean;
+  /** True when playback position is within 5s of the live edge (live mode only) */
+  isAtLiveEdge: boolean;
+  /** Currently active quality level (YouTube internal string) */
+  currentQuality: string;
+  /** Available quality levels (YouTube internal strings) */
+  availableQualities: string[];
 }
 
 /* ================================================================ */
@@ -104,8 +124,12 @@ export interface PlayerControls {
   toggleMute: () => void;
   /** Set playback speed */
   setSpeed: (rate: PlaybackSpeed) => void;
+  /** Change playback quality */
+  setQuality: (quality: string) => void;
   /** Enter or exit fullscreen */
   toggleFullscreen: () => void;
+  /** Seek to the live edge (live mode only) */
+  seekToLive: () => void;
   /** Click handler for thumbnail play button */
   handleThumbnailClick: () => void;
 }

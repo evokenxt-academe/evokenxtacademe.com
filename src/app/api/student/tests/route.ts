@@ -118,7 +118,7 @@ export async function GET(request: Request) {
             debug: {
               userId: user.id,
               enrolledCourseIds,
-              enrolledSectionIds,
+              enrolledChapterIds: [],
               publishedQuizCount: 0,
             },
           }

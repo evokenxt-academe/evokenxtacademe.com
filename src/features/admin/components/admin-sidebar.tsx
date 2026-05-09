@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation";
 
 import {
   IconArrowBackUp,
+  IconBell,
   IconBook,
   IconCertificate,
   IconClipboardList,
@@ -75,19 +76,9 @@ const ADMIN_SIDEBAR_SECTIONS = [
         icon: IconClipboardList,
       },
       {
-        title: "Test Rankings",
-        href: "/admin/tests",
-        icon: IconTrophy,
-      },
-      {
         title: "Live Streams",
         href: "/admin/live-streams",
         icon: IconVideo,
-      },
-      {
-        title: "Live Chat",
-        href: "/admin/live-chat",
-        icon: IconMessage2,
       },
     ],
   },
@@ -103,6 +94,16 @@ const ADMIN_SIDEBAR_SECTIONS = [
         title: "Reviews",
         href: "/admin/reviews",
         icon: IconClipboardList,
+      },
+    ],
+  },
+  {
+    label: "Engage",
+    items: [
+      {
+        title: "Notifications",
+        href: "/admin/notifications",
+        icon: IconBell,
       },
     ],
   },

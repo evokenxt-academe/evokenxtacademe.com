@@ -12,12 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -84,7 +79,10 @@ import { createClient } from "@/lib/supabase/client";
 
 import { extractYouTubeId, getYouTubeThumbnail } from "@/lib/utils/video";
 import { CoursePreviewCard } from "../../../new/_components/course-preview-card";
-import { uploadResourceFile, type UploadProgress } from "@/features/admin/course/services/course-api";
+import {
+  uploadResourceFile,
+  type UploadProgress,
+} from "@/features/admin/course/services/course-api";
 
 interface EditCourseTabsProps {
   courseId: string;
@@ -105,23 +103,31 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
   const [savingTab, setSavingTab] = React.useState<string | null>(null);
 
   // Slug check
-  const [slugStatus, setSlugStatus] = React.useState<"idle" | "checking" | "unique" | "taken">("idle");
+  const [slugStatus, setSlugStatus] = React.useState<
+    "idle" | "checking" | "unique" | "taken"
+  >("idle");
   const slugTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
   const thumbInputRef = React.useRef<HTMLInputElement>(null);
   const [thumbUploading, setThumbUploading] = React.useState(false);
-  const [thumbProgress, setThumbProgress] = React.useState<UploadProgress | null>(null);
+  const [thumbProgress, setThumbProgress] =
+    React.useState<UploadProgress | null>(null);
 
   const previewInputRef = React.useRef<HTMLInputElement>(null);
   const [previewUploading, setPreviewUploading] = React.useState(false);
-  const [previewProgress, setPreviewProgress] = React.useState<UploadProgress | null>(null);
+  const [previewProgress, setPreviewProgress] =
+    React.useState<UploadProgress | null>(null);
 
   const handleThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setThumbUploading(true);
     try {
-      const result = await uploadResourceFile(file, `thumb-${Date.now()}`, setThumbProgress);
+      const result = await uploadResourceFile(
+        file,
+        `thumb-${Date.now()}`,
+        setThumbProgress,
+      );
       if (result.success && result.fileUrl) {
         form.setValue("thumbnail_url", result.fileUrl, { shouldDirty: true });
         toast.success("Thumbnail uploaded");
@@ -137,14 +143,22 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
     }
   };
 
-  const handlePreviewUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePreviewUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setPreviewUploading(true);
     try {
-      const result = await uploadResourceFile(file, `preview-${Date.now()}`, setPreviewProgress);
+      const result = await uploadResourceFile(
+        file,
+        `preview-${Date.now()}`,
+        setPreviewProgress,
+      );
       if (result.success && result.fileUrl) {
-        form.setValue("preview_video_url", result.fileUrl, { shouldDirty: true });
+        form.setValue("preview_video_url", result.fileUrl, {
+          shouldDirty: true,
+        });
         toast.success("Preview video uploaded");
       } else {
         toast.error("Upload failed");
@@ -237,7 +251,7 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
               onClick: () => window.location.reload(),
             },
           });
-        }
+        },
       )
       .subscribe();
 
@@ -248,7 +262,11 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
 
   // Slug uniqueness check
   React.useEffect(() => {
-    if (!watchedSlug || watchedSlug.length < 3 || watchedSlug === course?.slug) {
+    if (
+      !watchedSlug ||
+      watchedSlug.length < 3 ||
+      watchedSlug === course?.slug
+    ) {
       setSlugStatus("idle");
       return;
     }
@@ -314,7 +332,9 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
   };
 
   // Status actions
-  const handleStatusChange = async (status: "draft" | "published" | "archived") => {
+  const handleStatusChange = async (
+    status: "draft" | "published" | "archived",
+  ) => {
     try {
       await updateCourseStatus(courseId, status);
       form.setValue("status", status);
@@ -376,10 +396,24 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
   const ytId = previewVideoUrl ? extractYouTubeId(previewVideoUrl) : null;
 
   // Tab dirty indicators
-  const isDetailsDirty = !!(dirtyFields.title || dirtyFields.slug || dirtyFields.short_description || dirtyFields.description || dirtyFields.language || dirtyFields.status || dirtyFields.is_featured);
-  const isMediaDirty = !!(dirtyFields.thumbnail_url || dirtyFields.preview_video_url);
-  const isOutcomesDirty = !!(dirtyFields.what_you_learn || dirtyFields.requirements);
-  const isProgramDirty = !!(dirtyFields.subject_id || dirtyFields.instructor_id);
+  const isDetailsDirty = !!(
+    dirtyFields.title ||
+    dirtyFields.slug ||
+    dirtyFields.short_description ||
+    dirtyFields.description ||
+    dirtyFields.language ||
+    dirtyFields.status ||
+    dirtyFields.is_featured
+  );
+  const isMediaDirty = !!(
+    dirtyFields.thumbnail_url || dirtyFields.preview_video_url
+  );
+  const isOutcomesDirty = !!(
+    dirtyFields.what_you_learn || dirtyFields.requirements
+  );
+  const isProgramDirty = !!(
+    dirtyFields.subject_id || dirtyFields.instructor_id
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -397,7 +431,11 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <a href={`/courses/${course?.slug}`} target="_blank" rel="noopener noreferrer">
+            <a
+              href={`/courses/${course?.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <IconExternalLink data-icon="inline-start" />
               View Course
             </a>
@@ -415,7 +453,9 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuGroup>
                 {status !== "published" && (
-                  <DropdownMenuItem onClick={() => handleStatusChange("published")}>
+                  <DropdownMenuItem
+                    onClick={() => handleStatusChange("published")}
+                  >
                     <IconUpload data-icon="inline-start" />
                     Publish
                   </DropdownMenuItem>
@@ -427,7 +467,9 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
                   </DropdownMenuItem>
                 )}
                 {status !== "archived" && (
-                  <DropdownMenuItem onClick={() => handleStatusChange("archived")}>
+                  <DropdownMenuItem
+                    onClick={() => handleStatusChange("archived")}
+                  >
                     <IconArchive data-icon="inline-start" />
                     Archive
                   </DropdownMenuItem>
@@ -456,383 +498,503 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="program" className="gap-1.5">
-            Program & Subject
-            {isProgramDirty && <span className="size-2 rounded-full bg-amber-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="details" className="gap-1.5">
-            Details
-            {isDetailsDirty && <span className="size-2 rounded-full bg-amber-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="media" className="gap-1.5">
-            Media
-            {isMediaDirty && <span className="size-2 rounded-full bg-amber-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="outcomes" className="gap-1.5">
-            Outcomes
-            {isOutcomesDirty && <span className="size-2 rounded-full bg-amber-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="pricing">Pricing</TabsTrigger>
-        </TabsList>
+            <TabsList>
+              <TabsTrigger value="program" className="gap-1.5">
+                Program & Subject
+                {isProgramDirty && (
+                  <span className="size-2 rounded-full bg-amber-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="details" className="gap-1.5">
+                Details
+                {isDetailsDirty && (
+                  <span className="size-2 rounded-full bg-amber-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="media" className="gap-1.5">
+                Media
+                {isMediaDirty && (
+                  <span className="size-2 rounded-full bg-amber-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="outcomes" className="gap-1.5">
+                Outcomes
+                {isOutcomesDirty && (
+                  <span className="size-2 rounded-full bg-amber-500" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            </TabsList>
 
-        {/* Program Tab */}
-        <TabsContent value="program">
-          <Card>
-            <CardContent className="flex flex-col gap-6 pt-6">
-              <div className="flex flex-col gap-2">
-                <Label>Subject</Label>
-                <p className="text-sm text-muted-foreground">
-                  Current: {course.subject?.program_level?.program?.body} → {course.subject?.program_level?.label} → {course.subject?.name}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label>Instructor</Label>
-                <Select
-                  value={form.watch("instructor_id")}
-                  onValueChange={(val) => form.setValue("instructor_id", val, { shouldDirty: true })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select instructor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {instructors.map((i) => (
-                        <SelectItem key={i.id} value={i.id}>
-                          {i.name} — {i.email}
-                        </SelectItem>
+            {/* Program Tab */}
+            <TabsContent value="program">
+              <Card>
+                <CardContent className="flex flex-col gap-6 pt-6">
+                  <div className="flex flex-col gap-2">
+                    <Label>Subject</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Current: {course.subject?.program_level?.program?.body} →{" "}
+                      {course.subject?.program_level?.label} →{" "}
+                      {course.subject?.name}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Instructor</Label>
+                    <Select
+                      value={form.watch("instructor_id")}
+                      onValueChange={(val) =>
+                        form.setValue("instructor_id", val, {
+                          shouldDirty: true,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select instructor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {instructors.map((i) => (
+                            <SelectItem key={i.id} value={i.id}>
+                              {i.name} — {i.email}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={() => saveTab("program")}
+                    disabled={!isProgramDirty || !!savingTab}
+                  >
+                    {savingTab === "program" && <Spinner className="mr-2" />}
+                    Save Changes
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Details Tab */}
+            <TabsContent value="details">
+              <Card>
+                <CardContent className="flex flex-col gap-6 pt-6">
+                  <div className="flex flex-col gap-2">
+                    <Label>Course Title</Label>
+                    <Input {...form.register("title")} maxLength={150} />
+                    <span className="text-right text-xs text-muted-foreground tabular-nums">
+                      {(title || "").length}/150
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>URL Slug</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">
+                        /courses/
+                      </span>
+                      <div className="relative flex-1">
+                        <Input {...form.register("slug")} className="pr-8" />
+                        <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                          {slugStatus === "checking" && (
+                            <IconLoader2 className="size-4 animate-spin text-muted-foreground" />
+                          )}
+                          {slugStatus === "unique" && (
+                            <IconCheck className="size-4 text-green-500" />
+                          )}
+                          {slugStatus === "taken" && (
+                            <IconX className="size-4 text-destructive" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Short Description</Label>
+                    <Textarea
+                      {...form.register("short_description")}
+                      rows={2}
+                      maxLength={200}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Full Description</Label>
+                    <Textarea {...form.register("description")} rows={6} />
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Language</Label>
+                    <Select
+                      value={form.watch("language")}
+                      onValueChange={(val) =>
+                        form.setValue(
+                          "language",
+                          val as "en" | "hi" | "hi-en",
+                          { shouldDirty: true },
+                        )
+                      }
+                    >
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="hi">Hindi</SelectItem>
+                          <SelectItem value="hi-en">Hinglish</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Status</Label>
+                    <RadioGroup
+                      value={form.watch("status")}
+                      onValueChange={(val) =>
+                        form.setValue(
+                          "status",
+                          val as "draft" | "published" | "archived",
+                          { shouldDirty: true },
+                        )
+                      }
+                      className="flex gap-3"
+                    >
+                      <label
+                        className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-4 ${status === "draft" ? "border-primary bg-primary/5" : ""}`}
+                      >
+                        <RadioGroupItem value="draft" />
+                        <span className="text-sm font-medium">Draft</span>
+                      </label>
+                      <label
+                        className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-4 ${status === "published" ? "border-primary bg-primary/5" : ""}`}
+                      >
+                        <RadioGroupItem value="published" />
+                        <span className="text-sm font-medium">Published</span>
+                      </label>
+                      <label
+                        className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-4 ${status === "archived" ? "border-primary bg-primary/5" : ""}`}
+                      >
+                        <RadioGroupItem value="archived" />
+                        <span className="text-sm font-medium">Archived</span>
+                      </label>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                      <Label>Featured Course</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Show in featured sections
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.watch("is_featured")}
+                      onCheckedChange={(val) =>
+                        form.setValue("is_featured", val, { shouldDirty: true })
+                      }
+                    />
+                  </div>
+
+                  <Button
+                    onClick={() => saveTab("details")}
+                    disabled={!isDetailsDirty || !!savingTab}
+                  >
+                    {savingTab === "details" && <Spinner className="mr-2" />}
+                    Save Changes
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Media Tab */}
+            <TabsContent value="media">
+              <Card>
+                <CardContent className="flex flex-col gap-6 pt-6">
+                  <div className="flex flex-col gap-2">
+                    <Label>Thumbnail URL</Label>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          {...form.register("thumbnail_url")}
+                          placeholder="https://..."
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => thumbInputRef.current?.click()}
+                        >
+                          <IconCloudUpload className="mr-2 size-4" />
+                          Upload Image
+                        </Button>
+                        <input
+                          type="file"
+                          ref={thumbInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleThumbUpload}
+                        />
+                      </div>
+                      {thumbUploading && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <IconLoader2 className="size-3 animate-spin" />
+                          Uploading... {thumbProgress?.percent}%
+                        </div>
+                      )}
+                      {form.watch("thumbnail_url") && (
+                        <img
+                          src={form.watch("thumbnail_url")}
+                          alt="Thumbnail"
+                          className="mt-1 aspect-video w-64 rounded-md object-cover border shadow-sm"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Preview Video URL</Label>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          {...form.register("preview_video_url")}
+                          placeholder="https://youtube.com/watch?v=..."
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => previewInputRef.current?.click()}
+                        >
+                          <IconCloudUpload className="mr-2 size-4" />
+                          Upload Video
+                        </Button>
+                        <input
+                          type="file"
+                          ref={previewInputRef}
+                          className="hidden"
+                          accept="video/*"
+                          onChange={handlePreviewUpload}
+                        />
+                      </div>
+                      {previewUploading && (
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <IconLoader2 className="size-3 animate-spin" />
+                          Uploading... {previewProgress?.percent}%
+                        </div>
+                      )}
+                      {ytId ? (
+                        <img
+                          src={getYouTubeThumbnail(ytId)}
+                          alt="Video preview"
+                          className="mt-1 aspect-video w-64 rounded-md object-cover border shadow-sm"
+                        />
+                      ) : previewVideoUrl &&
+                        previewVideoUrl.includes("cloudflare") ? (
+                        <video
+                          src={previewVideoUrl}
+                          controls
+                          className="mt-1 aspect-video w-64 rounded-md object-cover border shadow-sm"
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => saveTab("media")}
+                    disabled={
+                      !isMediaDirty ||
+                      !!savingTab ||
+                      thumbUploading ||
+                      previewUploading
+                    }
+                  >
+                    {savingTab === "media" && <Spinner className="mr-2" />}
+                    Save Changes
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Outcomes Tab */}
+            <TabsContent value="outcomes">
+              <Card>
+                <CardContent className="flex flex-col gap-6 pt-6">
+                  {/* What You'll Learn */}
+                  <div className="flex flex-col gap-2">
+                    <Label>What You&apos;ll Learn</Label>
+                    <div className="flex flex-col gap-2">
+                      {whatYouLearn.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 rounded-md border px-3 py-2"
+                        >
+                          <span className="flex-1 text-sm">{item}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = whatYouLearn.filter(
+                                (_, i) => i !== idx,
+                              );
+                              form.setValue("what_you_learn", next, {
+                                shouldDirty: true,
+                              });
+                            }}
+                            className="rounded p-0.5 hover:bg-muted"
+                          >
+                            <IconX className="size-3.5 text-muted-foreground" />
+                          </button>
+                        </div>
                       ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                onClick={() => saveTab("program")}
-                disabled={!isProgramDirty || !!savingTab}
-              >
-                {savingTab === "program" && <Spinner className="mr-2" />}
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Details Tab */}
-        <TabsContent value="details">
-          <Card>
-            <CardContent className="flex flex-col gap-6 pt-6">
-              <div className="flex flex-col gap-2">
-                <Label>Course Title</Label>
-                <Input {...form.register("title")} maxLength={150} />
-                <span className="text-right text-xs text-muted-foreground tabular-nums">
-                  {(title || "").length}/150
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>URL Slug</Label>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">/courses/</span>
-                  <div className="relative flex-1">
-                    <Input {...form.register("slug")} className="pr-8" />
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                      {slugStatus === "checking" && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
-                      {slugStatus === "unique" && <IconCheck className="size-4 text-green-500" />}
-                      {slugStatus === "taken" && <IconX className="size-4 text-destructive" />}
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Short Description</Label>
-                <Textarea {...form.register("short_description")} rows={2} maxLength={200} />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Full Description</Label>
-                <Textarea {...form.register("description")} rows={6} />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Language</Label>
-                <Select
-                  value={form.watch("language")}
-                  onValueChange={(val) => form.setValue("language", val as "en" | "hi" | "hi-en", { shouldDirty: true })}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="hi">Hindi</SelectItem>
-                      <SelectItem value="hi-en">Hinglish</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Status</Label>
-                <RadioGroup
-                  value={form.watch("status")}
-                  onValueChange={(val) => form.setValue("status", val as "draft" | "published" | "archived", { shouldDirty: true })}
-                  className="flex gap-3"
-                >
-                  <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-4 ${status === "draft" ? "border-primary bg-primary/5" : ""}`}>
-                    <RadioGroupItem value="draft" />
-                    <span className="text-sm font-medium">Draft</span>
-                  </label>
-                  <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-4 ${status === "published" ? "border-primary bg-primary/5" : ""}`}>
-                    <RadioGroupItem value="published" />
-                    <span className="text-sm font-medium">Published</span>
-                  </label>
-                  <label className={`flex flex-1 cursor-pointer items-center gap-3 rounded-lg border p-4 ${status === "archived" ? "border-primary bg-primary/5" : ""}`}>
-                    <RadioGroupItem value="archived" />
-                    <span className="text-sm font-medium">Archived</span>
-                  </label>
-                </RadioGroup>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <Label>Featured Course</Label>
-                  <p className="text-xs text-muted-foreground">Show in featured sections</p>
-                </div>
-                <Switch
-                  checked={form.watch("is_featured")}
-                  onCheckedChange={(val) => form.setValue("is_featured", val, { shouldDirty: true })}
-                />
-              </div>
-
-              <Button
-                onClick={() => saveTab("details")}
-                disabled={!isDetailsDirty || !!savingTab}
-              >
-                {savingTab === "details" && <Spinner className="mr-2" />}
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Media Tab */}
-        <TabsContent value="media">
-          <Card>
-            <CardContent className="flex flex-col gap-6 pt-6">
-              <div className="flex flex-col gap-2">
-                <Label>Thumbnail URL</Label>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <Input {...form.register("thumbnail_url")} placeholder="https://..." className="flex-1" />
-                    <Button type="button" variant="outline" onClick={() => thumbInputRef.current?.click()}>
-                      <IconCloudUpload className="mr-2 size-4" />
-                      Upload Image
-                    </Button>
-                    <input type="file" ref={thumbInputRef} className="hidden" accept="image/*" onChange={handleThumbUpload} />
-                  </div>
-                  {thumbUploading && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <IconLoader2 className="size-3 animate-spin" />
-                      Uploading... {thumbProgress?.progress}%
-                    </div>
-                  )}
-                  {form.watch("thumbnail_url") && (
-                    <img
-                      src={form.watch("thumbnail_url")}
-                      alt="Thumbnail"
-                      className="mt-1 aspect-video w-64 rounded-md object-cover border shadow-sm"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Preview Video URL</Label>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <Input {...form.register("preview_video_url")} placeholder="https://youtube.com/watch?v=..." className="flex-1" />
-                    <Button type="button" variant="outline" onClick={() => previewInputRef.current?.click()}>
-                      <IconCloudUpload className="mr-2 size-4" />
-                      Upload Video
-                    </Button>
-                    <input type="file" ref={previewInputRef} className="hidden" accept="video/*" onChange={handlePreviewUpload} />
-                  </div>
-                  {previewUploading && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <IconLoader2 className="size-3 animate-spin" />
-                      Uploading... {previewProgress?.progress}%
-                    </div>
-                  )}
-                  {ytId ? (
-                    <img
-                      src={getYouTubeThumbnail(ytId)}
-                      alt="Video preview"
-                      className="mt-1 aspect-video w-64 rounded-md object-cover border shadow-sm"
-                    />
-                  ) : form.watch("preview_video_url") && form.watch("preview_video_url").includes("cloudflare") ? (
-                    <video
-                      src={form.watch("preview_video_url")}
-                      controls
-                      className="mt-1 aspect-video w-64 rounded-md object-cover border shadow-sm"
-                    />
-                  ) : null}
-                </div>
-              </div>
-
-              <Button
-                onClick={() => saveTab("media")}
-                disabled={!isMediaDirty || !!savingTab || thumbUploading || previewUploading}
-              >
-                {savingTab === "media" && <Spinner className="mr-2" />}
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Outcomes Tab */}
-        <TabsContent value="outcomes">
-          <Card>
-            <CardContent className="flex flex-col gap-6 pt-6">
-              {/* What You'll Learn */}
-              <div className="flex flex-col gap-2">
-                <Label>What You&apos;ll Learn</Label>
-                <div className="flex flex-col gap-2">
-                  {whatYouLearn.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 rounded-md border px-3 py-2">
-                      <span className="flex-1 text-sm">{item}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = whatYouLearn.filter((_, i) => i !== idx);
-                          form.setValue("what_you_learn", next, { shouldDirty: true });
+                    <div className="flex gap-2">
+                      <Input
+                        value={outcomeInput}
+                        onChange={(e) => setOutcomeInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (outcomeInput.trim()) {
+                              form.setValue(
+                                "what_you_learn",
+                                [...whatYouLearn, outcomeInput.trim()],
+                                { shouldDirty: true },
+                              );
+                              setOutcomeInput("");
+                            }
+                          }
                         }}
-                        className="rounded p-0.5 hover:bg-muted"
-                      >
-                        <IconX className="size-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={outcomeInput}
-                    onChange={(e) => setOutcomeInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (outcomeInput.trim()) {
-                          form.setValue("what_you_learn", [...whatYouLearn, outcomeInput.trim()], { shouldDirty: true });
-                          setOutcomeInput("");
-                        }
-                      }
-                    }}
-                    placeholder="Add outcome and press Enter"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (outcomeInput.trim()) {
-                        form.setValue("what_you_learn", [...whatYouLearn, outcomeInput.trim()], { shouldDirty: true });
-                        setOutcomeInput("");
-                      }
-                    }}
-                  >
-                    Add
-                  </Button>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Requirements */}
-              <div className="flex flex-col gap-2">
-                <Label>Requirements / Prerequisites</Label>
-                <div className="flex flex-col gap-2">
-                  {requirements.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 rounded-md border px-3 py-2">
-                      <span className="flex-1 text-sm">{item}</span>
-                      <button
+                        placeholder="Add outcome and press Enter"
+                      />
+                      <Button
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
-                          const next = requirements.filter((_, i) => i !== idx);
-                          form.setValue("requirements", next, { shouldDirty: true });
+                          if (outcomeInput.trim()) {
+                            form.setValue(
+                              "what_you_learn",
+                              [...whatYouLearn, outcomeInput.trim()],
+                              { shouldDirty: true },
+                            );
+                            setOutcomeInput("");
+                          }
                         }}
-                        className="rounded p-0.5 hover:bg-muted"
                       >
-                        <IconX className="size-3.5 text-muted-foreground" />
-                      </button>
+                        Add
+                      </Button>
                     </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={requirementInput}
-                    onChange={(e) => setRequirementInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (requirementInput.trim()) {
-                          form.setValue("requirements", [...requirements, requirementInput.trim()], { shouldDirty: true });
-                          setRequirementInput("");
-                        }
-                      }
-                    }}
-                    placeholder="Add requirement and press Enter"
-                  />
+                  </div>
+
+                  <Separator />
+
+                  {/* Requirements */}
+                  <div className="flex flex-col gap-2">
+                    <Label>Requirements / Prerequisites</Label>
+                    <div className="flex flex-col gap-2">
+                      {requirements.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 rounded-md border px-3 py-2"
+                        >
+                          <span className="flex-1 text-sm">{item}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = requirements.filter(
+                                (_, i) => i !== idx,
+                              );
+                              form.setValue("requirements", next, {
+                                shouldDirty: true,
+                              });
+                            }}
+                            className="rounded p-0.5 hover:bg-muted"
+                          >
+                            <IconX className="size-3.5 text-muted-foreground" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        value={requirementInput}
+                        onChange={(e) => setRequirementInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (requirementInput.trim()) {
+                              form.setValue(
+                                "requirements",
+                                [...requirements, requirementInput.trim()],
+                                { shouldDirty: true },
+                              );
+                              setRequirementInput("");
+                            }
+                          }
+                        }}
+                        placeholder="Add requirement and press Enter"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (requirementInput.trim()) {
+                            form.setValue(
+                              "requirements",
+                              [...requirements, requirementInput.trim()],
+                              { shouldDirty: true },
+                            );
+                            setRequirementInput("");
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (requirementInput.trim()) {
-                        form.setValue("requirements", [...requirements, requirementInput.trim()], { shouldDirty: true });
-                        setRequirementInput("");
-                      }
-                    }}
+                    onClick={() => saveTab("outcomes")}
+                    disabled={!isOutcomesDirty || !!savingTab}
                   >
-                    Add
+                    {savingTab === "outcomes" && <Spinner className="mr-2" />}
+                    Save Changes
                   </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-              <Button
-                onClick={() => saveTab("outcomes")}
-                disabled={!isOutcomesDirty || !!savingTab}
-              >
-                {savingTab === "outcomes" && <Spinner className="mr-2" />}
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Pricing Tab */}
-        <TabsContent value="pricing">
-          <PricingTab courseId={courseId} />
-        </TabsContent>
+            {/* Pricing Tab */}
+            <TabsContent value="pricing">
+              <PricingTab courseId={courseId} />
+            </TabsContent>
           </Tabs>
         </div>
 
         <div className="flex flex-col gap-6">
           <div className="sticky top-6">
             <CoursePreviewCard values={form.watch()} />
-            
+
             <Card className="mt-6">
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">Course ID</span>
-                    <code className="text-xs font-mono bg-muted p-2 rounded truncate">{courseId}</code>
+                    <span className="text-xs font-medium text-muted-foreground uppercase">
+                      Course ID
+                    </span>
+                    <code className="text-xs font-mono bg-muted p-2 rounded truncate">
+                      {courseId}
+                    </code>
                   </div>
                   <Separator />
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">Last Updated</span>
-                    <span className="text-sm">{new Date(course.updated_at).toLocaleString()}</span>
+                    <span className="text-xs font-medium text-muted-foreground uppercase">
+                      Last Updated
+                    </span>
+                    <span className="text-sm">
+                      {new Date(course.updated_at).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -847,8 +1009,8 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Course</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete &quot;{course.title}&quot; and all its
-              content. This action cannot be undone.
+              This will permanently delete &quot;{course.title}&quot; and all
+              its content. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

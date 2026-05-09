@@ -8,8 +8,8 @@ import Link from "next/link";
 interface LiveStream {
   id: string;
   title: string;
-  startedAt: string;
-  currentViewers: number;
+  startedAt?: string;
+  currentViewers?: number;
 }
 
 interface LiveNowBannerProps {

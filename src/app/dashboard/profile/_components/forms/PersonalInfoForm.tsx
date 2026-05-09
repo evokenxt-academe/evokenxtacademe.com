@@ -90,7 +90,7 @@ export function PersonalInfoForm({ profile }: PersonalInfoFormProps) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     const [userResult, profileResult] = await Promise.all([
-      supabase
+      (supabase as any)
         .from("users")
         .update({
           name: values.name.trim(),
@@ -104,7 +104,7 @@ export function PersonalInfoForm({ profile }: PersonalInfoFormProps) {
           gender: values.gender ?? null,
           bio: normalizeOptionalString(values.bio),
           linkedin_url: normalizeOptionalString(values.linkedin_url),
-        },
+        } as any,
         { onConflict: "user_id" },
       ),
     ]);

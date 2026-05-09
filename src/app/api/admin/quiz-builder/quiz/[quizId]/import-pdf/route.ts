@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
 
 import { requireAdmin } from "@/features/admin/lib/admin-route";
 import type { ParsedQuestion } from "@/features/admin/quiz-builder/types";
 import { parseQuestionsFromRawText } from "@/lib/parsers/regexQuizPdfParser";
 import { buildR2ObjectKey, uploadBufferToR2 } from "@/lib/cloudflare/r2";
+import { extractTextFromPdf } from "@/lib/pdf/extract";
 
 type RouteParams = { params: Promise<{ quizId: string }> };
 
@@ -43,7 +43,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const fileBuffer = Buffer.from(await file.arrayBuffer());
+  const fileArrayBuffer = await file.arrayBuffer();
+  const fileBuffer = Buffer.from(fileArrayBuffer);
 
   const r2Key = buildR2ObjectKey({
     folder: "course-resources/quiz-imports",
@@ -53,18 +54,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   });
   const uploadedFile = await uploadBufferToR2({
     key: r2Key,
-    body: fileBuffer,
+    body: fileArrayBuffer,
     contentType: "application/pdf",
   });
 
-  const parser = new PDFParse({ data: fileBuffer });
-  let extractedText = "";
-  try {
-    const pdf = await parser.getText();
-    extractedText = pdf.text?.trim() ?? "";
-  } finally {
-    await parser.destroy();
-  }
+  const extractedText = (await extractTextFromPdf(fileBuffer)).trim();
 
   if (!extractedText) {
     return NextResponse.json(
