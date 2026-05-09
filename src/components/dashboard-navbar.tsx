@@ -24,9 +24,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { createClient } from "@/utils/supabase/client";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface DashboardNavbarProps {
   user: {
+    id?: string;
     name: string | null;
     email: string;
     avatar: string | null;
@@ -37,6 +40,9 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Register FCM token + listen for foreground notifications
+  useNotifications(user?.id ?? null);
 
   const initials = user?.name
     ? user.name
@@ -55,36 +61,11 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-xl md:px-6">
+     <div className="flex items-center gap-1 w-full">
       <SidebarTrigger className="-ml-1" />
+     </div>
 
-      {/* Search */}
-      <div className="relative flex-1">
-        {searchOpen ? (
-          <div className="relative max-w-md">
-            <IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              autoFocus
-              placeholder="Search courses, lectures..."
-              className="h-10 rounded-2xl border-border/70 bg-muted/50 pl-9 pr-8 text-sm focus-visible:ring-primary/20"
-              onBlur={() => setSearchOpen(false)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") setSearchOpen(false);
-              }}
-            />
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSearchOpen(true)}
-            className="gap-2 rounded-2xl text-muted-foreground hover:text-foreground"
-          >
-            <IconSearch className="size-4" />
-            <span className="hidden sm:inline">Search...</span>
-          </Button>
-        )}
-      </div>
-
+   
       {/* Actions */}
       <div className="flex items-center gap-1">
         {/* Theme toggle */}
@@ -100,14 +81,7 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
         </Button>
 
         {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative size-9 rounded-xl"
-        >
-          <IconBell className="size-4" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+        {user?.id && <NotificationBell userId={user.id} />}
 
         {/* User dropdown */}
         <DropdownMenu>

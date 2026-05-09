@@ -29,7 +29,7 @@ export function QuizStatsRow() {
             ) : (
               <>
                 <div className="text-2xl font-bold">
-                  {stats?.[s.key] ?? 0}{s.suffix ?? ""}
+                  {stats?.[s.key] ?? 0}{(s as any).suffix ?? ""}
                 </div>
                 {s.weeklyKey && (
                   <p className="text-xs text-muted-foreground mt-1">

@@ -7,6 +7,7 @@ import type {
   PlaybackSpeed,
   YtcnPlayerOptions,
 } from "@/components/ytcn/components/ytcn/types";
+import { QUALITY_LABELS } from "@/components/ytcn/components/ytcn/types";
 import { loadYouTubeAPI, styleIframe } from "@/components/ytcn/lib/ytcn/loader";
 import { useFullscreen } from "./use-fullscreen";
 
@@ -38,7 +39,7 @@ function createInitialState(
   return {
     phase: "thumbnail",
     isPlaying: false,
-    isMuted: prev?.isMuted ?? true,
+    isMuted: prev?.isMuted ?? false,
     volume: prev?.volume ?? 100,
     currentTime: 0,
     duration: 0,
@@ -61,6 +62,23 @@ function createInitialState(
 
 function getYT(): typeof YT | undefined {
   return (window as unknown as YTWindow).YT;
+}
+
+function normalizeQualityValue(requested: string, availableQualities: string[]): string {
+  if (!requested) return "auto";
+
+  // Already a valid YouTube quality key.
+  if (availableQualities.includes(requested) || requested === "auto") {
+    return requested;
+  }
+
+  // Allow UI labels like "720p", "360p", etc.
+  const matchedKey = Object.entries(QUALITY_LABELS).find(([, label]) => label === requested)?.[0];
+  if (matchedKey && (availableQualities.includes(matchedKey) || matchedKey === "auto")) {
+    return matchedKey;
+  }
+
+  return "auto";
 }
 
 /* ================================================================ */
@@ -177,10 +195,10 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
    */
   const suppressCaptions = useCallback((player: YT.Player): void => {
     try {
-      player.unloadModule("captions");
-      player.unloadModule("cc");
-      player.setOption("captions", "track", {});
-      player.setOption("cc", "track", {});
+      (player as any).unloadModule("captions");
+      (player as any).unloadModule("cc");
+      (player as any).setOption("captions", "track", {});
+      (player as any).setOption("cc", "track", {});
     } catch {
       /* player may be in a transitional state */
     }
@@ -231,7 +249,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
         disablekb: 1,        // Disable YouTube's keyboard controls (we have our own)
         playsinline: 1,      // Inline playback on iOS
         autoplay: 1,         // Start immediately when iframe loads
-        mute: 1,             // Muted start for browser autoplay policy compliance
+        mute: 0,             // Start with sound on by default
         origin: window.location.origin,
         start: Math.floor(seekSeconds),
       };
@@ -240,7 +258,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
         videoId,
         playerVars,
         events: {
-          onReady: (event: YT.PlayerEvent) => {
+          onReady: (event: any) => {
             const player = event.target;
 
             // First operation: offset the iframe to crop YouTube's native chrome
@@ -264,12 +282,12 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
               ...prev,
               isLoading: false,
               duration: player.getDuration() || prev.duration,
-              availableQualities: player.getAvailableQualityLevels() || [],
-              currentQuality: player.getPlaybackQuality() || "auto",
+              availableQualities: (player as any).getAvailableQualityLevels() || [],
+              currentQuality: (player as any).getPlaybackQuality() || "auto",
             }));
           },
 
-          onStateChange: (event: YT.OnStateChangeEvent) => {
+          onStateChange: (event: any) => {
             const yt2 = getYT();
             if (!yt2) return;
             const player = event.target;
@@ -299,8 +317,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                   isLoading: false,
                   isCued: false,
                   duration: player.getDuration() || prev.duration,
-                  availableQualities: player.getAvailableQualityLevels() || prev.availableQualities,
-                  currentQuality: player.getPlaybackQuality() || prev.currentQuality,
+                  availableQualities: (player as any).getAvailableQualityLevels() || prev.availableQualities,
+                  currentQuality: (player as any).getPlaybackQuality() || prev.currentQuality,
                 }));
                 break;
               }
@@ -334,18 +352,24 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             }
           },
 
-          onPlaybackRateChange: (event: YT.OnPlaybackRateChangeEvent) => {
+          onPlaybackRateChange: (event: any) => {
             const rate = event.data as PlaybackSpeed;
             if (!mountedRef.current) return;
             setState((prev) => ({ ...prev, playbackRate: rate }));
             onPlaybackRateChangeRef.current?.(rate);
           },
 
+          onPlaybackQualityChange: (event: any) => {
+            if (!mountedRef.current) return;
+            const nextQuality = event.data || "auto";
+            setState((prev) => ({ ...prev, currentQuality: nextQuality }));
+          },
+
           onError: () => {
             if (!mountedRef.current) return;
             setState((prev) => ({ ...prev, isLoading: false }));
           },
-        },
+        } as any,
       });
     },
     // videoId and suppressCaptions are the only true dependencies.
@@ -425,9 +449,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       // Guard: player may not have getCurrentTime during initialization
       if (!player?.getCurrentTime) return;
       try {
-        const currentTime = player.getCurrentTime();
-        const duration = player.getDuration();
-        const loadedFraction = player.getVideoLoadedFraction();
+        const currentTime = (player as any).getCurrentTime();
+        const duration = (player as any).getDuration();
+        const loadedFraction = (player as any).getVideoLoadedFraction();
 
         if (!mountedRef.current) return;
         const isAtLiveEdge = isLive ? (duration - currentTime <= 5) : false;
@@ -455,7 +479,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
 
   const play = useCallback((): void => {
     try {
-      playerRef.current?.playVideo();
+      (playerRef.current as any)?.playVideo();
     } catch {
       /* noop — player may not be ready */
     }
@@ -463,7 +487,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
 
   const pause = useCallback((): void => {
     try {
-      playerRef.current?.pauseVideo();
+      (playerRef.current as any)?.pauseVideo();
     } catch {
       /* noop — player may not be ready */
     }
@@ -475,10 +499,10 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     try {
       const yt = getYT();
       if (!yt) return;
-      if (player.getPlayerState() === yt.PlayerState.PLAYING) {
-        player.pauseVideo();
+      if ((player as any).getPlayerState() === yt.PlayerState.PLAYING) {
+        (player as any).pauseVideo();
       } else {
-        player.playVideo();
+        (player as any).playVideo();
       }
     } catch {
       /* noop — player may not be ready */
@@ -489,7 +513,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     const player = playerRef.current;
     if (!player) return;
     try {
-      player.seekTo(seconds, true);
+      (player as any).seekTo(seconds, true);
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, currentTime: seconds }));
       }
@@ -502,10 +526,10 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     const player = playerRef.current;
     if (!player) return;
     try {
-      const current = player.getCurrentTime();
-      const duration = player.getDuration();
+      const current = (player as any).getCurrentTime();
+      const duration = (player as any).getDuration();
       const newTime = Math.max(0, Math.min(duration, current + delta));
-      player.seekTo(newTime, true);
+      (player as any).seekTo(newTime, true);
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, currentTime: newTime }));
       }
@@ -518,12 +542,12 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     const player = playerRef.current;
     if (!player) return;
     try {
-      player.setVolume(vol);
+      (player as any).setVolume(vol);
       if (vol > 0) {
-        player.unMute();
+        (player as any).unMute();
         isMutedRef.current = false;
       } else {
-        player.mute();
+        (player as any).mute();
         isMutedRef.current = true;
       }
       volumeRef.current = vol;
@@ -540,13 +564,13 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     if (!player) return;
     try {
       if (isMutedRef.current) {
-        player.unMute();
+        (player as any).unMute();
         isMutedRef.current = false;
         if (mountedRef.current) {
           setState((prev) => ({ ...prev, isMuted: false }));
         }
       } else {
-        player.mute();
+        (player as any).mute();
         isMutedRef.current = true;
         if (mountedRef.current) {
           setState((prev) => ({ ...prev, isMuted: true }));
@@ -561,7 +585,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     const player = playerRef.current;
     if (!player) return;
     try {
-      player.setPlaybackRate(rate);
+      (player as any).setPlaybackRate(rate);
       playbackSpeedRef.current = rate;
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, playbackRate: rate }));
@@ -576,8 +600,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     const player = playerRef.current;
     if (!player) return;
     try {
-      const duration = player.getDuration();
-      player.seekTo(duration, true);
+      const duration = (player as any).getDuration();
+      (player as any).seekTo(duration, true);
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, currentTime: duration, isAtLiveEdge: true }));
       }
@@ -590,19 +614,29 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     const player = playerRef.current;
     if (!player) return;
     try {
-      player.setPlaybackQuality(quality);
-      
-      // Force quality change by seeking to current time
+      const normalized = normalizeQualityValue(quality, state.availableQualities);
+
+      if (normalized === "auto") {
+        (player as any).setPlaybackQuality("default");
+      } else {
+        (player as any).setPlaybackQuality(normalized);
+        // Ask YouTube to prefer this range when supported.
+        if (typeof (player as any).setPlaybackQualityRange === "function") {
+          (player as any).setPlaybackQualityRange(normalized);
+        }
+      }
+
+      // Force quality re-evaluation at current position.
       const currentTime = player.getCurrentTime();
       player.seekTo(currentTime, true);
-      
+
       if (mountedRef.current) {
-        setState((prev) => ({ ...prev, currentQuality: quality }));
+        setState((prev) => ({ ...prev, currentQuality: normalized }));
       }
     } catch {
       /* noop */
     }
-  }, []);
+  }, [state.availableQualities]);
 
   // ── Compose controls object ──
   const controls: PlayerControls = {

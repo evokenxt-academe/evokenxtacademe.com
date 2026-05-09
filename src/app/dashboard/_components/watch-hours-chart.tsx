@@ -1,24 +1,28 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 type Point = {
   dayLabel: string;
   hours: number;
-  breakdown?: Array<{ courseTitle: string; hours: number }>;
 };
 
-export function WatchHoursChart({ data }: { data: Point[] }) {
+type WatchHoursChartProps = {
+  data: Point[];
+  averageHours?: number;
+};
+
+export function WatchHoursChart({ data, averageHours }: WatchHoursChartProps) {
   return (
     <ChartContainer
       id="watch-hours-7d"
-      className="min-h-[220px] w-full"
+      className="min-h-[240px] w-full"
       config={{
         hours: { label: "Hours", color: "var(--chart-1)" },
       }}
     >
-      <BarChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
+      <AreaChart data={data} margin={{ left: 0, right: 8, top: 12, bottom: 0 }}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="dayLabel"
@@ -32,6 +36,9 @@ export function WatchHoursChart({ data }: { data: Point[] }) {
           width={30}
           tickFormatter={(v) => String(v)}
         />
+        {typeof averageHours === "number" ? (
+          <ReferenceLine y={averageHours} stroke="var(--border)" strokeDasharray="4 4" />
+        ) : null}
         <ChartTooltip
           cursor={false}
           content={
@@ -48,12 +55,15 @@ export function WatchHoursChart({ data }: { data: Point[] }) {
             />
           }
         />
-        <Bar
+        <Area
+          type="monotone"
           dataKey="hours"
           fill="var(--color-hours)"
-          radius={[8, 8, 2, 2]}
+          fillOpacity={0.24}
+          stroke="var(--color-hours)"
+          strokeWidth={2}
         />
-      </BarChart>
+      </AreaChart>
     </ChartContainer>
   );
 }

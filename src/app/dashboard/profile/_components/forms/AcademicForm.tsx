@@ -44,9 +44,9 @@ function createSupabaseClient() {
 
 function normalizeOptionalString(
   value: string | undefined,
-): string | null | undefined {
+): string | null {
   if (value === undefined) {
-    return undefined;
+    return null;
   }
 
   const trimmed = value.trim();
@@ -55,8 +55,8 @@ function normalizeOptionalString(
 
 function normalizeOptionalNumber(
   value: number | undefined,
-): number | null | undefined {
-  return value === undefined || Number.isNaN(value) ? undefined : value;
+): number | null {
+  return value === undefined || Number.isNaN(value) ? null : value;
 }
 
 export function AcademicForm({ profile }: AcademicFormProps) {
@@ -106,7 +106,7 @@ export function AcademicForm({ profile }: AcademicFormProps) {
         years_of_experience: normalizeOptionalNumber(
           values.years_of_experience,
         ),
-      },
+      } as any,
       { onConflict: "user_id" },
     );
 

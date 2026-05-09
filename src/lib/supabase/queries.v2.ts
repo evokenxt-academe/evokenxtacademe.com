@@ -66,7 +66,7 @@ function handleError(scope: string, error: any): string | null {
  * Get all active programs (ACCA, CFA, CMA)
  */
 export async function getPrograms(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
 ): Promise<QueryResultList<Program>> {
     const { data, error } = await supabase
         .from("programs")
@@ -84,7 +84,7 @@ export async function getPrograms(
  * Get program with all levels and subjects
  */
 export async function getProgramWithLevels(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     programId: string,
 ): Promise<QueryResult<Program & { program_levels?: (ProgramLevel & { subjects?: Subject[] })[] }>> {
     const { data, error } = await supabase
@@ -115,7 +115,7 @@ export async function getProgramWithLevels(
  * Get all published courses with instructor + program hierarchy
  */
 export async function getPublishedCourses(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     options?: {
         programBody?: string;
         programLevelId?: string;
@@ -181,7 +181,7 @@ export async function getPublishedCourses(
  * Get course by slug with full details
  */
 export async function getCourseBySlug(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     slug: string,
 ): Promise<QueryResult<CourseDetail>> {
     const { data, error } = await supabase
@@ -217,7 +217,7 @@ export async function getCourseBySlug(
  * Get course by ID (authenticated - respects RLS)
  */
 export async function getCourseById(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResult<CourseDetail>> {
     const { data, error } = await supabase
@@ -255,7 +255,7 @@ export async function getCourseById(
  * Get chapters for a course with lecture count
  */
 export async function getChaptersForCourse(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<Chapter & { lectures?: Lecture[] }>> {
     const { data, error } = await supabase
@@ -280,7 +280,7 @@ export async function getChaptersForCourse(
  * Get all lectures for a course
  */
 export async function getLecturesForCourse(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<Lecture & { resources?: any[] }>> {
     const { data, error } = await supabase
@@ -306,7 +306,7 @@ export async function getLecturesForCourse(
  * Get lecture by ID with resources
  */
 export async function getLectureById(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     lectureId: string,
 ): Promise<QueryResult<Lecture & { chapter?: Chapter; resources?: any[] }>> {
     const { data, error } = await supabase
@@ -335,7 +335,7 @@ export async function getLectureById(
  * Get study materials for a course
  */
 export async function getStudyMaterialsForCourse(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<StudyMaterial>> {
     const { data, error } = await supabase
@@ -359,7 +359,7 @@ export async function getStudyMaterialsForCourse(
  * Get user's active enrollments
  */
 export async function getUserEnrollments(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
 ): Promise<QueryResultList<EnrollmentDetail>> {
     const { data, error } = await supabase
@@ -395,7 +395,7 @@ export async function getUserEnrollments(
  * Check if user is enrolled in course
  */
 export async function isUserEnrolled(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     courseId: string,
 ): Promise<QueryResult<boolean>> {
@@ -417,7 +417,7 @@ export async function isUserEnrolled(
  * Get or create enrollment
  */
 export async function getOrCreateEnrollment(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     courseId: string,
     pricingId: string,
@@ -459,7 +459,7 @@ export async function getOrCreateEnrollment(
  * Update enrollment status
  */
 export async function updateEnrollmentStatus(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     enrollmentId: string,
     status: "active" | "completed" | "expired" | "paused",
 ): Promise<QueryResult<Enrollment>> {
@@ -484,7 +484,7 @@ export async function updateEnrollmentStatus(
  * Get pricing options for a course
  */
 export async function getCoursePricing(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<CoursePricing & { plans?: PaymentPlan[] }>> {
     const { data, error } = await supabase
@@ -512,7 +512,7 @@ export async function getCoursePricing(
  * Create payment record
  */
 export async function createPayment(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     payment: {
         user_id: string;
         enrollment_id: string;
@@ -541,7 +541,7 @@ export async function createPayment(
  * Update payment status
  */
 export async function updatePaymentStatus(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     paymentId: string,
     status: "pending" | "successful" | "failed" | "refunded" | "partially_paid",
     gatewayTransactionId?: string,
@@ -567,7 +567,7 @@ export async function updatePaymentStatus(
  * Get user's payments
  */
 export async function getUserPayments(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
 ): Promise<QueryResultList<Payment & { enrollment?: Enrollment }>> {
     const { data, error } = await supabase
@@ -595,7 +595,7 @@ export async function getUserPayments(
  * Create instalment schedule for EMI plan
  */
 export async function createInstalmentSchedule(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     enrollmentId: string,
     plan: PaymentPlan,
 ): Promise<QueryResultList<InstalmentSchedule>> {
@@ -638,7 +638,7 @@ export async function createInstalmentSchedule(
  * Get or create lecture progress
  */
 export async function getOrCreateLectureProgress(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     lectureId: string,
 ): Promise<QueryResult<LectureProgress>> {
@@ -677,7 +677,7 @@ export async function getOrCreateLectureProgress(
  * Update lecture progress (resume position + watch time)
  */
 export async function updateLectureProgress(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     lectureId: string,
     update: {
@@ -705,7 +705,7 @@ export async function updateLectureProgress(
  * Get course progress for user
  */
 export async function getCourseProgress(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     courseId: string,
 ): Promise<QueryResult<{
@@ -764,7 +764,7 @@ export async function getCourseProgress(
  * Get quizzes for course or chapter
  */
 export async function getQuizzesForCourse(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<Quiz>> {
     const { data, error } = await supabase
@@ -784,7 +784,7 @@ export async function getQuizzesForCourse(
  * Get quiz with all questions and options
  */
 export async function getQuizDetail(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     quizId: string,
 ): Promise<QueryResult<QuizDetail>> {
     const { data, error } = await supabase
@@ -861,7 +861,7 @@ export async function getUserQuizAttempts(
  * Submit quiz attempt
  */
 export async function submitQuizAttempt(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     attemptId: string,
     score: number,
     totalMarks: number,
@@ -895,7 +895,7 @@ export async function submitQuizAttempt(
  * Get or create certificate
  */
 export async function getOrCreateCertificate(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     courseId: string,
 ): Promise<QueryResult<Certificate>> {
@@ -936,7 +936,7 @@ export async function getOrCreateCertificate(
  * Get user's certificates
  */
 export async function getUserCertificates(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
 ): Promise<QueryResultList<Certificate & { course?: Course }>> {
     const { data, error } = await supabase
@@ -965,7 +965,7 @@ export async function getUserCertificates(
  * Create or update review
  */
 export async function upsertReview(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     courseId: string,
     review: {
@@ -1001,7 +1001,7 @@ export async function upsertReview(
  * Get reviews for course
  */
 export async function getApprovedReviewsForCourse(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<Review & { user?: User }>> {
     const { data, error } = await supabase
@@ -1030,7 +1030,7 @@ export async function getApprovedReviewsForCourse(
  * Get upcoming live streams for course
  */
 export async function getUpcomingStreams(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     courseId: string,
 ): Promise<QueryResultList<LiveStream>> {
     const now = new Date().toISOString();
@@ -1057,7 +1057,7 @@ export async function getUpcomingStreams(
  * Get student profile
  */
 export async function getStudentProfile(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
 ): Promise<QueryResult<StudentProfile>> {
     const { data, error } = await supabase
@@ -1076,7 +1076,7 @@ export async function getStudentProfile(
  * Update student profile
  */
 export async function updateStudentProfile(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     profile: Partial<StudentProfile>,
 ): Promise<QueryResult<StudentProfile>> {

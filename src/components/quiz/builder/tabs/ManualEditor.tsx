@@ -39,7 +39,7 @@ interface ManualEditorProps {
 export function ManualEditor({ quizId, question, onSaved }: ManualEditorProps) {
   const saveMutation = useSaveQuestion(quizId);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout>();
+  const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const [form, setForm] = useState<QuestionFormData>(() => {
     if (question) return {

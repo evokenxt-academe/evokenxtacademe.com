@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ quizId: string }> },
 ) {
   const { quizId } = await params;
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { DM_Serif_Display } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/supabase";
 import {
@@ -20,12 +20,13 @@ import { LiveStreamList } from "@/components/live-stream/LiveStreamList";
 import {
   IconArrowRight,
   IconCertificate,
+  IconClockHour4,
   IconFlame,
   IconPlayerPlay,
   IconTrophy,
 } from "@tabler/icons-react";
 
-const dmSerif = DM_Serif_Display({ weight: "400", subsets: ["latin"] });
+const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["600", "700"] });
 
 function greeting(now = new Date()): "Good morning" | "Good afternoon" | "Good evening" {
   const h = now.getHours();
@@ -50,6 +51,13 @@ function formatRelative(iso: string | null): string {
 function dayLabel(ymd: string): string {
   const d = new Date(`${ymd}T00:00:00`);
   return d.toLocaleDateString("en-US", { weekday: "short" });
+}
+
+function toYmdLocal(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export default async function DashboardPage() {
@@ -84,6 +92,7 @@ export default async function DashboardPage() {
   const data = await fetchStudentDashboardV21(supabase, user.id);
 
   const firstName = data.profile.name.split(" ")[0] || data.profile.name;
+  const greetingName = firstName || "Amar";
   const streak = computeStreak(data.streakDays);
   const daysToExam = computeDaysToExam(data.profile.target_exam_date);
 
@@ -99,11 +108,24 @@ export default async function DashboardPage() {
     for (const row of data.watchHours7d) {
       map.set(row.watch_date, (map.get(row.watch_date) ?? 0) + (row.total_seconds ?? 0));
     }
-    return Array.from(map.entries()).map(([date, seconds]) => ({
-      dayLabel: dayLabel(date),
-      hours: Math.round((seconds / 3600) * 10) / 10,
-    }));
+    const points: Array<{ dayLabel: string; hours: number }> = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateKey = toYmdLocal(d);
+      const seconds = map.get(dateKey) ?? 0;
+      points.push({
+        dayLabel: dayLabel(dateKey),
+        hours: Math.round((seconds / 3600) * 10) / 10,
+      });
+    }
+    return points;
   })();
+  const watch7Total = Math.round(watch7ByDay.reduce((sum, point) => sum + point.hours, 0) * 10) / 10;
+  const watch7Average = Math.round((watch7Total / 7) * 10) / 10;
+  const watchTrend = watch7ByDay.length >= 2 ? watch7ByDay[watch7ByDay.length - 1].hours - watch7ByDay[0].hours : 0;
+  const watchTrendPct = watch7ByDay[0]?.hours ? Math.round((watchTrend / watch7ByDay[0].hours) * 100) : 0;
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6">
@@ -113,8 +135,8 @@ export default async function DashboardPage() {
         <div className="relative flex flex-col gap-6 p-5 md:p-7">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-2">
-              <h1 className={`${dmSerif.className} text-3xl leading-tight md:text-4xl`}>
-                {greeting()}, {firstName}
+              <h1 className={`${plusJakarta.className} text-3xl leading-tight md:text-4xl`}>
+                {greeting()}, {greetingName}
               </h1>
               <div className="flex flex-wrap items-center gap-2">
                 {data.profile.target_exam_body && (
@@ -137,13 +159,6 @@ export default async function DashboardPage() {
                 Command centre for watch time, quizzes, live sessions, and your next best action.
               </p>
             </div>
-
-            <Avatar className="size-10">
-              <AvatarImage src={data.profile.avatar ?? undefined} alt={data.profile.name} />
-              <AvatarFallback>
-                {(data.profile.name?.slice(0, 2) ?? "ST").toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -265,11 +280,32 @@ export default async function DashboardPage() {
       {/* WATCH HOURS */}
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <Card>
-          <CardHeader>
+          <CardHeader className="gap-2">
             <CardTitle>Watch hours (7 days)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Your learning momentum over the last week.
+            </p>
           </CardHeader>
-          <CardContent>
-            <WatchHoursChart data={watch7ByDay} />
+          <CardContent className="flex flex-col gap-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border bg-background/80 p-3">
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums">{watch7Total.toFixed(1)}h</p>
+              </div>
+              <div className="rounded-lg border bg-background/80 p-3">
+                <p className="text-xs text-muted-foreground">Daily avg</p>
+                <p className="mt-1 text-xl font-semibold tabular-nums">{watch7Average.toFixed(1)}h</p>
+              </div>
+              <div className="rounded-lg border bg-background/80 p-3">
+                <p className="text-xs text-muted-foreground">Trend</p>
+                <p className="mt-1 flex items-center gap-1 text-xl font-semibold tabular-nums">
+                  <IconClockHour4 className="size-4 text-muted-foreground" />
+                  {watchTrendPct > 0 ? "+" : ""}
+                  {watchTrendPct}%
+                </p>
+              </div>
+            </div>
+            <WatchHoursChart data={watch7ByDay} averageHours={watch7Average} />
           </CardContent>
         </Card>
 

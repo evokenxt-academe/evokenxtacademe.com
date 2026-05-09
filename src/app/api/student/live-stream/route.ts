@@ -5,6 +5,12 @@ import type { LiveChatMessage, LiveStreamSummary } from "@/features/live-stream/
 
 export const runtime = "nodejs"
 
+type CourseLookup = {
+    id: string
+    title: string | null
+    slug: string | null
+}
+
 /**
  * GET /api/student/live-stream?courseId=xxx
  *
@@ -35,7 +41,7 @@ export async function GET(request: NextRequest) {
         ? await supabase.from("courses").select("id, title, slug").eq("id", courseParam).maybeSingle()
         : await supabase.from("courses").select("id, title, slug").eq("slug", courseParam).maybeSingle()
 
-    const course = courseResult.data
+    const course = courseResult.data as CourseLookup | null
 
     if (!course) {
         return NextResponse.json({ error: "Course not found" }, { status: 404 })
@@ -60,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     const [liveStreamResult, endedStreamResult] = await Promise.all([
-        supabase
+        (supabase as any)
             .from("live_streams")
             .select("id, title, course_id, yt_video_id, status, started_at, ended_at")
             .eq("course_id", courseId)
@@ -68,7 +74,7 @@ export async function GET(request: NextRequest) {
             .order("started_at", { ascending: false })
             .limit(1)
             .maybeSingle(),
-        supabase
+        (supabase as any)
             .from("live_streams")
             .select("id, title, course_id, yt_video_id, status, started_at, ended_at")
             .eq("course_id", courseId)
@@ -79,14 +85,14 @@ export async function GET(request: NextRequest) {
             .maybeSingle(),
     ])
 
-    const stream = liveStreamResult.data ?? endedStreamResult.data ?? null
+    const stream = (liveStreamResult.data ?? endedStreamResult.data ?? null) as any
 
     if (!stream) {
         return NextResponse.json({ currentStream: null, messages: [] })
     }
 
     // Get chat messages for this stream
-    const { data: messages } = await supabase
+    const { data: messages } = await (supabase as any)
         .from("chat_messages")
         .select(`
             id,
@@ -104,7 +110,7 @@ export async function GET(request: NextRequest) {
         id: stream.id,
         title: stream.title,
         courseId: stream.course_id,
-        courseName: course.name,
+        courseName: course.title ?? "Untitled course",
         ytVideoId: stream.yt_video_id,
         status: stream.status === "live" ? "live" : "ended",
         startedAt: stream.started_at,
@@ -153,11 +159,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the stream exists and is live
-    const { data: stream } = await supabase
+    const { data: streamData } = await (supabase as any)
         .from("live_streams")
         .select("id, course_id, status")
         .eq("id", streamId)
         .maybeSingle()
+    const stream = streamData as any
 
     if (!stream || stream.status !== "live") {
         return NextResponse.json(
@@ -182,7 +189,7 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    const { data: chatMsg, error: insertError } = await supabase
+    const { data: chatMsg, error: insertError } = await (supabase as any)
         .from("chat_messages")
         .insert({
             live_stream_id: streamId,
@@ -200,7 +207,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user profile for response
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
         .from("users")
         .select("name, avatar")
         .eq("id", user.id)

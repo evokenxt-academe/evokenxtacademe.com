@@ -48,6 +48,8 @@ export interface YtcnControlsProps {
   onSettingsOpenChange?: (open: boolean) => void;
   /** Called to keep controls visible (e.g. mouse movement over controls) */
   onInteraction?: () => void;
+  /** Whether the device is touch-enabled */
+  isTouchDevice: boolean;
 }
 
 /* ================================================================ */
@@ -76,6 +78,7 @@ export function YtcnControls({
   containerRef,
   onSettingsOpenChange,
   onInteraction,
+  isTouchDevice,
 }: YtcnControlsProps): React.JSX.Element {
   return (
     <div

@@ -11,7 +11,7 @@
  * - Displays all course information with instructor & reviews
  */
 
-import { useCallback } from "react";
+import { useCallback, use } from "react";
 import Link from "next/link";
 import {
   Breadcrumb,
@@ -47,9 +47,8 @@ interface CourseDetailPageProps {
 }
 
 export default function CourseDetailPage({ params }: CourseDetailPageProps) {
-  // Since params is now a Promise in Next.js 15+, we need to handle it
-  // For the page component, we'll use a client-side hook approach
-  const slug = params && "slug" in params ? params.slug : null;
+  const resolvedParams = use(params);
+  const slug = resolvedParams?.slug || "";
 
   // Use the hook to fetch course data
   const {

@@ -23,7 +23,7 @@ export interface CertificateRow {
  * Get all certificates
  */
 export async function getAllCertificates(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     filters?: {
         course_id?: string;
         status?: string;
@@ -84,7 +84,7 @@ export async function getAllCertificates(
  * Get certificate by ID
  */
 export async function getCertificateById(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     certificateId: string
 ): Promise<CertificateRow | null> {
     const { data, error } = await supabase
@@ -121,7 +121,7 @@ export async function getCertificateById(
  * Issue certificate (RPC call)
  */
 export async function issueCertificate(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     userId: string,
     courseId: string
 ): Promise<{ cert_number: string; id: string } | null> {
@@ -142,7 +142,7 @@ export async function issueCertificate(
  * Revoke certificate
  */
 export async function revokeCertificate(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     certificateId: string
 ): Promise<boolean> {
     const { error } = await supabase
@@ -162,7 +162,7 @@ export async function revokeCertificate(
  * Get certificate download URL
  */
 export async function getCertificateUrl(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     certificateUuid: string
 ): Promise<string | null> {
     // Generate a downloadable URL for certificate (could be PDF, image, etc.)
@@ -174,7 +174,7 @@ export async function getCertificateUrl(
  * Get certificates statistics
  */
 export async function getCertificateStats(
-    supabase: SupabaseClient<Database>
+    supabase: any
 ): Promise<{
     total_issued: number;
     total_revoked: number;

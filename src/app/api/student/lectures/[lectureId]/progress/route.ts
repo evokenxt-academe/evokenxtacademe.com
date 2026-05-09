@@ -57,13 +57,20 @@ export async function POST(
         return NextResponse.json({ error: "Lecture not found" }, { status: 404 });
     }
 
+    const lecture = lectureData as {
+        chapter_id: string;
+        is_preview: boolean;
+        duration_sec: number;
+    };
+
     const { data: chapterData, error: chapterError } = await supabase
         .from("chapters")
         .select("course_id")
-        .eq("id", lectureData.chapter_id)
+        .eq("id", lecture.chapter_id)
         .maybeSingle();
 
-    if (chapterError || !chapterData?.course_id) {
+    const chapter = chapterData as { course_id?: string } | null;
+    if (chapterError || !chapter?.course_id) {
         return NextResponse.json({ error: "Lecture chapter not found" }, { status: 404 });
     }
 
@@ -71,11 +78,11 @@ export async function POST(
         .from("enrollments")
         .select("id")
         .eq("user_id", user.id)
-        .eq("course_id", chapterData.course_id)
+        .eq("course_id", chapter.course_id)
         .eq("status", "active")
         .maybeSingle();
 
-    if (!enrollmentData && !lectureData.is_preview) {
+    if (!enrollmentData && !lecture.is_preview) {
         return NextResponse.json({ error: "Enrollment required" }, { status: 403 });
     }
 
@@ -93,14 +100,20 @@ export async function POST(
         );
     }
 
-    const previousWatched = toSafeNumber(existingProgressData?.watched_seconds);
-    const previousCompleted = existingProgressData?.is_completed === true;
+    const existingProgress = existingProgressData as {
+        watched_seconds?: number | null;
+        is_completed?: boolean | null;
+        watch_sessions?: number | null;
+    } | null;
+
+    const previousWatched = toSafeNumber(existingProgress?.watched_seconds);
+    const previousCompleted = existingProgress?.is_completed === true;
     const deltaSeconds = Math.max(0, watchedSeconds - previousWatched);
 
     const shouldMarkCompleted =
         requestedCompletion ||
         previousCompleted ||
-        (lectureData.duration_sec > 0 && watchedSeconds >= Math.floor(0.9 * lectureData.duration_sec));
+        (lecture.duration_sec > 0 && watchedSeconds >= Math.floor(0.9 * lecture.duration_sec));
 
     const payload = {
         user_id: user.id,
@@ -115,7 +128,7 @@ export async function POST(
     const { createAdminClient } = await import("@/utils/supabase/adminClient");
     const adminSupabase = createAdminClient();
 
-    const currentSessions = toSafeNumber((existingProgressData as any)?.watch_sessions);
+    const currentSessions = toSafeNumber(existingProgress?.watch_sessions);
     const watchSessions = currentSessions + 1;
 
     const { data, error } = await adminSupabase
@@ -143,7 +156,7 @@ export async function POST(
             .from("watch_hours_daily")
             .select("seconds")
             .eq("user_id", user.id)
-            .eq("course_id", chapterData.course_id)
+            .eq("course_id", chapter.course_id)
             .eq("watch_date", watchDate)
             .maybeSingle();
 
@@ -155,7 +168,7 @@ export async function POST(
             .upsert(
                 {
                     user_id: user.id,
-                    course_id: chapterData.course_id,
+                    course_id: chapter.course_id,
                     watch_date: watchDate,
                     seconds: nextSeconds,
                 },

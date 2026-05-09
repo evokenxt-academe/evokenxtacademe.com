@@ -23,7 +23,7 @@ export interface StreamRow {
  * Get all live streams
  */
 export async function getAllStreams(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     filters?: {
         course_id?: string;
         status?: "scheduled" | "live" | "ended";
@@ -75,7 +75,7 @@ export async function getAllStreams(
  * Get stream by ID with details
  */
 export async function getStreamById(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     streamId: string
 ): Promise<{
     id: string;
@@ -107,7 +107,7 @@ export async function getStreamById(
  * Create new live stream
  */
 export async function createStream(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     streamData: {
         title: string;
         description?: string;
@@ -120,7 +120,7 @@ export async function createStream(
 ): Promise<{ id: string } | null> {
     const { data, error } = await supabase
         .from("live_streams")
-        .insert([{ ...streamData, status: "scheduled", viewers_count: 0 }])
+        .insert([{ ...streamData, status: "scheduled", viewers_count: 0 } as any])
         .select("id")
         .single();
 
@@ -136,13 +136,13 @@ export async function createStream(
  * Update stream status
  */
 export async function updateStreamStatus(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     streamId: string,
     status: "scheduled" | "live" | "ended"
 ): Promise<boolean> {
     const { error } = await supabase
         .from("live_streams")
-        .update({ status })
+        .update({ status } as any)
         .eq("id", streamId);
 
     if (error) {
@@ -157,13 +157,13 @@ export async function updateStreamStatus(
  * Update viewer count
  */
 export async function updateViewerCount(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     streamId: string,
     count: number
 ): Promise<boolean> {
     const { error } = await supabase
         .from("live_streams")
-        .update({ viewers_count: count })
+        .update({ viewers_count: count } as any)
         .eq("id", streamId);
 
     if (error) {
@@ -178,7 +178,7 @@ export async function updateViewerCount(
  * Get upcoming streams for admin dashboard
  */
 export async function getUpcomingStreams(
-    supabase: SupabaseClient<Database>,
+    supabase: any,
     days: number = 7
 ): Promise<StreamRow[]> {
     const now = new Date();

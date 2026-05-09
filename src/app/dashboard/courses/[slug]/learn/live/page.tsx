@@ -14,7 +14,7 @@ const UUID_PATTERN =
 
 export default async function LiveLearnPage({ params }: LiveLearnPageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
 
   const {
     data: { user },

@@ -118,7 +118,7 @@ export function CoursePreviewPage({ slug }: CoursePreviewPageProps) {
     section_title: "Preview",
     course_name: course.name,
     resources: [],
-  } as FlatLecture : null;
+  } as unknown as FlatLecture : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">

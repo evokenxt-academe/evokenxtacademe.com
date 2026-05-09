@@ -41,11 +41,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
+    const courseRow = course as { id: string };
+
     const { data: enrollment } = await supabase
         .from("enrollments")
         .select("id")
         .eq("user_id", user.id)
-        .eq("course_id", course.id)
+        .eq("course_id", courseRow.id)
         .eq("status", "active")
         .maybeSingle();
 
@@ -59,14 +61,18 @@ export async function GET(request: NextRequest) {
     const { data: sections, error: sectionError } = await supabase
         .from("sections")
         .select("id, lectures(id)")
-        .eq("course_id", course.id)
+        .eq("course_id", courseRow.id)
         .order("position", { ascending: true });
 
     if (sectionError) {
         return NextResponse.json({ error: sectionError.message }, { status: 500 });
     }
 
-    const lectureIds = (Array.isArray(sections) ? sections : [])
+    const typedSections = (Array.isArray(sections) ? sections : []) as Array<{
+        lectures?: Array<{ id?: string }> | null;
+    }>;
+
+    const lectureIds = typedSections
         .flatMap((section) => (Array.isArray(section.lectures) ? section.lectures : []))
         .map((lecture) => String((lecture as { id?: string }).id ?? ""))
         .filter(Boolean);

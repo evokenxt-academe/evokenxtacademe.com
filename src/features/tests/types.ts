@@ -95,6 +95,7 @@ export interface AttemptResultDetail {
   correctCount: number;
   incorrectCount: number;
   rank: number | null;
+  durationSec: number | null;
   review: Array<{
     questionId: string;
     question: string;

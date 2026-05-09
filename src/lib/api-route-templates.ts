@@ -4,8 +4,12 @@
  * ============================================================
  * Place these in: /src/app/api/[route]/(route).ts
  * Update Next.js patterns as needed for your version
+ * 
+ * NOTE: This file is commented out to prevent TypeScript duplicate 
+ * identifier errors. Copy and uncomment into actual route files.
  */
 
+/*
 // ============================================================
 // EXAMPLE 1: GET /api/catalog/courses
 // ============================================================
@@ -419,3 +423,4 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: String(error) }, { status: 500 });
     }
 }
+*/

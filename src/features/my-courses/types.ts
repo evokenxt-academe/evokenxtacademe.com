@@ -3,7 +3,7 @@
 // Database + UI types for enrolled courses with progress
 // ─────────────────────────────────────────────────────────
 
-import type { Database } from "@/types/database.types";
+import type { Database } from "@/types/database.v2.types";
 
 // ── Row aliases ──────────────────────────────────────────
 
@@ -28,7 +28,7 @@ export interface EnrollmentWithCourse extends EnrollmentRow {
             lecture_progress: Array<
               Pick<
                 LectureProgressRow,
-                "user_id" | "is_completed" | "watched_seconds" | "last_watched_at"
+                "user_id" | "is_completed" | "watch_time_sec" | "updated_at"
               >
             >;
           }

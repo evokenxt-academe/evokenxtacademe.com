@@ -427,6 +427,7 @@ export interface BankDashboardStats {
   totalQuestions: number;
   verifiedCount: number;
   unverifiedCount: number;
+  subjectCount: number;
   byType: Record<QuestionType, number>;
   byDifficulty: Record<DifficultyLevel, number>;
   topTopics: { name: string; count: number }[];

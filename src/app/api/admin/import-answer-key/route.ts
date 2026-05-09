@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
 
 import { requireAdmin } from "@/features/admin/lib/admin-route";
+import { extractTextFromPdf } from "@/lib/pdf/extract";
 import {
     parseAnswerKeyText,
     inferSectionType,
@@ -77,13 +77,7 @@ export async function POST(request: NextRequest) {
     let pdfText: string;
     try {
         const buffer = Buffer.from(await file.arrayBuffer());
-        const parser = new PDFParse({ data: buffer });
-        try {
-            const pdf = await parser.getText();
-            pdfText = pdf.text;
-        } finally {
-            await parser.destroy();
-        }
+        pdfText = await extractTextFromPdf(buffer);
     } catch (err) {
         console.error("[import-answer-key] PDF parse failed:", err);
         return NextResponse.json({ error: "Failed to read PDF file." }, { status: 422 });

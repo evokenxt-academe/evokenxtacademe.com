@@ -72,13 +72,16 @@ export default function CoursesListPage() {
   const [loading, setLoading] = React.useState(true);
   const [filters, setFilters] = React.useState<CourseFilters>({});
   const [page, setPage] = React.useState(0);
-  const [rowSelection, setRowSelection] = React.useState<Record<string, boolean>>({});
+  const [rowSelection, setRowSelection] = React.useState<
+    Record<string, boolean>
+  >({});
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
   const [actionLoading, setActionLoading] = React.useState(false);
 
   // Pricing sheet
-  const [pricingCourse, setPricingCourse] = React.useState<CourseListItem | null>(null);
+  const [pricingCourse, setPricingCourse] =
+    React.useState<CourseListItem | null>(null);
   const [pricingData, setPricingData] = React.useState<CoursePricing[]>([]);
   const [pricingLoading, setPricingLoading] = React.useState(false);
 
@@ -112,7 +115,7 @@ export default function CoursesListPage() {
         { event: "*", schema: "public", table: "courses" },
         () => {
           loadCourses();
-        }
+        },
       )
       .subscribe();
 
@@ -123,7 +126,8 @@ export default function CoursesListPage() {
 
   // Actions
   const handleEdit = (id: string) => router.push(`/admin/courses/${id}/edit`);
-  const handleContent = (id: string) => router.push(`/admin/courses/${id}/content`);
+  const handleContent = (id: string) =>
+    router.push(`/admin/courses/${id}/content`);
 
   const handlePricing = async (course: CourseListItem) => {
     setPricingCourse(course);
@@ -148,7 +152,10 @@ export default function CoursesListPage() {
     }
   };
 
-  const handleStatusChange = async (id: string, status: "draft" | "published" | "archived") => {
+  const handleStatusChange = async (
+    id: string,
+    status: "draft" | "published" | "archived",
+  ) => {
     try {
       await updateCourseStatus(id, status);
       toast.success(`Course ${status}`);
@@ -177,7 +184,7 @@ export default function CoursesListPage() {
     try {
       await toggleFeatured(id, value);
       setCourses((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, is_featured: value } : c))
+        prev.map((c) => (c.id === id ? { ...c, is_featured: value } : c)),
       );
       toast.success(value ? "Course featured" : "Course unfeatured");
     } catch {
@@ -246,7 +253,7 @@ export default function CoursesListPage() {
         onToggleFeatured: handleToggleFeatured,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const table = useReactTable({
@@ -263,7 +270,7 @@ export default function CoursesListPage() {
   const toRow = Math.min((page + 1) * pageSize, totalCount);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 md:p-10 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
@@ -311,10 +318,16 @@ export default function CoursesListPage() {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} style={{ width: header.getSize() }}>
+                  <TableHead
+                    key={header.id}
+                    style={{ width: header.getSize() }}
+                  >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -324,21 +337,44 @@ export default function CoursesListPage() {
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="size-4" /></TableCell>
-                  <TableCell><Skeleton className="size-10 rounded-md" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-36" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-                  <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="size-4" /></TableCell>
-                  <TableCell><Skeleton className="size-6" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="size-4" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="size-10 rounded-md" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-36" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="size-4" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="size-6" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : courses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-64 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-64 text-center"
+                >
                   <div className="flex flex-col items-center gap-3">
                     <IconBookOff className="size-12 text-muted-foreground" />
                     <div className="flex flex-col gap-1">
@@ -362,7 +398,10 @@ export default function CoursesListPage() {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -432,7 +471,9 @@ export default function CoursesListPage() {
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedCourseIds.length} Courses</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete {selectedCourseIds.length} Courses
+            </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. All selected courses and their
               content will be permanently deleted.
@@ -464,13 +505,16 @@ export default function CoursesListPage() {
               ))
             ) : pricingData.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <p className="text-sm text-muted-foreground">No pricing tiers set</p>
+                <p className="text-sm text-muted-foreground">
+                  No pricing tiers set
+                </p>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
                     setPricingCourse(null);
-                    if (pricingCourse) router.push(`/admin/courses/${pricingCourse.id}/edit`);
+                    if (pricingCourse)
+                      router.push(`/admin/courses/${pricingCourse.id}/edit`);
                   }}
                 >
                   Add Pricing
@@ -508,9 +552,11 @@ export default function CoursesListPage() {
                   </div>
                   {(tier.valid_from || tier.valid_until) && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {tier.valid_from && `From ${new Date(tier.valid_from).toLocaleDateString()}`}
+                      {tier.valid_from &&
+                        `From ${new Date(tier.valid_from).toLocaleDateString()}`}
                       {tier.valid_from && tier.valid_until && " · "}
-                      {tier.valid_until && `Until ${new Date(tier.valid_until).toLocaleDateString()}`}
+                      {tier.valid_until &&
+                        `Until ${new Date(tier.valid_until).toLocaleDateString()}`}
                     </p>
                   )}
                 </div>

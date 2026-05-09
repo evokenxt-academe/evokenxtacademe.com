@@ -16,7 +16,7 @@ export default async function EditCoursePage({
   const { id } = await params;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 md:p-10 p-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

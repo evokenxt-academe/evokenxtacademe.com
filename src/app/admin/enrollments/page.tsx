@@ -146,7 +146,7 @@ function useCreateEnrollments() {
         throw new Error("Missing users or courses");
       }
 
-      const payloads = [];
+      const payloads: any[] = [];
       for (const userId of input.userIds) {
         for (const courseId of input.courseIds) {
           payloads.push({
@@ -159,7 +159,9 @@ function useCreateEnrollments() {
         }
       }
 
-      const { error } = await supabase.from("enrollments").insert(payloads);
+      const { error } = await supabase
+        .from("enrollments")
+        .insert(payloads as any);
       if (error) throw new Error(error.message);
 
       return payloads.length;
@@ -189,10 +191,14 @@ export default function EnrollmentsPage() {
   );
 
   const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<"all" | EnrollmentStatus>("all");
+  const [statusFilter, setStatusFilter] = React.useState<
+    "all" | EnrollmentStatus
+  >("all");
 
   const [enrollOpen, setEnrollOpen] = React.useState(false);
-  const [revokeEnrollment, setRevokeEnrollment] = React.useState<any | null>(null);
+  const [revokeEnrollment, setRevokeEnrollment] = React.useState<any | null>(
+    null,
+  );
 
   // New hooks
   const { data: users = [], isLoading: loadingUsers } = useUsers();
@@ -201,9 +207,15 @@ export default function EnrollmentsPage() {
 
   // Multi-select Form State
   const [userSearch, setUserSearch] = React.useState("");
-  const [selectedUserIds, setSelectedUserIds] = React.useState<Set<string>>(new Set());
-  const [selectedCourseIds, setSelectedCourseIds] = React.useState<Set<string>>(new Set());
-  const [expiryType, setExpiryType] = React.useState<"never" | "custom">("never");
+  const [selectedUserIds, setSelectedUserIds] = React.useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedCourseIds, setSelectedCourseIds] = React.useState<Set<string>>(
+    new Set(),
+  );
+  const [expiryType, setExpiryType] = React.useState<"never" | "custom">(
+    "never",
+  );
   const [customExpiry, setCustomExpiry] = React.useState("");
 
   const resetForm = () => {
@@ -220,21 +232,25 @@ export default function EnrollmentsPage() {
   };
 
   const handleEnroll = () => {
-    createEnrollment.mutate({
-      userIds: Array.from(selectedUserIds),
-      courseIds: Array.from(selectedCourseIds),
-      expiresAt: expiryType === "never" ? null : (customExpiry || null),
-    }, {
-      onSuccess: () => {
-        setEnrollOpen(false);
-        resetForm();
-      }
-    });
+    createEnrollment.mutate(
+      {
+        userIds: Array.from(selectedUserIds),
+        courseIds: Array.from(selectedCourseIds),
+        expiresAt: expiryType === "never" ? null : customExpiry || null,
+      },
+      {
+        onSuccess: () => {
+          setEnrollOpen(false);
+          resetForm();
+        },
+      },
+    );
   };
 
   const queryClient = useQueryClient();
   const revokeEnrollmentMutation = useMutation({
-    mutationFn: (enrollmentId: string) => adminApi.revokeEnrollment(enrollmentId),
+    mutationFn: (enrollmentId: string) =>
+      adminApi.revokeEnrollment(enrollmentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-enrollments"] });
       toast.success("Enrollment revoked");
@@ -329,7 +345,6 @@ export default function EnrollmentsPage() {
 
             <ScrollArea className="flex-1 -mx-6 px-6">
               <div className="flex flex-col gap-8 pb-4">
-
                 {/* 1. USERS */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -355,13 +370,20 @@ export default function EnrollmentsPage() {
                             Type a name or email to search users...
                           </div>
                         ) : loadingUsers ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground">Loading users...</div>
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Loading users...
+                          </div>
                         ) : (
                           <CommandGroup>
                             {users
-                              .filter(u =>
-                                u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-                                u.email.toLowerCase().includes(userSearch.toLowerCase())
+                              .filter(
+                                (u) =>
+                                  u.name
+                                    .toLowerCase()
+                                    .includes(userSearch.toLowerCase()) ||
+                                  u.email
+                                    .toLowerCase()
+                                    .includes(userSearch.toLowerCase()),
                               )
                               .map((user) => {
                                 const isSelected = selectedUserIds.has(user.id);
@@ -377,27 +399,40 @@ export default function EnrollmentsPage() {
                                     }}
                                     className="flex items-center gap-3 py-2 cursor-pointer"
                                   >
-                                    <div className={`flex items-center justify-center size-5 rounded border ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-input'}`}>
-                                      {isSelected && <IconCheck className="size-3.5" />}
+                                    <div
+                                      className={`flex items-center justify-center size-5 rounded border ${isSelected ? "bg-primary border-primary text-primary-foreground" : "border-input"}`}
+                                    >
+                                      {isSelected && (
+                                        <IconCheck className="size-3.5" />
+                                      )}
                                     </div>
                                     <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary shrink-0">
                                       {getInitials(user.name)}
                                     </div>
                                     <div className="flex flex-col min-w-0 flex-1">
-                                      <span className="text-sm font-medium truncate">{user.name}</span>
-                                      <span className="text-xs text-muted-foreground truncate">{user.email}</span>
+                                      <span className="text-sm font-medium truncate">
+                                        {user.name}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground truncate">
+                                        {user.email}
+                                      </span>
                                     </div>
                                   </CommandItem>
                                 );
                               })}
-                            {users.filter(u =>
-                              u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-                              u.email.toLowerCase().includes(userSearch.toLowerCase())
+                            {users.filter(
+                              (u) =>
+                                u.name
+                                  .toLowerCase()
+                                  .includes(userSearch.toLowerCase()) ||
+                                u.email
+                                  .toLowerCase()
+                                  .includes(userSearch.toLowerCase()),
                             ).length === 0 && (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
-                                  No users found matching "{userSearch}"
-                                </div>
-                              )}
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                No users found matching "{userSearch}"
+                              </div>
+                            )}
                           </CommandGroup>
                         )}
                       </CommandList>
@@ -406,11 +441,15 @@ export default function EnrollmentsPage() {
 
                   {selectedUserIds.size > 0 && (
                     <div className="flex flex-wrap gap-2 pt-1">
-                      {Array.from(selectedUserIds).map(id => {
-                        const u = users.find(x => x.id === id);
+                      {Array.from(selectedUserIds).map((id) => {
+                        const u = users.find((x) => x.id === id);
                         if (!u) return null;
                         return (
-                          <Badge key={u.id} variant="secondary" className="gap-1 pr-1">
+                          <Badge
+                            key={u.id}
+                            variant="secondary"
+                            className="gap-1 pr-1"
+                          >
                             {u.name}
                             <div
                               className="rounded-full hover:bg-muted p-0.5 cursor-pointer"
@@ -444,16 +483,20 @@ export default function EnrollmentsPage() {
                     <ScrollArea className="h-[200px]">
                       <div className="p-2 space-y-1">
                         {loadingCourses ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground">Loading courses...</div>
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            Loading courses...
+                          </div>
                         ) : courses.length === 0 ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground">No courses found.</div>
+                          <div className="p-4 text-center text-sm text-muted-foreground">
+                            No courses found.
+                          </div>
                         ) : (
                           courses.map((course) => {
                             const isSelected = selectedCourseIds.has(course.id);
                             return (
                               <label
                                 key={course.id}
-                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-accent ${isSelected ? 'bg-accent/50' : ''}`}
+                                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors hover:bg-accent ${isSelected ? "bg-accent/50" : ""}`}
                               >
                                 <Checkbox
                                   checked={isSelected}
@@ -465,8 +508,12 @@ export default function EnrollmentsPage() {
                                   }}
                                 />
                                 <div className="flex flex-col">
-                                  <span className="text-sm font-medium">{course.title}</span>
-                                  <span className="text-xs text-muted-foreground font-mono">{course.slug}</span>
+                                  <span className="text-sm font-medium">
+                                    {course.title}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground font-mono">
+                                    {course.slug}
+                                  </span>
                                 </div>
                               </label>
                             );
@@ -482,20 +529,28 @@ export default function EnrollmentsPage() {
                   <h3 className="text-sm font-medium">3. Expiry Date</h3>
                   <RadioGroup
                     value={expiryType}
-                    onValueChange={(val: "never" | "custom") => setExpiryType(val)}
+                    onValueChange={(val: "never" | "custom") =>
+                      setExpiryType(val)
+                    }
                     className="flex flex-col gap-3 rounded-xl border border-border/70 p-4 bg-background"
                   >
                     <label className="flex items-center gap-3 cursor-pointer">
                       <RadioGroupItem value="never" id="never" />
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium">Never expire</span>
-                        <span className="text-xs text-muted-foreground">Lifetime access to the assigned courses</span>
+                        <span className="text-sm font-medium">
+                          Never expire
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Lifetime access to the assigned courses
+                        </span>
                       </div>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <RadioGroupItem value="custom" id="custom" />
                       <div className="flex flex-col w-full max-w-xs">
-                        <span className="text-sm font-medium mb-2">Set expiry date</span>
+                        <span className="text-sm font-medium mb-2">
+                          Set expiry date
+                        </span>
                         <Input
                           type="datetime-local"
                           value={customExpiry}
@@ -507,7 +562,6 @@ export default function EnrollmentsPage() {
                     </label>
                   </RadioGroup>
                 </div>
-
               </div>
             </ScrollArea>
 

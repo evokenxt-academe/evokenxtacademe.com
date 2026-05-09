@@ -283,8 +283,8 @@ export async function fetchStudentDashboardV21(
       .order("watch_date", { ascending: true }),
   ]);
 
-  const profileRow = requireData(profileRes.data, profileRes.error, "dashboard.profile");
-  const sp = (profileRow.student_profiles ?? null) as
+  const profileRow = requireData(profileRes.data, profileRes.error, "dashboard.profile") as any;
+  const sp = (profileRow?.student_profiles ?? null) as
     | {
         target_exam_body: ProgramBody | null;
         target_exam_level: string | null;
@@ -404,7 +404,7 @@ export async function fetchStudentDashboardV21(
       const courseId = e.course.id;
       return {
         enrollment_id: e.id,
-        enrollment_status: "active",
+        enrollment_status: "active" as const,
         enrolled_at: e.enrolled_at,
         expires_at: e.expires_at,
         course_id: courseId,

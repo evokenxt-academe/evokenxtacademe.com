@@ -126,11 +126,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
       const legacyOptionRows = insertedLegacy.flatMap((row, idx) => {
         const options = parsedQuestions[idx]?.options ?? [];
-        return options.map((opt) => ({
+        return options.map((opt, position) => ({
           question_id: row.id,
           option_text: opt.text,
           is_correct: Boolean(opt.isCorrect),
-          position: opt.position ?? 0,
+          position,
           explanation: null,
         }));
       });

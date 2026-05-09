@@ -48,7 +48,7 @@ function calculateProgress(
     );
 
     const watchedSec = userProgress.reduce(
-      (sum, p) => sum + (p.watched_seconds ?? 0),
+      (sum, p) => sum + ((p as any).watch_time_sec ?? 0),
       0,
     );
 
@@ -60,7 +60,7 @@ function calculateProgress(
     // Build a map: lectureId → progress
     const progressByLectureId = new Map<
       string,
-      { is_completed: boolean; last_watched_at: string | null; watched_seconds: number }
+      { is_completed: boolean; updated_at: string | null; watch_time_sec: number }
     >();
     for (const lecture of lectures) {
       const progressForLecture = (lecture.lecture_progress ?? []).find(
@@ -69,8 +69,8 @@ function calculateProgress(
       if (progressForLecture) {
         progressByLectureId.set(lecture.id, {
           is_completed: progressForLecture.is_completed,
-          last_watched_at: progressForLecture.last_watched_at,
-          watched_seconds: progressForLecture.watched_seconds ?? 0,
+          updated_at: progressForLecture.updated_at,
+          watch_time_sec: (progressForLecture as any).watch_time_sec ?? 0,
         });
       }
     }
@@ -82,11 +82,11 @@ function calculateProgress(
 
     for (const lecture of lectures) {
       const prog = progressByLectureId.get(lecture.id);
-      if (prog?.last_watched_at) {
-        const ms = Date.parse(prog.last_watched_at);
+      if (prog?.updated_at) {
+        const ms = Date.parse(prog.updated_at);
         if (!Number.isNaN(ms) && ms > latestMs) {
           latestMs = ms;
-          lastWatchedAt = prog.last_watched_at;
+          lastWatchedAt = prog.updated_at;
           lastWatchedLectureId = lecture.id;
         }
       }
@@ -181,8 +181,8 @@ export async function fetchMyCourses(): Promise<MyCourse[]> {
             lecture_progress (
               user_id,
               is_completed,
-              watched_seconds,
-              last_watched_at
+              watch_time_sec,
+              updated_at
             )
           )
         )

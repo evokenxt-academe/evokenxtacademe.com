@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from("users")
     .update(updates)
     .eq("id", user.id);

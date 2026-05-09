@@ -42,7 +42,6 @@ export interface RazorpayPaymentResponse {
     amount_refunded: number;
     refund_status?: string;
     captured: boolean;
-    description?: string;
     card_id?: string;
     bank?: string;
     wallet?: string;
@@ -231,7 +230,7 @@ export async function completeEnrollmentWithPayment(
         gateway_transaction_id: razorpayPaymentId,
         gateway_order_id: razorpayOrderId,
         gateway_metadata: paymentDetails,
-    });
+    } as any);
 
     if (!paymentResult.data) {
         return { success: false, error: paymentResult.error || "Failed to record payment" };
@@ -249,7 +248,7 @@ export async function completeEnrollmentWithPayment(
             .eq("id", planId)
             .maybeSingle();
 
-        if (plan && plan.num_installments) {
+        if (plan && (plan as any).num_installments) {
             await createInstalmentSchedule(supabase, enrollmentResult.data.id, plan);
         }
     }
@@ -355,7 +354,7 @@ export async function processInstalmentPayment(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         // Update instalment status
-        await supabase
+        await (supabase as any)
             .from("instalment_schedule")
             .update({ status: "paid", paid_date: new Date().toISOString().split("T")[0] })
             .eq("id", instalmentId);

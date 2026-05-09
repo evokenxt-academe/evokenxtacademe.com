@@ -22,7 +22,7 @@ export async function GET() {
     }
 
     // Fetch all currently live streams
-    const { data: liveStreams, error: streamsError } = await supabase
+    const { data: liveStreams, error: streamsError } = await (supabase as any)
         .from("live_streams")
         .select(
             `
@@ -54,7 +54,7 @@ export async function GET() {
     // Filter for enrolled courses only
     const courseIds = (liveStreams as any[]).map((s) => s.course_id);
 
-    const { data: enrollments } = await supabase
+    const { data: enrollments } = await (supabase as any)
         .from("enrollments")
         .select("course_id")
         .eq("user_id", user.id)
@@ -62,7 +62,7 @@ export async function GET() {
         .in("course_id", courseIds);
 
     const enrolledCourseIds = new Set(
-        (enrollments ?? []).map((e) => e.course_id)
+        (enrollments ?? []).map((e: any) => e.course_id)
     );
 
     // Map to LiveStreamSummary format

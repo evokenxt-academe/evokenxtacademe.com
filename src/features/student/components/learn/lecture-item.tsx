@@ -28,9 +28,9 @@ export function LectureItem({
       disabled={isDisabled}
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors",
-        "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        status === "current" && "bg-accent font-medium",
+        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
+        "hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        status === "current" && "bg-accent font-medium shadow-sm",
         status === "completed" && "text-muted-foreground",
         isDisabled && "cursor-not-allowed opacity-50 hover:bg-transparent"
       )}

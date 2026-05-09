@@ -7,6 +7,13 @@ interface Props {
   searchParams?: Promise<{ lecture?: string; t?: string }>;
 }
 
+interface LearnNavbarUser {
+  id: string;
+  name: string | null;
+  email: string;
+  avatar: string | null;
+}
+
 function toSafeInt(value: string | undefined): number | null {
   if (!value) return null;
   const n = Number.parseInt(value, 10);
@@ -45,10 +52,18 @@ export default async function LearnPage({ params, searchParams }: Props) {
 
   if (!enrollment) redirect("/courses");
 
+  const navbarUser: LearnNavbarUser = {
+    id: user.id,
+    name: user.user_metadata?.full_name ?? null,
+    email: user.email ?? "",
+    avatar: user.user_metadata?.avatar_url ?? null,
+  };
+
   return (
     <LearnPageClient
       courseId={courseId}
       userId={user.id}
+      navbarUser={navbarUser}
       initialLectureId={lectureId}
       initialTimeSeconds={t}
     />

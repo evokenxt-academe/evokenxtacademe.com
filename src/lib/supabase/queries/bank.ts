@@ -102,27 +102,29 @@ export async function bulkSetDifficulty(supabase: SupabaseClient, ids: string[],
 }
 
 export async function getBankDashboardStats(supabase: SupabaseClient, subjectId?: string): Promise<BankDashboardStats> {
-  let query = supabase.from("bank_questions").select("id, type, difficulty, is_verified, topic:topics(name)").eq("is_active", true);
+  let query = supabase.from("bank_questions").select("id, subject_id, type, difficulty, is_verified, topic:topics(name)").eq("is_active", true);
   if (subjectId) query = query.eq("subject_id", subjectId);
 
   const { data, error } = await query;
-  if (error || !data) return { totalQuestions: 0, verifiedCount: 0, unverifiedCount: 0, byType: {} as Record<QuestionType, number>, byDifficulty: {} as Record<DifficultyLevel, number>, topTopics: [] };
+  if (error || !data) return { totalQuestions: 0, verifiedCount: 0, unverifiedCount: 0, subjectCount: 0, byType: {} as Record<QuestionType, number>, byDifficulty: {} as Record<DifficultyLevel, number>, topTopics: [] };
 
   const byType: Record<string, number> = {};
   const byDifficulty: Record<string, number> = {};
   const topicCounts: Record<string, number> = {};
+  const subjectIds = new Set<string>();
   let verified = 0;
 
   data.forEach((q: any) => {
     byType[q.type] = (byType[q.type] || 0) + 1;
     byDifficulty[q.difficulty] = (byDifficulty[q.difficulty] || 0) + 1;
     if (q.is_verified) verified++;
+    if (q.subject_id) subjectIds.add(q.subject_id);
     const tn = q.topic?.name;
     if (tn) topicCounts[tn] = (topicCounts[tn] || 0) + 1;
   });
 
   return {
-    totalQuestions: data.length, verifiedCount: verified, unverifiedCount: data.length - verified,
+    totalQuestions: data.length, verifiedCount: verified, unverifiedCount: data.length - verified, subjectCount: subjectIds.size,
     byType: byType as Record<QuestionType, number>, byDifficulty: byDifficulty as Record<DifficultyLevel, number>,
     topTopics: Object.entries(topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count })),
   };

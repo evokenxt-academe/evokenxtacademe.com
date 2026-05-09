@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
@@ -14,9 +14,24 @@ import {
 import { UserDropdown } from "@/components/user-dropdown";
 import { Fragment } from "react";
 import { AdminThemeToggle } from "@/components/admin-theme-toggle";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import { useNotifications } from "@/hooks/useNotifications";
+import { createClient } from "@/utils/supabase/client";
 
 export function AdminHeader() {
   const pathname = usePathname();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Fetch current user id for notifications
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+  }, []);
+
+  // Register FCM token + listen for foreground notifications
+  useNotifications(userId);
 
   // Generate breadcrumb items from pathname
   const breadcrumbItems = useMemo(() => {
@@ -63,8 +78,10 @@ export function AdminHeader() {
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2 md:gap-3">
         <AdminThemeToggle />
+        {userId && <NotificationBell userId={userId} />}
         <UserDropdown />
       </div>
     </header>
   );
 }
+

@@ -16,7 +16,7 @@ export default async function ContentBuilderPage({
   const { id } = await params;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 md:p-10 p-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>

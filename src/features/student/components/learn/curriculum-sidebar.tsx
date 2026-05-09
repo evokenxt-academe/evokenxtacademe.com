@@ -64,9 +64,9 @@ export function CurriculumSidebar({
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col bg-card/40">
+    <div className="flex h-full min-h-0 w-full flex-col bg-background">
       {/* Progress header */}
-      <div className="sticky top-0 z-10 flex flex-col gap-2 border-b border-border bg-background/95 p-4 backdrop-blur">
+      <div className="sticky top-0 z-10 flex flex-col gap-2 border-b border-border bg-background p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold tracking-tight">Course Content</h3>
           <span className="text-xs text-muted-foreground">
@@ -84,7 +84,7 @@ export function CurriculumSidebar({
         <Accordion
           type="multiple"
           defaultValue={currentChapterId ? [currentChapterId] : [chapters[0]?.id]}
-          className="space-y-1 px-2 py-2"
+          className="space-y-2 px-3 py-3"
         >
           {chapters.map((chapter) => {
             const chapterCompleted = chapter.lectures.filter((l) =>
@@ -95,7 +95,7 @@ export function CurriculumSidebar({
               <AccordionItem
                 key={chapter.id}
                 value={chapter.id}
-                className="overflow-hidden rounded-lg border border-transparent bg-background/60 transition-colors data-[state=open]:border-border"
+                className="overflow-hidden rounded-xl border border-border/70 bg-card/40 transition-colors"
               >
                 <AccordionTrigger className="px-3 py-3 text-sm hover:bg-muted/50 hover:no-underline">
                   <div className="flex flex-1 flex-col items-start gap-1 text-left">

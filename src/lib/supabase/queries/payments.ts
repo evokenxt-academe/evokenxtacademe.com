@@ -146,7 +146,7 @@ export async function getPaymentStatusBreakdown(
         "partially_paid",
     ];
 
-    const results = [];
+    const results: any[] = [];
 
     for (const status of statuses) {
         const { data, error } = await supabase

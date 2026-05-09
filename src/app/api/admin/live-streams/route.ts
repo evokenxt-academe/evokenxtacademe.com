@@ -37,10 +37,10 @@ export async function GET() {
                 id: stream.id,
                 title: stream.title,
                 courseId: stream.course_id,
-                courseName: course?.name ?? "Unknown course",
+                courseName: course?.title ?? "Unknown course",
                 courseSlug: course?.slug ?? null,
                 ytVideoId: stream.yt_video_id,
-                status: stream.status === "live" ? "live" : "ended",
+                status: (stream.status === "live" ? "live" : "ended") as "live" | "ended",
                 startedAt: stream.started_at,
                 endedAt: stream.ended_at,
             }
