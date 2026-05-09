@@ -1,25 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
-);
-
-/**
- * API Route: Duplicate a stream
- * POST /api/live-streams/:streamId/duplicate
- *
- * Copies all stream fields except:
- * - status (set to 'scheduled')
- * - timestamps (started_at, ended_at)
- * - YouTube IDs (yt_broadcast_id, yt_stream_id, yt_video_id, yt_rtmp_url, yt_stream_key, yt_live_chat_id)
- * - Metrics (concurrent_viewers, peak_viewers, duration_sec, total_chat_msgs)
- */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ streamId: string }> }
 ) {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
+  );
   try {
     const { streamId } = await params;
 

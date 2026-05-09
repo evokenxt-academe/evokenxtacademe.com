@@ -34,7 +34,7 @@ import type {
 // ─────────────────────────────────────────────────────────
 
 function getClient() {
-  return createClient();
+  return createClient() as any;
 }
 
 /**

@@ -48,7 +48,7 @@ export async function getBankQuestionById(supabase: SupabaseClient, id: string):
     .select(`*, options:bank_question_options(*), topic:topics(id, name), sub_topic:sub_topics(id, name), subject:subjects(id, code, name), stats:bank_question_stats(*)`)
     .eq("id", id).single();
 
-  if (error) { console.error("[bank] getById error:", error.message); return null; }
+  if (error || !data) { console.error("[bank] getById error:", error?.message || "Not found"); return null; }
 
   return { ...data, options: (data.options ?? []).sort((a: any, b: any) => (a.position ?? 0) - (b.position ?? 0)), stats: Array.isArray(data.stats) ? data.stats[0] ?? null : data.stats } as BankQuestionWithOptions;
 }

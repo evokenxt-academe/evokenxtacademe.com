@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+
 
 type AnalyticsSyncError = {
     streamId: string;
@@ -31,6 +28,11 @@ type AnalyticsSyncResults = {
  * Called by: Vercel cron (vercel.json) or external cron service
  */
 export async function POST(request: NextRequest) {
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // Verify cron secret
     const cronSecret = request.headers.get('x-cron-secret');
     if (cronSecret !== process.env.CRON_SECRET) {

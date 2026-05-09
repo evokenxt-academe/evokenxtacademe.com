@@ -47,8 +47,8 @@ export async function getQuestionById(
     .eq("id", questionId)
     .single();
 
-  if (error) {
-    console.error("[questions] getById error:", error.message);
+  if (error || !data) {
+    console.error("[questions] getById error:", error?.message || "Not found");
     return null;
   }
 

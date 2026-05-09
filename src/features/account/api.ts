@@ -17,7 +17,8 @@ export async function getUserProfile(): Promise<UserProfile> {
   if (authError || !user) throw new Error('Not authenticated');
 
   // As per instructions, fetching from 'profiles'
-  const { data, error } = await supabase
+  // Using 'as any' to avoid strict type checks on tables that might not exist in the schema
+  const { data, error } = await (supabase as any)
     .from('profiles')
     .select('*')
     .eq('id', user.id)
@@ -26,21 +27,26 @@ export async function getUserProfile(): Promise<UserProfile> {
   if (error) {
     // Fallback to users table if profiles doesn't exist yet
     if (error.code === '42P01') { 
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await (supabase as any)
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
         
-      if (userError) throw userError;
+      if (userError || !userData) throw userError || new Error('User not found');
+      
+      // Ensure userData is treated as an object for spreading
+      const userObj = userData as Record<string, any>;
       return {
-        ...userData,
-        avatar_url: userData.avatar,
+        ...userObj,
+        avatar_url: userObj.avatar || null,
         bio: null
       } as any;
     }
     throw error;
   }
+  
+  if (!data) throw new Error('Profile not found');
   return data as UserProfile;
 }
 
@@ -49,7 +55,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('profiles')
     .update(updates)
     .eq('id', user.id)
@@ -59,22 +65,26 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   if (error) {
     if (error.code === '42P01') {
       const { avatar_url, bio, ...rest } = updates;
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await (supabase as any)
         .from('users')
         .update({ ...rest, avatar: avatar_url } as any)
         .eq('id', user.id)
         .select()
         .single();
       
-      if (userError) throw userError;
+      if (userError || !userData) throw userError || new Error('User not found');
+      
+      const userObj = userData as Record<string, any>;
       return {
-        ...userData,
-        avatar_url: userData.avatar,
+        ...userObj,
+        avatar_url: userObj.avatar || null,
         bio: null
       } as any;
     }
     throw error;
   }
+
+  if (!data) throw new Error('Profile not found');
   return data as UserProfile;
 }
 
