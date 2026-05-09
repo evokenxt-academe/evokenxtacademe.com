@@ -51,7 +51,8 @@ export async function GET(request: Request) {
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`)
+      const separator = next.includes('?') ? '&' : '?';
+      return NextResponse.redirect(`${origin}${next}${separator}pwa_install=1`)
     }
 
     const message = error?.message ?? 'Could not authenticate user'

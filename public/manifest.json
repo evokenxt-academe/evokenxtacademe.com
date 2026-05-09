@@ -1,21 +1,36 @@
 {
   "name": "Evoke EduGlobal",
   "short_name": "Evoke",
-  "description": "Master your ACCA qualification with expert-led courses",
+  "description": "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate.",
   "theme_color": "#5CC593",
   "background_color": "#0f0f0f",
   "display": "standalone",
   "start_url": "/",
+  "scope": "/",
   "icons": [
     {
-      "src": "/logo.jpg",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/logo.jpg",
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

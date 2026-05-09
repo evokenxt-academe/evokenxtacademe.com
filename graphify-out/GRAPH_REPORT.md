@@ -1,12 +1,12 @@
 # Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-05-09)
 
 ## Corpus Check
-- 627 files · ~468,939 words
+- 627 files · ~469,723 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1902 nodes · 2170 edges · 409 communities detected
-- Extraction: 77% EXTRACTED · 23% INFERRED · 0% AMBIGUOUS · INFERRED: 489 edges (avg confidence: 0.8)
+- 1902 nodes · 2171 edges · 409 communities detected
+- Extraction: 77% EXTRACTED · 23% INFERRED · 0% AMBIGUOUS · INFERRED: 490 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -423,10 +423,10 @@
 ## God Nodes (most connected - your core abstractions)
 1. `Select()` - 202 edges
 2. `POST()` - 92 edges
-3. `createClient()` - 73 edges
+3. `createClient()` - 74 edges
 4. `GET()` - 68 edges
-5. `handleError()` - 34 edges
-6. `DELETE()` - 33 edges
+5. `DELETE()` - 34 edges
+6. `handleError()` - 34 edges
 7. `String()` - 30 edges
 8. `getClient()` - 23 edges
 9. `throwIfError()` - 14 edges
@@ -442,7 +442,7 @@
 - `GET()` --calls--> `extractYoutubeVideoId()`  [INFERRED]
   C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → src\features\admin\course\components\course-detail-page.tsx
 - `GET()` --calls--> `extractYoutubeVideoId()`  [INFERRED]
-  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → src\features\admin\course\components\youtube-video-player.tsx
+  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → C:\Users\vishw\Desktop\evokeeduglobal\src\features\admin\course\components\youtube-video-player.tsx
 
 ## Communities
 
@@ -2626,16 +2626,16 @@ Nodes (1): Vercel Logo
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Select()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 13`, `Community 19`, `Community 57`?**
-  _High betweenness centrality (0.147) - this node is a cross-community bridge._
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
 - **Why does `POST()` connect `Community 2` to `Community 0`, `Community 1`, `Community 33`, `Community 3`, `Community 5`, `Community 6`, `Community 28`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
 - **Why does `createClient()` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 5`, `Community 6`, `Community 9`, `Community 15`?**
-  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
 - **Are the 201 inferred relationships involving `Select()` (e.g. with `run()` and `run()`) actually correct?**
   _`Select()` has 201 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 30 inferred relationships involving `POST()` (e.g. with `requireAdmin()` and `Select()`) actually correct?**
   _`POST()` has 30 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 72 inferred relationships involving `createClient()` (e.g. with `proxy()` and `GET()`) actually correct?**
-  _`createClient()` has 72 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 73 inferred relationships involving `createClient()` (e.g. with `proxy()` and `GET()`) actually correct?**
+  _`createClient()` has 73 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 28 inferred relationships involving `GET()` (e.g. with `createClient()` and `createAdminClient()`) actually correct?**
   _`GET()` has 28 INFERRED edges - model-reasoned connections that need verification._

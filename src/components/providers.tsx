@@ -3,6 +3,9 @@ import * as React from "react";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { PWAProvider } from "@/context/PWAContext";
+import { InstallBanner } from "@/components/pwa/InstallBanner";
+import { PWAInstallTrigger } from "@/components/pwa/PWAInstallTrigger";
 
 // Workaround for next-themes injecting a script tag that React 19 complains about
 // This is a known false-positive warning during development.
@@ -27,7 +30,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <QueryClientProvider client={queryClient}>
-        {children}
+        <PWAProvider>
+          {children}
+          <InstallBanner />
+          <React.Suspense fallback={null}>
+            <PWAInstallTrigger />
+          </React.Suspense>
+        </PWAProvider>
         <Toaster position="top-right" richColors />
       </QueryClientProvider>
     </ThemeProvider>
