@@ -110,7 +110,8 @@ function formatLevel(level: string) {
   }
 }
 
-function getInitials(name: string) {
+function getInitials(name?: string) {
+  if (!name) return "??";
   return name
     .split(" ")
     .map((part) => part[0])
@@ -522,7 +523,7 @@ function CoursePreviewSheet({
                                                     ),
                                                   )}
                                                 {lecture.resources.length >
-                                                3 ? (
+                                                  3 ? (
                                                   <Badge
                                                     variant="secondary"
                                                     className="rounded-full px-2.5 py-0.5 text-[11px]"
@@ -680,8 +681,9 @@ function CoursePageContent() {
     const next = courses.filter((course) => {
       const matchesQuery =
         !query ||
-        course.name.toLowerCase().includes(query) ||
-        course.instructor.toLowerCase().includes(query);
+        (course.name || "").toLowerCase().includes(query) ||
+        (course.title || "").toLowerCase().includes(query) ||
+        (course.instructor || "").toLowerCase().includes(query);
 
       const matchesStatus =
         statusFilter === "all" || course.status === statusFilter;
@@ -713,9 +715,9 @@ function CoursePageContent() {
     ).length;
     const averagePrice = courses.length
       ? Math.round(
-          courses.reduce((sum, course) => sum + course.price, 0) /
-            courses.length,
-        )
+        courses.reduce((sum, course) => sum + course.price, 0) /
+        courses.length,
+      )
       : 0;
 
     return {

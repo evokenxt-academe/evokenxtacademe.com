@@ -21,7 +21,7 @@ export const useUserSession = create<UserSessionStore>((set) => ({
     isLoading: false,
     getSession: async () => {
         set({ isLoading: true });
-        const supabase = createClient();
+        const supabase = createClient() as any;
 
         const { data: { session }, error } = await supabase.auth.getSession();
         const user = session?.user;
@@ -30,7 +30,7 @@ export const useUserSession = create<UserSessionStore>((set) => ({
             console.log("Supabase Auth Error:", error.message);
         }
 
-        let userProfile = null;
+        let userProfile: User | null = null;
 
         if (user) {
             const { data: profile, error: profileError } = await supabase

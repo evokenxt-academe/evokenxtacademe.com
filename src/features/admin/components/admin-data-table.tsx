@@ -79,7 +79,7 @@ export function AdminDataTable<TData>({
       pagination,
     },
     onPaginationChange: setPagination,
-    globalFilterFn: "fuzzy",
+    globalFilterFn: "includesString",
   });
 
   const handleSearch = (value: string) => {

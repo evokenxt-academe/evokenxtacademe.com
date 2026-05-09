@@ -116,8 +116,8 @@ export async function getQuizById(supabase: SupabaseClient, quizId: string) {
     .eq("id", quizId)
     .single();
 
-  if (error) {
-    console.error("[quizzes] getQuizById error:", error.message);
+  if (error || !data) {
+    console.error("[quizzes] getQuizById error:", error?.message || "Not found");
     return null;
   }
   return data as QuizWithRelations;
