@@ -101,6 +101,27 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Sync error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    const message = error?.message || '';
+    
+    // Detect insufficient scopes or auth errors
+    if (message.includes('insufficient authentication scopes') || 
+        message.includes('insufficientPermissions')) {
+      return NextResponse.json({ 
+        error: message,
+        code: 'INSUFFICIENT_SCOPES',
+        action: 'reauth',
+      }, { status: 403 });
+    }
+    
+    if (message.includes('invalid_grant') || message.includes('Token has been expired')) {
+      return NextResponse.json({ 
+        error: message,
+        code: 'TOKEN_EXPIRED',
+        action: 'reauth',
+      }, { status: 401 });
+    }
+    
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
