@@ -1,7 +1,7 @@
-# Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-05-10)
+# Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-05-11)
 
 ## Corpus Check
-- 632 files · ~478,581 words
+- 632 files · ~478,693 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -2648,11 +2648,11 @@ Nodes (1): Vercel Logo
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Select()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 37`, `Community 12`, `Community 17`, `Community 19`, `Community 20`, `Community 21`, `Community 60`?**
-  _High betweenness centrality (0.161) - this node is a cross-community bridge._
-- **Why does `GET()` connect `Community 5` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 6`, `Community 14`, `Community 16`, `Community 18`, `Community 21`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+  _High betweenness centrality (0.112) - this node is a cross-community bridge._
+- **Why does `createClient()` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 14`, `Community 21`?**
+  _High betweenness centrality (0.058) - this node is a cross-community bridge._
 - **Why does `POST()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 36`, `Community 21`, `Community 28`?**
-  _High betweenness centrality (0.065) - this node is a cross-community bridge._
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
 - **Are the 202 inferred relationships involving `Select()` (e.g. with `run()` and `run()`) actually correct?**
   _`Select()` has 202 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 30 inferred relationships involving `POST()` (e.g. with `requireAdmin()` and `Select()`) actually correct?**
