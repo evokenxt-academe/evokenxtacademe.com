@@ -24,6 +24,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Build the redirect URI dynamically (must match authorize step exactly)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+      `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const redirectUri = process.env.YOUTUBE_REDIRECT_URI || `${baseUrl}/api/youtube/oauth/callback`;
+
     // Exchange code for tokens
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -32,7 +37,7 @@ export async function GET(req: NextRequest) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: process.env.YOUTUBE_REDIRECT_URI!,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }).toString(),
     });
@@ -92,7 +97,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Redirect to stream creation page
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
     return NextResponse.redirect(`${baseUrl}/admin/live-streams?success=connected`);
   } catch (error) {
     console.error('YouTube OAuth callback error:', error);

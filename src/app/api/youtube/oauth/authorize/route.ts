@@ -13,9 +13,14 @@ export async function GET(req: NextRequest) {
     'https://www.googleapis.com/auth/userinfo.email',
   ];
 
+  // Build the redirect URI dynamically for production vs local
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+  const redirectUri = process.env.YOUTUBE_REDIRECT_URI || `${baseUrl}/api/youtube/oauth/callback`;
+
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: process.env.YOUTUBE_REDIRECT_URI!,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: scopes.join(' '),
     access_type: 'offline',

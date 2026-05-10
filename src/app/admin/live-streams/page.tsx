@@ -39,6 +39,9 @@ import {
   IconUsers,
   IconMessageCircle,
   IconClock,
+  IconBrandYoutube,
+  IconUnlink,
+  IconExternalLink,
 } from "@tabler/icons-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
@@ -80,6 +83,15 @@ export default function LiveStreamsDashboard() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [authError, setAuthError] = useState(false);
+  const [scopeError, setScopeError] = useState(false);
+  const [ytStatus, setYtStatus] = useState<{
+    connected: boolean;
+    expired?: boolean;
+    needsReauth?: boolean;
+    channel?: { channelName: string; subscribers: string; thumbnail: string } | null;
+  }>({ connected: false });
+  const [ytLoading, setYtLoading] = useState(true);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,9 +103,50 @@ export default function LiveStreamsDashboard() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
+  // Check YouTube connection status
+  const checkYouTubeStatus = async () => {
+    setYtLoading(true);
+    try {
+      const res = await fetch("/api/youtube/status");
+      if (res.ok) {
+        const data = await res.json();
+        setYtStatus(data);
+        if (data.needsReauth) {
+          setScopeError(true);
+        }
+      }
+    } catch {
+      // Ignore — will show as disconnected
+    } finally {
+      setYtLoading(false);
+    }
+  };
+
+  // Disconnect YouTube
+  const handleDisconnect = async () => {
+    if (!confirm("Disconnect your YouTube account? You'll need to reconnect to sync streams.")) return;
+    setDisconnecting(true);
+    try {
+      const res = await fetch("/api/youtube/oauth/disconnect", { method: "DELETE" });
+      if (res.ok) {
+        setYtStatus({ connected: false });
+        setScopeError(false);
+        setAuthError(false);
+        toast.success("YouTube account disconnected");
+      } else {
+        toast.error("Failed to disconnect YouTube account");
+      }
+    } catch {
+      toast.error("Network error");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const handleSync = async () => {
     setSyncing(true);
     setAuthError(false);
+    setScopeError(false);
     try {
       const response = await fetch("/api/youtube/broadcasts/sync", {
         method: "POST",
@@ -101,7 +154,10 @@ export default function LiveStreamsDashboard() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.error?.includes("invalid_grant")) {
+        if (data.code === "INSUFFICIENT_SCOPES" || data.error?.includes("insufficient authentication scopes")) {
+          setScopeError(true);
+          toast.error("YouTube permissions need to be updated — please reconnect");
+        } else if (data.code === "TOKEN_EXPIRED" || data.error?.includes("invalid_grant")) {
           setAuthError(true);
           toast.error("YouTube account needs reconnection");
         } else {
@@ -214,6 +270,7 @@ export default function LiveStreamsDashboard() {
 
     fetchStreams();
     handleSync();
+    checkYouTubeStatus();
 
     // Subscribe to live_streams changes
     const channel = supabase
@@ -231,6 +288,7 @@ export default function LiveStreamsDashboard() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "connected") {
       toast.success("YouTube account connected successfully!");
+      checkYouTubeStatus(); // Refresh status after connection
       router.replace("/admin/live-streams");
     }
     if (params.get("error") === "oauth_failed") {
@@ -346,33 +404,85 @@ export default function LiveStreamsDashboard() {
         </Button>
       </div>
 
-      {/* YouTube Auth Alert */}
-      {authError && (
-        <Alert
-          variant="destructive"
-          className="border-destructive/20 bg-destructive/5"
-        >
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>YouTube Authentication Expired</AlertTitle>
-          <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-2">
-            <span>
-              Your YouTube access has expired. Please reconnect your account to
-              sync live streams.
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2 w-full sm:w-auto"
-              asChild
-            >
-              <Link href="/api/youtube/oauth/authorize">
-                <ExternalLink className="w-4 h-4" />
-                Reconnect YouTube
-              </Link>
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* YouTube Connection Card */}
+      <Card className="border-red-500/20 shadow-sm overflow-hidden bg-gradient-to-r from-background to-red-500/5">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20 text-red-600">
+                <IconBrandYoutube className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  YouTube Connection
+                  {!ytLoading && ytStatus.connected && !scopeError && !authError && (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                      Connected
+                    </Badge>
+                  )}
+                  {!ytLoading && (!ytStatus.connected || scopeError || authError) && (
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                      Disconnected
+                    </Badge>
+                  )}
+                </h3>
+                {ytLoading ? (
+                  <p className="text-sm text-muted-foreground">Checking status...</p>
+                ) : ytStatus.connected && !scopeError && !authError ? (
+                  <p className="text-sm text-muted-foreground">
+                    {ytStatus.channel?.channelName 
+                      ? `Linked to ${ytStatus.channel.channelName} (${ytStatus.channel.subscribers} subs)` 
+                      : 'Channel is connected and ready to broadcast.'}
+                  </p>
+                ) : scopeError ? (
+                  <p className="text-sm text-destructive">
+                    Insufficient permissions. Reconnect to grant full broadcast access.
+                  </p>
+                ) : authError ? (
+                  <p className="text-sm text-destructive">
+                    Session expired. Please reconnect your account.
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Connect to automatically create and sync live streams.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex w-full sm:w-auto items-center gap-2">
+              {ytStatus.connected ? (
+                <>
+                  {(scopeError || authError) && (
+                    <Button asChild size="sm" className="w-full sm:w-auto gap-2 bg-red-600 hover:bg-red-700 text-white">
+                      <Link href="/api/youtube/oauth/authorize">
+                        <RefreshCw className="w-4 h-4" />
+                        Reconnect
+                      </Link>
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full sm:w-auto gap-2 text-destructive hover:bg-destructive/10 border-destructive/20"
+                    onClick={handleDisconnect}
+                    disabled={disconnecting}
+                  >
+                    <IconUnlink className="w-4 h-4" />
+                    Disconnect
+                  </Button>
+                </>
+              ) : (
+                <Button asChild size="sm" className="w-full sm:w-auto gap-2 bg-red-600 hover:bg-red-700 text-white">
+                  <Link href="/api/youtube/oauth/authorize">
+                    <IconExternalLink className="w-4 h-4" />
+                    Connect Channel
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Live Count Badge */}
       {stats.liveCount > 0 && (
