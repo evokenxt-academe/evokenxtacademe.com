@@ -145,7 +145,7 @@ export function Navigation() {
                 )}
                 asChild
               >
-                <Link href="/login">Sign in</Link>
+                <Link href="/auth/login">Sign in</Link>
               </Button>
 
               <Button
@@ -231,7 +231,7 @@ export function Navigation() {
               onClick={() => setIsMobileMenuOpen(false)}
               asChild
             >
-              <Link href="/login">Sign in</Link>
+              <Link href="/auth/login">Sign in</Link>
             </Button>
             <Button
               className="h-12 w-full text-base"
