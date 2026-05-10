@@ -18,15 +18,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Evoke Edu Global — ACCA Courses & Professional Qualifications",
+  title: "Evokenxt — ACCA Courses & Professional Qualifications",
   description:
     "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate. Study online, learn at your pace, succeed globally.",
   manifest: "/manifest.json",
-  applicationName: "Evoke EduGlobal",
+  applicationName: "Evokenxt",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Evoke EduGlobal",
+    title: "Evokenxt",
   },
   other: {
     "mobile-web-app-capable": "yes",

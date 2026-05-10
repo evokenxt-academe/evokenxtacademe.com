@@ -18,7 +18,7 @@ export function StorySection() {
               <div className="inline-flex items-center gap-3 mb-6">
                 <span className="w-8 h-[2px] bg-primary"></span>
                 <span className="text-sm font-bold text-primary uppercase tracking-widest">
-                  Evoke EduGlobal
+                  Evokenxt
                 </span>
               </div>
               <h2 className="text-4xl md:text-5xl font-extrabold text-foreground leading-[1.15] mb-6 tracking-tight">
@@ -29,7 +29,7 @@ export function StorySection() {
               </h2>
 
               <p className="text-lg text-muted-foreground leading-relaxed mb-10">
-                Experience education without boundaries. Evoke EduGlobal brings the classroom directly to you with crystal-clear 4K video lessons, highly interactive live lectures, and rigorous mock exams designed to guarantee your professional success.
+                Experience education without boundaries. Evokenxt brings the classroom directly to you with crystal-clear 4K video lessons, highly interactive live lectures, and rigorous mock exams designed to guarantee your professional success.
               </p>
 
               {/* Features Bullet Grid */}

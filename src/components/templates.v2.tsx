@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Evoke EduGlobal LMS v2.0.0 - UI Component Templates
+ * Evokenxt LMS v2.0.0 - UI Component Templates
  * ============================================================
  * React/Next.js + shadcn/ui components
  * Place in: src/components/[page]/[component].tsx

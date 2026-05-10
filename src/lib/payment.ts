@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Evoke EduGlobal LMS v2.0.0 - Payment System
+ * Evokenxt LMS v2.0.0 - Payment System
  * ============================================================
  * Razorpay integration with EMI support
  * Handles one-time + instalment payments

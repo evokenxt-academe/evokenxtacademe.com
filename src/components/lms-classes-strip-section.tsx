@@ -59,7 +59,7 @@ export function LmsClassesStripSection() {
               <span className="text-primary">Mock Exams</span>
             </h2>
             <p className="mt-4 text-base text-muted-foreground font-medium leading-relaxed">
-              Test your knowledge instantly. Evoke EduGlobal goes beyond video lectures with custom mock exams and real-time performance analytics designed to guarantee success.
+              Test your knowledge instantly. Evokenxt goes beyond video lectures with custom mock exams and real-time performance analytics designed to guarantee success.
             </p>
           </div>
 

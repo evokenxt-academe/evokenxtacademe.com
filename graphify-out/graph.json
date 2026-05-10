@@ -30984,8 +30984,8 @@
       "source_file": "C:\\Users\\vishw\\Desktop\\evokeeduglobal\\src\\hooks\\usePWAInstallAfterLogin.ts",
       "source_location": "L51",
       "weight": 1.0,
-      "_src": "usepwainstallafterlogin_usepwainstallafterlogin",
-      "_tgt": "pwacontext_usepwa",
+      "_src": "pwacontext_usepwa",
+      "_tgt": "usepwainstallafterlogin_usepwainstallafterlogin",
       "source": "pwacontext_usepwa",
       "target": "usepwainstallafterlogin_usepwainstallafterlogin"
     },

@@ -60,7 +60,7 @@ export function HowProcessSection() {
             {/* Headline */}
             <h2 className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight leading-tight mb-4">
               Welcome to <br />
-              <span className="text-primary">Evoke EduGlobal</span>
+              <span className="text-primary">Evokenxt</span>
             </h2>
 
             {/* Blockquote */}

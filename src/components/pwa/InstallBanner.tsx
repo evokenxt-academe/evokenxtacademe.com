@@ -77,7 +77,7 @@ export function InstallBanner() {
           <div className="shrink-0">
             <Image
               src="/icons/icon-192x192.png"
-              alt="Evoke EduGlobal"
+              alt="Evokenxt"
               width={40}
               height={40}
               className="rounded-lg"
@@ -88,7 +88,7 @@ export function InstallBanner() {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-foreground truncate">
-                Evoke EduGlobal
+                Evokenxt
               </span>
               <Badge variant="secondary" className="text-[10px] px-1.5 h-4">
                 App
