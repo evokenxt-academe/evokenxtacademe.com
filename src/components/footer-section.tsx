@@ -80,11 +80,8 @@ export function FooterSection() {
             <Link href="/" className="flex items-center gap-2.5">
               <div className="relative size-10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.jpg" alt="Evoke EduGlobal Logo" className="size-full object-contain" />
+                <img src="/logo.jpg" alt="Evokenxt Logo" className="size-full object-contain" />
               </div>
-              <span className="font-semibold tracking-tight text-foreground">
-                Evoke EduGlobal
-              </span>
             </Link>
             <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
               Empowering global leaders through world-class ACCA and
@@ -94,7 +91,7 @@ export function FooterSection() {
             <div className="flex flex-col gap-2.5 text-sm text-muted-foreground">
               <div className="flex items-center gap-2.5">
                 <Mail className="size-4" />
-                <span>contact@evokeedu.global</span>
+                <span>contact@evokenxt.com</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="size-4" />
@@ -176,7 +173,7 @@ export function FooterSection() {
         {/* Bottom */}
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Evoke EduGlobal. All rights
+            &copy; {new Date().getFullYear()} Evokenxt. All rights
             reserved.
           </p>
           <div className="flex gap-6">

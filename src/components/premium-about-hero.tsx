@@ -70,7 +70,7 @@ export function PremiumAboutHero() {
             transition={{ duration: 1, delay: 0.3 }}
             className="text-lg md:text-xl text-white/50 max-w-2xl leading-relaxed mb-12 font-light"
           >
-            Evoke EduGlobal isn&apos;t just an educational institution; it&apos;s a state-of-the-art learning ecosystem engineered to transform professional aspirations into global careers.
+            Evokenxt isn&apos;t just an educational institution; it&apos;s a state-of-the-art learning ecosystem engineered to transform professional aspirations into global careers.
           </motion.p>
 
           {/* CTA Group */}

@@ -94,7 +94,7 @@ export function FaqSection() {
               Questions &amp; Answers
             </h2>
             <p className="text-muted-foreground text-base leading-relaxed mb-10 max-w-md">
-              Discover a world of knowledge and opportunity with Evoke EduGlobal — your platform for professional accounting excellence.
+              Discover a world of knowledge and opportunity with Evokenxt — your platform for professional accounting excellence.
             </p>
 
             {/* Accordion */}

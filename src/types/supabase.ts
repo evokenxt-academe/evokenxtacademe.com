@@ -1,6 +1,6 @@
 // Generated types are expected at `@/types/supabase`.
 // This file is a minimal, strict-mode friendly Database definition aligned to
-// Evoke EduGlobal Supabase schema v2.1.0 as used by student routes.
+// Evokenxt Supabase schema v2.1.0 as used by student routes.
 
 export type Json =
   | string

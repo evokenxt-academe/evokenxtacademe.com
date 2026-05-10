@@ -94,11 +94,11 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-[#193CB8] dark:bg-white text-white dark:text-[#193CB8] font-bold">
                   E
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Evoke</span>
+                  <span className="truncate font-semibold"><span className="text-[#193CB8] dark:text-foreground">Evoke</span><span className="text-[#00C950]">nxt</span></span>
                   <span className="truncate text-xs">Student Portal</span>
                 </div>
               </Link>

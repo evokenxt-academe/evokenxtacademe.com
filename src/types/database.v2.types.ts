@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Evoke EduGlobal LMS v2.0.0 - TypeScript Database Types
+ * Evokenxt LMS v2.0.0 - TypeScript Database Types
  * ============================================================
  * Generated from supabase-schema.sql
  * Strict typing with nullable handling and enums

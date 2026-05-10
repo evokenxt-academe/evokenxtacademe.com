@@ -42,7 +42,7 @@ export function useNotifications(userId: string | null) {
       const notification = payload.notification as ForegroundNotification | undefined;
       const data         = payload.data as Partial<ForegroundNotification> | undefined;
 
-      const title = notification?.title ?? data?.title ?? 'Evoke EduGlobal';
+      const title = notification?.title ?? data?.title ?? 'Evokenxt';
       const body  = notification?.body  ?? data?.body  ?? '';
       const route = data?.route;
 

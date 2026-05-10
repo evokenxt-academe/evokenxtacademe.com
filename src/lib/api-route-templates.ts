@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * API ROUTE TEMPLATES - Evoke EduGlobal LMS v2.0.0
+ * API ROUTE TEMPLATES - Evokenxt LMS v2.0.0
  * ============================================================
  * Place these in: /src/app/api/[route]/(route).ts
  * Update Next.js patterns as needed for your version
