@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { GlobalLayoutWrapper } from "@/components/global-layout-wrapper";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
@@ -69,10 +70,11 @@ export default function RootLayout({
           href="/icons/icon-512x512.png"
         />
       </head>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col pb-16 sm:pb-0" suppressHydrationWarning>
         <Providers>
           <GlobalLayoutWrapper>{children}</GlobalLayoutWrapper>
         </Providers>
+        <DashboardMobileNav />
         <Toaster />
       </body>
     </html>

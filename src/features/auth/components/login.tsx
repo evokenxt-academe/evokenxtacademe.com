@@ -12,6 +12,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { createClient } from "@/utils/supabase/client";
+import { useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { ShieldCheck } from "lucide-react";
 
@@ -45,6 +46,8 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export function LoginCard() {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirectUrl") || searchParams.get("next") || "/dashboard";
 
   const handleSignInWithGoogle = async () => {
     setIsLoading(true);
@@ -52,7 +55,7 @@ export function LoginCard() {
     const { error } = await createClient().auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectUrl)}`,
         scopes: "email profile https://www.googleapis.com/auth/youtube.upload",
         queryParams: {
           access_type: "offline",
