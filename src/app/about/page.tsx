@@ -1,9 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Stars, FileText, Video, Users, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SuccessTimeline } from "@/components/success-timeline";
 import { LmsClassesStripSection } from "@/components/lms-classes-strip-section";
@@ -16,71 +15,90 @@ export default function AboutPage() {
   return (
 
     <main className="relative min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-hidden">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        
-        body {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
-        .image-container-mask {
-          mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-        }
-
-        .badge-shadow {
-          box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.1);
-        }
-
-        .pill-shadow {
-          box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
-        }
-      `}</style>
-
-
-
 
       {/* HERO SECTION */}
-      <section className="relative w-full min-h-[40vh] md:min-h-[50vh] flex items-center justify-center border-b border-border bg-background">
-        {/* Fixed Background Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-fixed"
-          style={{ backgroundImage: "url('/wallpaper.jpeg')" }}
-        />
-        {/* Adaptive overlay for text readability */}
-        <div className="absolute inset-0 bg-background/85" />
+      <section className="relative w-full bg-background border-b border-border">
+        {/* Top eyebrow bar */}
+        <div className="border-b border-border bg-muted/40">
+          <div className="container mx-auto px-6 lg:px-10 py-3 flex items-center gap-3">
+            <span className="w-5 h-px bg-primary" />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              About Evoke EduGlobal
+            </span>
+          </div>
+        </div>
 
-        {/* Content */}
-        <div className="relative z-10 container mx-auto px-6 text-center py-20 md:py-24">
+        {/* Main hero content */}
+        <div className="container mx-auto px-6 lg:px-10">
+          {/* Headline block */}
+          <div className="pt-16 pb-12 md:pt-20 md:pb-16 border-b border-border">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: "easeOut" }}
+              className="max-w-4xl"
+            >
+              <h1 className="text-[2.75rem] md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.04] text-foreground text-balance">
+                Transforming careers through{" "}
+                <span className="text-primary">world-class</span>{" "}
+                professional education.
+              </h1>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.15, ease: "easeOut" }}
+              className="mt-8 flex flex-col sm:flex-row sm:items-end justify-between gap-8"
+            >
+              <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl font-normal">
+                Evoke EduGlobal delivers globally recognised ACCA and finance programs that bridge the gap between learning and career success — for students, professionals, and organisations worldwide.
+              </p>
+              <div className="flex items-center gap-3 shrink-0">
+                <Button
+                  size="lg"
+                  className="h-11 px-7 text-sm font-semibold rounded-sm"
+                  asChild
+                >
+                  <Link href="/courses">Explore Programs</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-11 px-7 text-sm font-semibold rounded-sm border-border bg-transparent hover:bg-muted"
+                  asChild
+                >
+                  <Link href="#team">Meet the Team</Link>
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Stats strip */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col items-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+            className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-border"
           >
-            <div className="mb-6">
-              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground uppercase tracking-widest font-semibold">
-                <span className="w-8 h-[2px] bg-primary" />
-                About Evoke EduGlobal
-              </span>
-            </div>
-
-            <h1 className="text-5xl md:text-7xl lg:text-[6rem] font-extrabold text-foreground mb-8 leading-[0.95] tracking-tight">
-              Empowering the <br className="hidden md:block" />
-              <span className="text-primary">Next Generation</span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed mb-10">
-              We deliver world-class ACCA education and industry-driven programs to bridge the gap between learning and global career success.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="rounded-none h-12 px-8 text-base font-semibold" asChild>
-                <Link href="/courses">Explore Programs</Link>
-              </Button>
-              <Button variant="outline" size="lg" className="rounded-none h-12 px-8 text-base font-semibold border-border bg-transparent hover:bg-muted" asChild>
-                <Link href="#team">Meet the Team</Link>
-              </Button>
-            </div>
+            {[
+              { value: "16+",    label: "Years of excellence" },
+              { value: "3,000+", label: "Global graduates" },
+              { value: "95%",    label: "Pass rate improvement" },
+              { value: "40+",    label: "Countries reached" },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-1 px-6 py-8 first:pl-0"
+              >
+                <span className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+                  {stat.value}
+                </span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                  {stat.label}
+                </span>
+              </div>
+            ))}
           </motion.div>
         </div>
       </section>
