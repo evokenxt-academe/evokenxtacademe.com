@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
   ];
 
   // Build the redirect URI dynamically for production vs local
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-    `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-  const redirectUri = process.env.YOUTUBE_REDIRECT_URI || `${baseUrl}/api/youtube/oauth/callback`;
+  // Ignore process.env.YOUTUBE_REDIRECT_URI because it might be hardcoded to localhost in .env
+  const protocol = req.headers.get('x-forwarded-proto') || 'https';
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host;
+  const redirectUri = `${protocol}://${host}/api/youtube/oauth/callback`;
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,

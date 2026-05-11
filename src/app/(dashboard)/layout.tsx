@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DashboardNavbar } from "@/components/dashboard-navbar";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 import { createClient } from "@/utils/supabase/server";
 import { fetchStudentShellProfile } from "@/features/student/lib/student-shell";
 
@@ -39,10 +40,11 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <DashboardSidebar user={sidebarUser} />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="bg-background pb-16 sm:pb-0">
         <DashboardNavbar user={navbarUser} />
         {children}
       </SidebarInset>
+      <DashboardMobileNav />
     </SidebarProvider>
   );
 }
