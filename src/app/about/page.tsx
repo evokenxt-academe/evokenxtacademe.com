@@ -18,54 +18,51 @@ export default function AboutPage() {
 
       {/* HERO SECTION */}
       <section className="relative w-full bg-background border-b border-border">
-        {/* Top eyebrow bar */}
-        <div className="border-b border-border bg-muted/40">
-          <div className="container mx-auto px-6 lg:px-10 py-3 flex items-center gap-3">
-            <span className="w-5 h-px bg-primary" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+        {/* Eyebrow label */}
+        <div className="border-b border-border">
+          <div className="container mx-auto px-6 lg:px-16 py-3 flex items-center gap-2.5">
+            <span className="w-4 h-px bg-primary" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               About Evoke EduGlobal
             </span>
           </div>
         </div>
 
-        {/* Main hero content */}
-        <div className="container mx-auto px-6 lg:px-10">
-          {/* Headline block */}
-          <div className="pt-16 pb-12 md:pt-20 md:pb-16 border-b border-border">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
+        {/* Headline + body */}
+        <div className="container mx-auto px-6 lg:px-16">
+          <div className="pt-14 pb-10 md:pt-16 md:pb-12 border-b border-border">
+            <motion.h1
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: "easeOut" }}
-              className="max-w-4xl"
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tight leading-[1.08] text-foreground text-balance max-w-3xl"
             >
-              <h1 className="text-[2.75rem] md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.04] text-foreground text-balance">
-                Transforming careers through{" "}
-                <span className="text-primary">world-class</span>{" "}
-                professional education.
-              </h1>
-            </motion.div>
+              Transforming careers through{" "}
+              <span className="text-primary">world-class</span>{" "}
+              professional education.
+            </motion.h1>
 
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.15, ease: "easeOut" }}
-              className="mt-8 flex flex-col sm:flex-row sm:items-end justify-between gap-8"
+              transition={{ duration: 0.6, delay: 0.14, ease: "easeOut" }}
+              className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6"
             >
-              <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl font-normal">
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg">
                 Evoke EduGlobal delivers globally recognised ACCA and finance programs that bridge the gap between learning and career success — for students, professionals, and organisations worldwide.
               </p>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 shrink-0">
                 <Button
-                  size="lg"
-                  className="h-11 px-7 text-sm font-semibold rounded-sm"
+                  size="default"
+                  className="h-10 px-5 text-sm font-medium rounded-sm"
                   asChild
                 >
                   <Link href="/courses">Explore Programs</Link>
                 </Button>
                 <Button
                   variant="outline"
-                  size="lg"
-                  className="h-11 px-7 text-sm font-semibold rounded-sm border-border bg-transparent hover:bg-muted"
+                  size="default"
+                  className="h-10 px-5 text-sm font-medium rounded-sm border-border bg-transparent hover:bg-muted"
                   asChild
                 >
                   <Link href="#team">Meet the Team</Link>
@@ -78,8 +75,8 @@ export default function AboutPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-            className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-border"
+            transition={{ duration: 0.6, delay: 0.28, ease: "easeOut" }}
+            className="grid grid-cols-2 md:grid-cols-4"
           >
             {[
               { value: "16+",    label: "Years of excellence" },
@@ -89,12 +86,12 @@ export default function AboutPage() {
             ].map((stat, i) => (
               <div
                 key={i}
-                className="flex flex-col gap-1 px-6 py-8 first:pl-0"
+                className="flex flex-col gap-1 py-7 pr-8 border-r border-border last:border-r-0 odd:border-b md:odd:border-b-0 [&:nth-child(2)]:border-b md:[&:nth-child(2)]:border-b-0"
               >
-                <span className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+                <span className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                   {stat.value}
                 </span>
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-[0.15em]">
                   {stat.label}
                 </span>
               </div>
