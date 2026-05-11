@@ -2,7 +2,6 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 import { fetchStudentShellProfile } from "@/features/student/lib/student-shell";
 
 export default async function LearnLayout({
@@ -34,7 +33,6 @@ export default async function LearnLayout({
       <SidebarInset className="min-h-screen bg-background pb-16 sm:pb-0">
         <main className="min-h-screen w-full bg-background">{children}</main>
       </SidebarInset>
-      <DashboardMobileNav />
     </SidebarProvider>
   );
 }
