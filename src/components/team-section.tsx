@@ -1,136 +1,223 @@
 "use client";
-
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { motion } from "motion/react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
-const IconInstagram = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-);
-const IconWhatsApp = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-12.7 8.38 8.38 0 0 1 3.8.9L21 3z"></path></svg>
+const InstagramIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g clipPath="url(#clip-instagram-team02)">
+      <path d="M12 2.162c3.204 0 3.584.012 4.849.07 1.17.054 1.805.249 2.228.413.56.218.96.478 1.38.898s.68.82.898 1.38c.164.423.36 1.058.413 2.228.058 1.265.07 1.645.07 4.849s-.012 3.584-.07 4.849c-.053 1.17-.249 1.805-.413 2.228a3.7 3.7 0 0 1-.898 1.38c-.42.42-.82.68-1.38.898-.423.164-1.058.36-2.228.413-1.265.058-1.645.07-4.849.07s-3.584-.012-4.849-.07c-1.17-.053-1.805-.249-2.228-.413a3.7 3.7 0 0 1-1.38-.898c-.42-.42-.68-.82-.898-1.38-.164-.423-.36-1.058-.413-2.228-.058-1.265-.07-1.645-.07-4.849s.012-3.584.07-4.849c.054-1.17.249-1.805.413-2.228.218-.56.478-.96.898-1.38s.82-.68 1.38-.898c.423-.164 1.058-.36 2.228-.413 1.265-.058 1.645-.07 4.849-.07M12 0C8.741 0 8.332.014 7.052.072 5.775.131 4.902.333 4.14.63a5.9 5.9 0 0 0-2.126 1.384A5.9 5.9 0 0 0 .63 4.14c-.297.763-.5 1.635-.558 2.912C.014 8.332 0 8.741 0 12s.014 3.668.072 4.948c.059 1.277.261 2.15.558 2.912.307.79.717 1.459 1.384 2.126A5.9 5.9 0 0 0 4.14 23.37c.763.297 1.635.5 2.912.558C8.332 23.986 8.741 24 12 24s3.668-.014 4.948-.072c1.277-.059 2.15-.261 2.912-.558a5.9 5.9 0 0 0 2.126-1.384 5.9 5.9 0 0 0 1.384-2.126c.297-.763.5-1.635.558-2.912.058-1.28.072-1.689.072-4.948s-.014-3.668-.072-4.948c-.059-1.277-.261-2.15-.558-2.912a5.9 5.9 0 0 0-1.384-2.126A5.9 5.9 0 0 0 19.86.63c-.763-.297-1.635-.5-2.912-.558C15.668.014 15.259 0 12 0m0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324M12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8m7.846-10.406a1.44 1.44 0 1 1-2.88 0 1.44 1.44 0 0 1 2.88 0" fill="currentColor" />
+    </g>
+    <defs>
+      <clipPath id="clip-instagram-team02">
+        <rect width="24" height="24" fill="white" />
+      </clipPath>
+    </defs>
+  </svg>
 );
 
-const teamMembers = [
+const LinkedinIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g clipPath="url(#clip-linkedin-team02)">
+      <path d="M13.633 13.633h-2.37V9.92c0-.885-.017-2.025-1.234-2.025-1.235 0-1.424.965-1.424 1.96v3.778h-2.37V5.998H8.51v1.043h.031a2.5 2.5 0 0 1 2.246-1.233c2.403 0 2.846 1.58 2.846 3.637zM3.56 4.954a1.376 1.376 0 1 1 0-2.751 1.376 1.376 0 0 1 0 2.751m1.185 8.679H2.372V5.998h2.373zM14.815.001H1.18A1.17 1.17 0 0 0 0 1.154v13.691A1.17 1.17 0 0 0 1.18 16h13.635A1.17 1.17 0 0 0 16 14.845V1.153A1.17 1.17 0 0 0 14.815 0" fill="currentColor" />
+    </g>
+    <defs>
+      <clipPath id="clip-linkedin-team02">
+        <rect width="16" height="16" fill="white" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+const DribbbleIcon = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g clipPath="url(#clip-dribbble-team02)">
+      <path d="M15.942 4.242C12.683 7.617 8.333 8.7 1.874 9.117m16.25 1.583c-5.517-1.175-10.117.833-13.65 5.267M7.133 2.292c3.642 5 5 7.85 6.667 14.766M18.333 10a8.333 8.333 0 1 1-16.666 0 8.333 8.333 0 0 1 16.666 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </g>
+    <defs>
+      <clipPath id="clip-dribbble-team02">
+        <rect width="20" height="20" fill="white" />
+      </clipPath>
+    </defs>
+  </svg>
+);
+
+type team = {
+  name: string;
+  role: string;
+  image: string;
+  socials: {
+    icon: React.ReactNode;
+    link: string;
+  }[];
+}[];
+
+const teamData: team = [
   {
-    name: "Joel Wish",
-    role: "LMS Tech Lead",
-    image: "https://i.pravatar.cc/400?img=53",
-    bio: "Visionary leader dedicated to democratizing global education access via advanced LMS.",
-    instagram: "#",
-    whatsapp: "#",
+    name: "Martha Finley",
+    role: "Creative Director",
+    image: "https://images.shadcnspace.com/assets/team/team-img-5.webp",
+    socials: [
+      {
+        icon: <InstagramIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <DribbbleIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <LinkedinIcon size={16} />,
+        link: "#",
+      },
+    ],
   },
   {
-    name: "Amara Okeke",
-    role: "Top Academic Achiever",
-    image: "https://i.pravatar.cc/400?img=26",
-    bio: "Consistent top performer and peer mentor in advanced computer science.",
-    instagram: "#",
-    whatsapp: "#",
+    name: "Floyd Miles",
+    role: "Marketing Strategist",
+    image: "https://images.shadcnspace.com/assets/team/team-img-6.webp",
+    socials: [
+      {
+        icon: <InstagramIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <DribbbleIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <LinkedinIcon size={16} />,
+        link: "#",
+      },
+    ],
   },
   {
-    name: "Gavin Blair",
-    role: "Operations Expert",
-    image: "https://i.pravatar.cc/400?img=54",
-    bio: "Software Architect specializing in scalable learning ecosystems.",
-    instagram: "#",
-    whatsapp: "#",
+    name: "Glenna Snyder",
+    role: "Lead Designer",
+    image: "https://images.shadcnspace.com/assets/team/team-img-7.webp",
+    socials: [
+      {
+        icon: <InstagramIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <DribbbleIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <LinkedinIcon size={16} />,
+        link: "#",
+      },
+    ],
   },
   {
-    name: "Emmy Bush",
-    role: "Community Growth",
-    image: "https://i.pravatar.cc/400?img=47",
-    bio: "Connecting thousands of students through innovative global study groups.",
-    instagram: "#",
-    whatsapp: "#",
-  },
-  {
-    name: "David Chen",
-    role: "AI Research Junior",
-    image: "https://i.pravatar.cc/400?img=33",
-    bio: "Implementing next-gen student assistant bots into the platform.",
-    instagram: "#",
-    whatsapp: "#",
-  },
-  {
-    name: "Zoe Martinez",
-    role: "Student Experience Lead",
-    image: "https://i.pravatar.cc/400?img=56",
-    bio: "Designing the most intuitive and engaging mobile learning pathways.",
-    instagram: "#",
-    whatsapp: "#",
-  },
-  {
-    name: "Marcus Thorne",
-    role: "Infrastructure Junior",
-    image: "https://i.pravatar.cc/400?img=13",
-    bio: "Ensuring 99.9% uptime for world-wide student lectures.",
-    instagram: "#",
-    whatsapp: "#",
-  },
-  {
-    name: "Aria Kim",
-    role: "Course Content Creator",
-    image: "https://i.pravatar.cc/400?img=44",
-    bio: "Building high-fidelity workshop content for creative professionals.",
-    instagram: "#",
-    whatsapp: "#",
+    name: "Albert Flores",
+    role: "UX/UI Developer",
+    image: "https://images.shadcnspace.com/assets/team/team-img-8.webp",
+    socials: [
+      {
+        icon: <InstagramIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <DribbbleIcon size={16} />,
+        link: "#",
+      },
+      {
+        icon: <LinkedinIcon size={16} />,
+        link: "#",
+      },
+    ],
   },
 ];
 
-export function TeamSection() {
+const Team = () => {
   return (
-    <section id="team" className="py-16 bg-muted/20 border-y">
-      <div className="container mx-auto px-6 max-w-7xl">
-        <div className="text-center mb-12 max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Meet Our Experts</h2>
-            <p className="text-muted-foreground text-sm">
-              World-class professionals providing the tools, technology, and mentorship for your educational success.
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {teamMembers.map((member, idx) => (
+    <section>
+      <div className="lg:py-20 sm:py-16 py-8">
+        <div className="mx-auto max-w-7xl px-4 lg:px-8 xl:px-16">
+          <div className="flex flex-col items-center justify-center gap-16">
             <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ y: -40, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: idx * 0.05 }}
+              transition={{
+                duration: 0.8,
+                ease: [0.21, 0.47, 0.32, 0.98],
+              }}
+              className="max-w-xl mx-auto flex flex-col items-center justify-center text-center gap-4"
             >
-              <Card className="overflow-hidden border-border/50 shadow-sm hover:shadow-md transition-shadow">
-                <div className="aspect-square bg-muted">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <CardContent className="p-4 text-center">
-                  <h4 className="font-semibold text-base">{member.name}</h4>
-                  <p className="text-xs text-muted-foreground mb-3">{member.role}</p>
-                  
-                  <div className="flex items-center justify-center gap-2">
-                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground" asChild>
-                      <a href={member.instagram}><IconInstagram className="w-4 h-4" /></a>
-                    </Button>
-                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-muted-foreground hover:text-foreground" asChild>
-                      <a href={member.whatsapp}><IconWhatsApp className="w-4 h-4" /></a>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <Badge variant={"outline"} className="px-3 py-1 h-auto text-sm">
+                Team
+              </Badge>
+              <div className="flex flex-col items-center justify-center gap-3">
+                <h2 className="text-3xl md:text-5xl font-semibold text-foreground">
+                  Meet our team
+                </h2>
+                <p className="text-base font-normal text-muted-foreground">
+                  Our team is committed to redefining digital experiences
+                  through innovative web solutions while fostering a diverse and
+                  collaborative environment.
+                </p>
+              </div>
             </motion.div>
-          ))}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+              {teamData?.map((value, index) => {
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ y: 40, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{
+                      duration: 0.8,
+                      delay: index * 0.1,
+                      ease: [0.21, 0.47, 0.32, 0.98],
+                    }}
+                    className="group flex flex-col items-start gap-6"
+                  >
+                    <div className="relative w-full h-80 overflow-hidden">
+                      <img
+                        src={value.image}
+                        alt="team-img"
+                        height={325}
+                        width={270}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gray-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-end p-5">
+                        <div className="flex gap-2">
+                          {value.socials.map((social, idx) => (
+                            <a
+                              key={idx}
+                              href={social.link}
+                              target="_blank"
+                              className="flex w-fit bg-background p-3 rounded-full hover:opacity-80 transition-opacity duration-300"
+                            >
+                              {social.icon}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-xl font-medium text-foreground">
+                        {value.name}
+                      </h3>
+                      <p className="text-sm font-normal text-muted-foreground">
+                        {value.role}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
-}
+};
+
+export default Team;
+

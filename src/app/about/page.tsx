@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SuccessTimeline } from "@/components/success-timeline";
 import { LmsClassesStripSection } from "@/components/lms-classes-strip-section";
-import { TeamSection } from "@/components/team-section";
+import TeamSection from "@/components/team-section";
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AboutPage() {
@@ -90,7 +90,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-6 py-16">
           <div className="max-w-[1220px] mx-auto">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center mb-16">
-              
+
               {/* LEFT COLUMN: COMPLEX IMAGE GRID */}
               <div className="relative grid grid-cols-2 gap-4">
                 {/* Main Large Image */}
