@@ -6,6 +6,7 @@ import {
   IconVolume2,
 } from "@tabler/icons-react";
 import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 
 /* ================================================================ */
 /*  Props                                                            */
@@ -20,6 +21,8 @@ export interface YtcnVolumeProps {
   onVolumeChange: (vol: number) => void;
   /** Toggle mute on/off */
   onToggleMute: () => void;
+  /** Whether the device is touch-enabled */
+  isTouchDevice?: boolean;
 }
 
 /* ================================================================ */
@@ -38,6 +41,7 @@ export function YtcnVolume({
   isMuted,
   onVolumeChange,
   onToggleMute,
+  isTouchDevice,
 }: YtcnVolumeProps): React.JSX.Element {
   const VolumeIcon =
     isMuted || volume === 0
@@ -63,7 +67,12 @@ export function YtcnVolume({
       >
         <VolumeIcon className="size-5" />
       </button>
-      <div className="w-0 overflow-hidden transition-[width] duration-200 group-hover/volume:w-20">
+      <div
+        className={cn(
+          "overflow-hidden transition-[width] duration-200",
+          isTouchDevice ? "w-20" : "w-0 group-hover/volume:w-20"
+        )}
+      >
         <Slider
           value={[isMuted ? 0 : volume]}
           max={100}

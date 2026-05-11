@@ -88,7 +88,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   };
 
   return (
-    <Sidebar variant="inset">
+    <Sidebar variant="inset" className="hidden sm:flex">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

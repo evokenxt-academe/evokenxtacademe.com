@@ -1,11 +1,11 @@
 # Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-05-11)
 
 ## Corpus Check
-- 632 files · ~478,690 words
+- 633 files · ~479,417 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1914 nodes · 2182 edges · 413 communities detected
+- 1917 nodes · 2185 edges · 413 communities detected
 - Extraction: 77% EXTRACTED · 23% INFERRED · 0% AMBIGUOUS · INFERRED: 494 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -428,7 +428,7 @@
 1. `Select()` - 203 edges
 2. `POST()` - 92 edges
 3. `createClient()` - 74 edges
-4. `GET()` - 68 edges
+4. `GET()` - 69 edges
 5. `DELETE()` - 34 edges
 6. `handleError()` - 34 edges
 7. `String()` - 30 edges
@@ -438,21 +438,21 @@
 
 ## Surprising Connections (you probably didn't know these)
 - `GET()` --calls--> `createLookupMap()`  [INFERRED]
-  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → src\features\admin\lib\admin-normalizers.ts
+  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\status\route.ts → src\features\admin\lib\admin-normalizers.ts
 - `GET()` --calls--> `computeMonthlySeries()`  [INFERRED]
-  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → src\features\admin\lib\admin-normalizers.ts
+  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\status\route.ts → src\features\admin\lib\admin-normalizers.ts
 - `GET()` --calls--> `getChannelInfo()`  [INFERRED]
-  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → C:\Users\vishw\Desktop\evokeeduglobal\src\lib\youtube\api.ts
+  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\status\route.ts → C:\Users\vishw\Desktop\evokeeduglobal\src\lib\youtube\api.ts
 - `GET()` --calls--> `extractYoutubeVideoId()`  [INFERRED]
-  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → src\features\admin\course\components\course-detail-page.tsx
+  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\status\route.ts → src\features\admin\course\components\course-detail-page.tsx
 - `GET()` --calls--> `extractYoutubeVideoId()`  [INFERRED]
-  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\oauth\callback\route.ts → C:\Users\vishw\Desktop\evokeeduglobal\src\features\admin\course\components\youtube-video-player.tsx
+  C:\Users\vishw\Desktop\evokeeduglobal\src\app\api\youtube\status\route.ts → C:\Users\vishw\Desktop\evokeeduglobal\src\features\admin\course\components\youtube-video-player.tsx
 
 ## Communities
 
 ### Community 0 - "Community 0"
 Cohesion: 0.02
-Nodes (145): getActiveEnrollments(), getCertificatesIssued(), getDailyRevenueData(), getMonthRevenue(), getPreviousMonthRevenue(), getRecentPayments(), getStudentsByCountry(), getTotalStudents() (+137 more)
+Nodes (121): getActiveEnrollments(), getCertificatesIssued(), getDailyRevenueData(), getMonthRevenue(), getPreviousMonthRevenue(), getRecentPayments(), getStudentsByCountry(), getTotalStudents() (+113 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.02
@@ -464,23 +464,23 @@ Nodes (54): createAdminClient(), extractAnswers(), inferSectionType(), letterToI
 
 ### Community 3 - "Community 3"
 Cohesion: 0.03
-Nodes (40): extractYoutubeVideoId(), formatTimestamp(), deleteCoursePricing(), updateCoursePricing(), formatDurationShort(), formatFullDuration(), computeDaysToExam(), computeStreak() (+32 more)
+Nodes (40): extractYoutubeVideoId(), formatTimestamp(), formatDurationShort(), formatFullDuration(), computeDaysToExam(), computeStreak(), daysBetween(), fetchStudentDashboardV21() (+32 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.04
-Nodes (51): isAllowlistedAdminEmail(), requireAdmin(), addLecture(), addResource(), addSection(), calculateProgress(), createCourse(), deleteCourse() (+43 more)
+Cohesion: 0.03
+Nodes (66): handleAddChapter(), handleAddLecture(), handleDeleteChapter(), handleDeleteLecture(), handleDragEnd(), handleReorderLectures(), handleTogglePublished(), uploadResourceFile() (+58 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.04
 Nodes (22): getLectureStatus(), buildActivityFeed(), computeQuizScoreTimeline(), computeWeeklyActivity(), dayLabel(), fetchDashboardPageData(), isoDate(), formatWatchTimeCompact() (+14 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.1
-Nodes (27): fmtDuration(), fmtSectionDuration(), getResourceKind(), isPdfResource(), handleCreate(), handleStart(), buildYoutubeEmbedUrl(), computeCourseProgress() (+19 more)
+Cohesion: 0.07
+Nodes (41): isAllowlistedAdminEmail(), requireAdmin(), addLecture(), addResource(), addSection(), calculateProgress(), createCourse(), deleteCourse() (+33 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.1
-Nodes (27): bulkSetDifficulty(), bulkVerifyBankQuestions(), deleteBankQuestion(), getBankDashboardStats(), getBankQuestionById(), getBankQuestions(), saveBankQuestion(), verifyBankQuestion() (+19 more)
+Nodes (27): fmtDuration(), fmtSectionDuration(), getResourceKind(), isPdfResource(), handleCreate(), handleStart(), buildYoutubeEmbedUrl(), computeCourseProgress() (+19 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.08
@@ -511,76 +511,76 @@ Cohesion: 0.14
 Nodes (11): buildUploadError(), computeCourseTotalDuration(), fetchYouTubeVideoDuration(), formatSpeed(), readResponsePayload(), submitCourse(), uploadVideoToYouTube(), updateLecture() (+3 more)
 
 ### Community 15 - "Community 15"
+Cohesion: 0.19
+Nodes (15): bulkSetDifficulty(), bulkVerifyBankQuestions(), deleteBankQuestion(), getBankDashboardStats(), getBankQuestionById(), getBankQuestions(), saveBankQuestion(), verifyBankQuestion() (+7 more)
+
+### Community 16 - "Community 16"
 Cohesion: 0.12
 Nodes (0): 
 
-### Community 16 - "Community 16"
+### Community 17 - "Community 17"
 Cohesion: 0.34
 Nodes (14): computeMonthlySeries(), createLookupMap(), normalizeChatMessage(), normalizeCourse(), normalizeEnrollment(), normalizeLiveStream(), normalizePayment(), normalizeQuiz() (+6 more)
-
-### Community 17 - "Community 17"
-Cohesion: 0.14
-Nodes (9): getActivePolls(), getStreamById(), getStreamChat(), getStudentLiveStreams(), registerForStream(), sendChatMessage(), handleKeyDown(), handleSend() (+1 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.14
 Nodes (4): extractYoutubeVideoId(), getInitials(), ProfileHeader(), formatExamHeaderLabel()
 
 ### Community 19 - "Community 19"
-Cohesion: 0.26
-Nodes (9): getCourseBySlug(), getLectureProgress(), getPublishedCourses(), getRecentActivity(), getSectionsWithLectures(), getStudentCertificates(), getStudentEnrollments(), getUpcomingStreams() (+1 more)
-
-### Community 20 - "Community 20"
 Cohesion: 0.18
 Nodes (2): fetchStream(), handleSave()
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.31
 Nodes (8): QuizPage(), createQuizAttempt(), fetchQuizForAttempt(), int(), num(), str(), strOrNull(), submitQuizAttempt()
 
-### Community 22 - "Community 22"
+### Community 21 - "Community 21"
 Cohesion: 0.27
 Nodes (6): AttemptCard(), getScorePercent(), getStatusClasses(), getStatusLabel(), getTypeBadgeClasses(), isPassed()
 
+### Community 22 - "Community 22"
+Cohesion: 0.22
+Nodes (0): 
+
 ### Community 23 - "Community 23"
 Cohesion: 0.22
-Nodes (3): EditCourseTabs(), extractYouTubeId(), VideoPlayer()
+Nodes (0): 
 
 ### Community 24 - "Community 24"
 Cohesion: 0.22
-Nodes (0): 
+Nodes (2): votePoll(), handleVote()
 
 ### Community 25 - "Community 25"
 Cohesion: 0.22
-Nodes (0): 
-
-### Community 26 - "Community 26"
-Cohesion: 0.22
-Nodes (2): votePoll(), handleVote()
-
-### Community 27 - "Community 27"
-Cohesion: 0.22
 Nodes (4): InstallBanner(), usePWA(), PWAInstallTrigger(), usePWAInstallAfterLogin()
 
-### Community 28 - "Community 28"
+### Community 26 - "Community 26"
 Cohesion: 0.31
 Nodes (6): handleParse(), extractFields(), extractOptions(), parseFormattedText(), parseNumberedBlock(), parseTypedBlock()
 
+### Community 27 - "Community 27"
+Cohesion: 0.22
+Nodes (0): 
+
+### Community 28 - "Community 28"
+Cohesion: 0.22
+Nodes (0): 
+
 ### Community 29 - "Community 29"
-Cohesion: 0.22
-Nodes (0): 
-
-### Community 30 - "Community 30"
-Cohesion: 0.22
-Nodes (0): 
-
-### Community 31 - "Community 31"
 Cohesion: 0.28
 Nodes (4): handleDrop(), handleFileSelect(), handleImport(), removeFile()
 
-### Community 32 - "Community 32"
+### Community 30 - "Community 30"
+Cohesion: 0.22
+Nodes (3): EditCourseTabs(), extractYouTubeId(), VideoPlayer()
+
+### Community 31 - "Community 31"
 Cohesion: 0.29
 Nodes (2): AttemptCard(), getTypeBadgeClasses()
+
+### Community 32 - "Community 32"
+Cohesion: 0.25
+Nodes (0): 
 
 ### Community 33 - "Community 33"
 Cohesion: 0.25
@@ -591,48 +591,48 @@ Cohesion: 0.25
 Nodes (0): 
 
 ### Community 35 - "Community 35"
-Cohesion: 0.25
-Nodes (0): 
-
-### Community 36 - "Community 36"
 Cohesion: 0.5
 Nodes (7): cleanLine(), extractAnswerKeys(), inferDifficulty(), inferQuestionType(), normalizeQuestionStart(), parseQuestionsFromRawText(), toParsedQuestion()
 
+### Community 36 - "Community 36"
+Cohesion: 0.29
+Nodes (8): Data Transformation Layer, Courses Feature, Next.js (App Router), React Query (TanStack Query), shadcn/ui, Supabase, Tailwind CSS, Course Detail Page Refactor Rationale
+
 ### Community 37 - "Community 37"
 Cohesion: 0.29
-Nodes (6): archiveCourse(), createCourse(), getAllCourses(), getCourseById(), updateCourse(), handleSubmit()
+Nodes (0): 
 
 ### Community 38 - "Community 38"
 Cohesion: 0.29
-Nodes (8): Data Transformation Layer, Courses Feature, Next.js (App Router), React Query (TanStack Query), shadcn/ui, Supabase, Tailwind CSS, Course Detail Page Refactor Rationale
+Nodes (0): 
 
 ### Community 39 - "Community 39"
 Cohesion: 0.29
 Nodes (0): 
 
 ### Community 40 - "Community 40"
-Cohesion: 0.29
-Nodes (0): 
-
-### Community 41 - "Community 41"
-Cohesion: 0.29
-Nodes (0): 
-
-### Community 42 - "Community 42"
 Cohesion: 0.33
 Nodes (2): SidebarMenuButton(), useSidebar()
 
-### Community 43 - "Community 43"
+### Community 41 - "Community 41"
 Cohesion: 0.29
 Nodes (2): useFullscreen(), useYtcnPlayer()
 
-### Community 44 - "Community 44"
+### Community 42 - "Community 42"
 Cohesion: 0.29
 Nodes (0): 
 
-### Community 45 - "Community 45"
+### Community 43 - "Community 43"
+Cohesion: 0.33
+Nodes (0): 
+
+### Community 44 - "Community 44"
 Cohesion: 0.4
 Nodes (3): Alert(), handleDrop(), handleFileSelect()
+
+### Community 45 - "Community 45"
+Cohesion: 0.33
+Nodes (0): 
 
 ### Community 46 - "Community 46"
 Cohesion: 0.33
@@ -640,7 +640,7 @@ Nodes (0):
 
 ### Community 47 - "Community 47"
 Cohesion: 0.33
-Nodes (0): 
+Nodes (3): ProfileForm(), useProfile(), useUpdateProfile()
 
 ### Community 48 - "Community 48"
 Cohesion: 0.33
@@ -648,23 +648,23 @@ Nodes (0):
 
 ### Community 49 - "Community 49"
 Cohesion: 0.33
-Nodes (3): ProfileForm(), useProfile(), useUpdateProfile()
+Nodes (2): useLiveStreamsList(), useLiveStreamsRealtime()
 
 ### Community 50 - "Community 50"
 Cohesion: 0.33
-Nodes (0): 
+Nodes (2): getFirebaseMessaging(), requestAndGetFcmToken()
 
 ### Community 51 - "Community 51"
 Cohesion: 0.33
-Nodes (2): useLiveStreamsList(), useLiveStreamsRealtime()
+Nodes (6): Evoke EduGlobal Logo, Globe Icon (O in GLOBAL), Shield with Bar Chart and Rising Arrow, LEARN. LEAD. SUCCEED., EDUGLOBAL, EVOKE
 
 ### Community 52 - "Community 52"
-Cohesion: 0.33
-Nodes (2): getFirebaseMessaging(), requestAndGetFcmToken()
+Cohesion: 0.4
+Nodes (0): 
 
 ### Community 53 - "Community 53"
-Cohesion: 0.33
-Nodes (6): Evoke EduGlobal Logo, Globe Icon (O in GLOBAL), Shield with Bar Chart and Rising Arrow, LEARN. LEAD. SUCCEED., EDUGLOBAL, EVOKE
+Cohesion: 0.5
+Nodes (3): sendChatMessage(), handleKeyDown(), handleSend()
 
 ### Community 54 - "Community 54"
 Cohesion: 0.4
@@ -675,20 +675,20 @@ Cohesion: 0.4
 Nodes (0): 
 
 ### Community 56 - "Community 56"
-Cohesion: 0.4
-Nodes (0): 
-
-### Community 57 - "Community 57"
 Cohesion: 0.5
 Nodes (2): CarouselNext(), useCarousel()
 
-### Community 58 - "Community 58"
+### Community 57 - "Community 57"
 Cohesion: 0.7
 Nodes (4): FormControl(), FormDescription(), FormMessage(), useFormField()
 
-### Community 59 - "Community 59"
+### Community 58 - "Community 58"
 Cohesion: 0.6
 Nodes (3): Popover(), PopoverDescription(), PopoverTrigger()
+
+### Community 59 - "Community 59"
+Cohesion: 0.4
+Nodes (0): 
 
 ### Community 60 - "Community 60"
 Cohesion: 0.4
@@ -711,20 +711,20 @@ Cohesion: 0.4
 Nodes (0): 
 
 ### Community 65 - "Community 65"
-Cohesion: 0.4
-Nodes (0): 
-
-### Community 66 - "Community 66"
 Cohesion: 0.6
 Nodes (3): extractYouTubeId(), loadYouTubeAPI(), useYouTubePlayer()
 
-### Community 67 - "Community 67"
+### Community 66 - "Community 66"
 Cohesion: 0.5
 Nodes (3): DashboardShell(), useDashboardData(), useRealtimeUpdates()
 
-### Community 68 - "Community 68"
+### Community 67 - "Community 67"
 Cohesion: 0.4
 Nodes (0): 
+
+### Community 68 - "Community 68"
+Cohesion: 0.5
+Nodes (1): fetchData()
 
 ### Community 69 - "Community 69"
 Cohesion: 0.5
@@ -732,7 +732,7 @@ Nodes (1): formatCurrency()
 
 ### Community 70 - "Community 70"
 Cohesion: 0.5
-Nodes (1): InstructorCard()
+Nodes (0): 
 
 ### Community 71 - "Community 71"
 Cohesion: 0.5
@@ -748,7 +748,7 @@ Nodes (0):
 
 ### Community 74 - "Community 74"
 Cohesion: 0.5
-Nodes (2): DashboardNavbar(), useNotifications()
+Nodes (0): 
 
 ### Community 75 - "Community 75"
 Cohesion: 0.5
@@ -760,11 +760,11 @@ Nodes (0):
 
 ### Community 77 - "Community 77"
 Cohesion: 0.5
-Nodes (2): ImageUploadZone(), useR2Upload()
+Nodes (0): 
 
 ### Community 78 - "Community 78"
-Cohesion: 0.5
-Nodes (0): 
+Cohesion: 0.67
+Nodes (2): cn(), DropdownMenu()
 
 ### Community 79 - "Community 79"
 Cohesion: 0.5
@@ -775,8 +775,8 @@ Cohesion: 0.5
 Nodes (0): 
 
 ### Community 81 - "Community 81"
-Cohesion: 0.67
-Nodes (2): cn(), DropdownMenu()
+Cohesion: 0.5
+Nodes (0): 
 
 ### Community 82 - "Community 82"
 Cohesion: 0.5
@@ -796,7 +796,7 @@ Nodes (0):
 
 ### Community 86 - "Community 86"
 Cohesion: 0.5
-Nodes (0): 
+Nodes (1): InstructorCard()
 
 ### Community 87 - "Community 87"
 Cohesion: 0.5
@@ -820,15 +820,15 @@ Nodes (0):
 
 ### Community 92 - "Community 92"
 Cohesion: 0.5
-Nodes (0): 
+Nodes (2): ResponsiveAdminWrapper(), useMediaQuery()
 
 ### Community 93 - "Community 93"
 Cohesion: 0.5
-Nodes (0): 
+Nodes (2): DashboardNavbar(), useNotifications()
 
 ### Community 94 - "Community 94"
 Cohesion: 0.5
-Nodes (2): ResponsiveAdminWrapper(), useMediaQuery()
+Nodes (2): ImageUploadZone(), useR2Upload()
 
 ### Community 95 - "Community 95"
 Cohesion: 0.5
@@ -2647,12 +2647,12 @@ Nodes (1): Vercel Logo
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Select()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 37`, `Community 12`, `Community 17`, `Community 19`, `Community 20`, `Community 21`, `Community 60`?**
-  _High betweenness centrality (0.132) - this node is a cross-community bridge._
-- **Why does `POST()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 36`, `Community 21`, `Community 28`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
-- **Why does `createClient()` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 14`, `Community 21`?**
-  _High betweenness centrality (0.049) - this node is a cross-community bridge._
+- **Why does `Select()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 68`, `Community 6`, `Community 5`, `Community 7`, `Community 12`, `Community 15`, `Community 19`, `Community 20`, `Community 59`?**
+  _High betweenness centrality (0.100) - this node is a cross-community bridge._
+- **Why does `POST()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 35`, `Community 5`, `Community 6`, `Community 7`, `Community 20`, `Community 26`?**
+  _High betweenness centrality (0.060) - this node is a cross-community bridge._
+- **Why does `GET()` connect `Community 5` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 6`, `Community 7`, `Community 14`, `Community 17`, `Community 18`, `Community 20`?**
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
 - **Are the 202 inferred relationships involving `Select()` (e.g. with `run()` and `run()`) actually correct?**
   _`Select()` has 202 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 30 inferred relationships involving `POST()` (e.g. with `requireAdmin()` and `Select()`) actually correct?**
