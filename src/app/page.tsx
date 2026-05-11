@@ -20,7 +20,6 @@ export default function Home() {
       <Testimonials01 />
       <Separator />
       <FaqSection />
-      <LmsClassesStripSection />
       <HowProcessSection />
     </main>
   );
