@@ -28,7 +28,7 @@ export type Users = {
 }
 
 function ActionsCell({ userId, role }: { userId: string; role: string }) {
-    const supabase = createClient()
+    const supabase = createClient() as any
     const query = useQueryClient()
 
 

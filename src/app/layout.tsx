@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { GlobalLayoutWrapper } from "@/components/global-layout-wrapper";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
@@ -18,9 +19,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Evoke Edu Global — ACCA Courses & Professional Qualifications",
-  description: "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate. Study online, learn at your pace, succeed globally.",
+  title: "Evokenxt — ACCA Courses & Professional Qualifications",
+  description:
+    "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate. Study online, learn at your pace, succeed globally.",
   manifest: "/manifest.json",
+  applicationName: "Evokenxt",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Evokenxt",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#5CC593",
 };
 
 export default function RootLayout({
@@ -41,10 +56,25 @@ export default function RootLayout({
         inter.variable,
       )}
     >
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <head>
+        {/* PWA & Apple Touch Icons */}
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link
+          rel="apple-touch-icon"
+          sizes="192x192"
+          href="/icons/icon-192x192.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="512x512"
+          href="/icons/icon-512x512.png"
+        />
+      </head>
+      <body className="min-h-full flex flex-col pb-16 sm:pb-0" suppressHydrationWarning>
         <Providers>
           <GlobalLayoutWrapper>{children}</GlobalLayoutWrapper>
         </Providers>
+        <DashboardMobileNav />
         <Toaster />
       </body>
     </html>

@@ -39,7 +39,7 @@ export default async function DashboardLayout({
   return (
     <SidebarProvider>
       <DashboardSidebar user={sidebarUser} />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="bg-background pb-16 sm:pb-0">
         <DashboardNavbar user={navbarUser} />
         {children}
       </SidebarInset>

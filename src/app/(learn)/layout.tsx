@@ -30,7 +30,7 @@ export default async function LearnLayout({
   return (
     <SidebarProvider>
       <DashboardSidebar user={sidebarUser} />
-      <SidebarInset className="min-h-screen bg-background">
+      <SidebarInset className="min-h-screen bg-background pb-16 sm:pb-0">
         <main className="min-h-screen w-full bg-background">{children}</main>
       </SidebarInset>
     </SidebarProvider>

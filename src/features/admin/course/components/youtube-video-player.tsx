@@ -24,27 +24,7 @@ const QUALITY_ORDER = [
   "small",
 ];
 
-type YoutubePlayerApi = {
-  getIframe: () => HTMLIFrameElement | null;
-  setPlaybackQuality: (quality: string) => void;
-  getAvailableQualityLevels: () => string[];
-  getPlaybackQuality: () => string;
-  getDuration: () => number;
-  getCurrentTime: () => number;
-  getVideoLoadedFraction: () => number;
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
-  playVideo: () => void;
-  pauseVideo: () => void;
-  mute: () => void;
-  unMute: () => void;
-  setVolume: (volume: number) => void;
-  loadVideoById: (params: {
-    videoId: string;
-    startSeconds?: number;
-    suggestedQuality?: string;
-  }) => void;
-  destroy: () => void;
-};
+type YoutubePlayerApi = any;
 
 type YoutubeNamespace = {
   Player: new (

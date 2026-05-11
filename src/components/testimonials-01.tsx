@@ -26,7 +26,7 @@ const TESTIMONIALS_1: TestimonialType[] = [
     authorName: "Sarah J.",
     authorTagline: "ACCA Affiliate",
     url: "#",
-    quote: "Evoke EduGlobal transformed how I study. The recorded sessions are crystal clear, and the tutors explain complex topics beautifully.",
+    quote: "Evokenxt transformed how I study. The recorded sessions are crystal clear, and the tutors explain complex topics beautifully.",
   },
   {
     authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026703d",

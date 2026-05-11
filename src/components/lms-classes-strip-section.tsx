@@ -60,8 +60,8 @@ export function LmsClassesStripSection() {
               World-Class Learning <br />
               <span className="text-primary">Experience</span>
             </h2>
-            <p className="text-base md:text-lg text-zinc-900 dark:text-zinc-100 font-bold max-w-md drop-shadow-md">
-              Join thousands of students achieving professional excellence. Evoke EduGlobal delivers expert-led courses, rigorous mock exams, and unparalleled support to accelerate your career.
+            <p className="mt-4 text-base md:text-lg text-zinc-900 dark:text-zinc-100 font-medium max-w-md drop-shadow-md leading-relaxed">
+              Join thousands of students achieving professional excellence. Evoke EduGlobal goes beyond video lectures with custom mock exams, real-time performance analytics, and expert-led support.
             </p>
           </motion.div>
 

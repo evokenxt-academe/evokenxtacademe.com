@@ -37,7 +37,7 @@ export default function ContactPage() {
                         </div>
                         <div>
                             <h4 className="font-bold text-slate-900">Email</h4>
-                            <p className="text-slate-600">contact@evokeeduglobal.com</p>
+                            <p className="text-slate-600">contact@evokenxt.com</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-4">

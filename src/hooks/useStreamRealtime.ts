@@ -9,47 +9,85 @@ export function useStreamRealtime(streamId: string) {
   const [viewers, setViewers] = useState(0);
   const [isLive, setIsLive] = useState(false);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const channelRef = useRef<any>(null);
-  const channelKeyRef = useRef(`ch_${Math.random().toString(36).slice(2, 10)}`);
 
   useEffect(() => {
     if (!streamId) return;
 
-    const channelName = `stream:${streamId}:${channelKeyRef.current}`;
-    channelRef.current = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "live_streams",
-          filter: `id=eq.${streamId}`,
-        },
-        (payload: any) => {
-          const stream = payload.new;
-          if (!stream) return;
-          setViewers(stream.concurrent_viewers ?? 0);
-          setIsLive(stream.status === "live");
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `live_stream_id=eq.${streamId}`,
-        },
-        (payload: any) => {
-          setChatMessages((prev) => [...prev, payload.new]);
-        },
-      )
-      .subscribe();
+    let mounted = true;
+    let channel: any = null;
+    const channelName = `stream:${streamId}`;
+
+    const setup = async () => {
+      // Remove any existing channels with the same name to prevent the "after subscribe()" error
+      const existingChannels = supabase.getChannels().filter(c => c.topic === `realtime:${channelName}` || c.topic === channelName);
+      for (const c of existingChannels) {
+        await supabase.removeChannel(c);
+      }
+
+      if (!mounted) return;
+
+      channel = supabase.channel(channelName);
+      
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const state = channel.presenceState();
+          const count = Object.keys(state).length;
+          setViewers(count);
+        })
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "live_streams",
+            filter: `id=eq.${streamId}`,
+          },
+          (payload: any) => {
+            const stream = payload.new;
+            if (!stream) return;
+            setIsLive(stream.status === "live");
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "chat_messages",
+            filter: `live_stream_id=eq.${streamId}`,
+          },
+          (payload: any) => {
+            const newMsg = payload.new;
+            if (newMsg.user_id) {
+              supabase
+                .from("users")
+                .select("name, avatar")
+                .eq("id", newMsg.user_id)
+                .single()
+                .then(({ data }) => {
+                  if (data) newMsg.users = data;
+                  setChatMessages((prev) => [...prev, newMsg]);
+                });
+            } else {
+              setChatMessages((prev) => [...prev, newMsg]);
+            }
+          },
+        )
+        .subscribe(async (status: string) => {
+          if (status === 'SUBSCRIBED' && mounted) {
+            await channel.track({
+              online_at: new Date().toISOString(),
+            });
+          }
+        });
+    };
+
+    setup();
 
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
+      mounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
   }, [streamId]);

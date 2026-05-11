@@ -24,6 +24,7 @@ export function LiveChat({ streamId, isLive }: LiveChatProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollViewportRef = useRef<HTMLDivElement>(null);
@@ -38,7 +39,12 @@ export function LiveChat({ streamId, isLive }: LiveChatProps) {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
+      if (data.user?.id) {
+        setUserId(data.user.id);
+        supabase.from("users").select("name, avatar").eq("id", data.user.id).single().then(({ data: user }) => {
+          setCurrentUser(user);
+        });
+      }
     });
   }, [supabase]);
 
@@ -106,7 +112,9 @@ export function LiveChat({ streamId, isLive }: LiveChatProps) {
       id: tempId,
       message: text,
       created_at: new Date().toISOString(),
-      author_name: "You",
+      author_name: currentUser?.name ?? "User",
+      author_avatar: currentUser?.avatar ?? null,
+      user_id: userId,
       is_optimistic: true,
     };
     setMessages((prev) => [...prev, optimisticMsg]);
@@ -152,12 +160,13 @@ export function LiveChat({ streamId, isLive }: LiveChatProps) {
                 <Avatar className="mt-0.5 size-7 shrink-0">
                   <AvatarImage src={msg.users?.avatar ?? msg.author_avatar ?? undefined} />
                   <AvatarFallback className="text-[10px]">
-                    {(msg.users?.name ?? msg.author_name ?? "Y").charAt(0).toUpperCase()}
+                    {(msg.users?.name ?? msg.author_name ?? "U").charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
-                  <p className="mb-1 text-xs font-medium leading-none text-foreground">
-                    {msg.users?.name ?? msg.author_name ?? "You"}
+                  <p className="mb-1 text-xs font-medium leading-none text-foreground flex items-center gap-1.5">
+                    {msg.users?.name ?? msg.author_name ?? "User"}
+                    {userId && msg.user_id === userId && <span className="text-muted-foreground font-normal text-[10px] bg-muted px-1 rounded">(You)</span>}
                   </p>
                   <p className="wrap-break-word text-sm text-foreground/80 whitespace-pre-wrap">{msg.message}</p>
                   <p className="mt-0.5 text-[10px] text-muted-foreground">
@@ -185,7 +194,7 @@ export function LiveChat({ streamId, isLive }: LiveChatProps) {
         )}
       </div>
 
-      {isLive && userId ? (
+      {userId ? (
         <div className="flex gap-2 border-t p-3.5 shrink-0 bg-card z-10">
           <Textarea
             value={input}
@@ -209,7 +218,7 @@ export function LiveChat({ streamId, isLive }: LiveChatProps) {
       ) : (
         <div className="border-t p-3.5 text-center shrink-0 bg-card z-10">
           <p className="text-xs text-muted-foreground">
-            Chat is only available during live sessions
+            Please sign in to chat
           </p>
         </div>
       )}

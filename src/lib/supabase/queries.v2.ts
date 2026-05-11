@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Evoke EduGlobal LMS v2.0.0 - Supabase Query Layer
+ * Evokenxt LMS v2.0.0 - Supabase Query Layer
  * ============================================================
  * Strict RLS-aware queries with full type safety
  * All queries respect Row-Level Security policies

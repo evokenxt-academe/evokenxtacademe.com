@@ -60,7 +60,7 @@ export default function AboutPage() {
             <div className="mb-6">
               <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground uppercase tracking-widest font-semibold">
                 <span className="w-8 h-[2px] bg-primary" />
-                About Evoke EduGlobal
+                About Evokenxt
               </span>
             </div>
 
@@ -209,7 +209,7 @@ export default function AboutPage() {
               </div>
               <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-[1.05] mb-6">
                 The Values That <br />
-                <span className="text-primary">Drive EduGlobal.</span>
+                <span className="text-primary">Drive Evokenxt.</span>
               </h2>
             </div>
             <p className="text-muted-foreground font-medium text-lg max-w-sm leading-relaxed mb-4">

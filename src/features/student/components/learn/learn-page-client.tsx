@@ -253,131 +253,131 @@ export function LearnPageClient({
       <DashboardNavbar user={navbarUser} />
 
       <div className="flex w-full flex-col lg:h-[calc(100vh-65px)] lg:flex-row">
-      {/* ─── Main content area ─────────────────────────────────── */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <div className="flex flex-col gap-0">
-          <div className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/95 px-3 py-2 backdrop-blur sm:px-4 lg:hidden">
-            <h1 className="truncate text-sm font-semibold">{course.title}</h1>
-            <Badge variant="secondary" className="text-[11px]">
-              {completedCount}/{flatLectures.length} completed
-            </Badge>
-          </div>
+        {/* ─── Main content area ─────────────────────────────────── */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+          <div className="flex flex-col gap-0">
+            <div className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/95 px-3 py-2 backdrop-blur sm:px-4 lg:hidden">
+              <h1 className="truncate text-sm font-semibold">{course.title}</h1>
+              <Badge variant="secondary" className="text-[11px]">
+                {completedCount}/{flatLectures.length} completed
+              </Badge>
+            </div>
 
-          {/* Video Player */}
-          <div className=" px-0 py-0 sm:px-4 sm:pt-4 lg:px-8 lg:pt-6">
-            <VideoPlayer
-              lecture={currentLecture}
-              isCompleted={isCurrentCompleted}
-              isMarkingComplete={updateProgress.isPending}
-              onMarkComplete={handleMarkComplete}
-              onVideoEnded={handleVideoEnded}
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              sectionTitle={currentFlat?.chapterTitle ?? ""}
-              onTimeUpdate={handleTimeUpdate}
-              initialTimeSeconds={activeLectureId === initialLectureId ? (initialTimeSeconds ?? null) : null}
-            />
-          </div>
+            {/* Video Player */}
+            <div className=" px-0 py-0 sm:px-4 sm:pt-4 lg:px-8 lg:pt-6">
+              <VideoPlayer
+                lecture={currentLecture}
+                isCompleted={isCurrentCompleted}
+                isMarkingComplete={updateProgress.isPending}
+                onMarkComplete={handleMarkComplete}
+                onVideoEnded={handleVideoEnded}
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                sectionTitle={currentFlat?.chapterTitle ?? ""}
+                onTimeUpdate={handleTimeUpdate}
+                initialTimeSeconds={activeLectureId === initialLectureId ? (initialTimeSeconds ?? null) : null}
+              />
+            </div>
 
-          {/* Lecture info + controls below player */}
-          <div className="flex flex-col gap-4 bg-background px-3 py-4 sm:px-4 lg:px-8 lg:py-6">
-            {/* Section + title */}
-            {currentLecture && (
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {currentFlat?.chapterTitle}
-                </p>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h2 className="text-base font-semibold leading-tight sm:text-lg">
-                    {currentLecture.title}
-                  </h2>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {currentLecture.duration_sec > 0 && (
-                      <Badge variant="secondary">
-                        {formatDuration(currentLecture.duration_sec)}
-                      </Badge>
-                    )}
-                    {isCurrentCompleted && (
-                      <Badge variant="default" className="bg-emerald-600 text-white">
-                        <IconCheck data-icon="inline-start" />
-                        Completed
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                {currentLecture.description && (
-                  <p className="text-sm text-muted-foreground leading-relaxed mt-1">
-                    {currentLecture.description}
+            {/* Lecture info + controls below player */}
+            <div className="flex flex-col gap-4 bg-background px-3 py-4 sm:px-4 lg:px-8 lg:py-6">
+              {/* Section + title */}
+              {currentLecture && (
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {currentFlat?.chapterTitle}
                   </p>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h2 className="text-base font-semibold leading-tight sm:text-lg">
+                      {currentLecture.title}
+                    </h2>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {currentLecture.duration_sec > 0 && (
+                        <Badge variant="secondary">
+                          {formatDuration(currentLecture.duration_sec)}
+                        </Badge>
+                      )}
+                      {isCurrentCompleted && (
+                        <Badge variant="default" className="bg-emerald-600 text-white">
+                          <IconCheck data-icon="inline-start" />
+                          Completed
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {currentLecture.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed mt-1">
+                      {currentLecture.description}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Navigation + Mark Complete */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!handlePrevious}
+                    onClick={handlePrevious ?? undefined}
+                  >
+                    <IconChevronLeft data-icon="inline-start" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!handleNext}
+                    onClick={handleNext ?? undefined}
+                  >
+                    Next
+                    <IconChevronRight data-icon="inline-end" />
+                  </Button>
+                </div>
+
+                {!isCurrentCompleted && (
+                  <Button
+                    size="sm"
+                    className="w-full sm:w-auto sm:min-w-[150px]"
+                    onClick={handleMarkComplete}
+                    disabled={updateProgress.isPending}
+                  >
+                    <IconCheck data-icon="inline-start" />
+                    {updateProgress.isPending ? "Marking..." : "Mark as Complete"}
+                  </Button>
                 )}
               </div>
-            )}
 
-            {/* Navigation + Mark Complete */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!handlePrevious}
-                  onClick={handlePrevious ?? undefined}
-                >
-                  <IconChevronLeft data-icon="inline-start" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!handleNext}
-                  onClick={handleNext ?? undefined}
-                >
-                  Next
-                  <IconChevronRight data-icon="inline-end" />
-                </Button>
+              <Separator />
+
+              {/* Bottom tabs */}
+              <BottomTabs
+                userId={userId}
+                lectureId={activeLectureId}
+                resources={currentLecture?.resources ?? []}
+                lectureDescription={currentLecture?.description ?? null}
+              />
+            </div>
+
+            <div className="border-t border-border bg-background lg:hidden">
+              <div className="px-3 py-3 sm:px-4">
+                <p className="text-sm font-semibold">Course Content</p>
+                <p className="text-xs text-muted-foreground">
+                  Continue from any lecture
+                </p>
               </div>
-
-              {!isCurrentCompleted && (
-                <Button
-                  size="sm"
-                  className="w-full sm:w-auto sm:min-w-[150px]"
-                  onClick={handleMarkComplete}
-                  disabled={updateProgress.isPending}
-                >
-                  <IconCheck data-icon="inline-start" />
-                  {updateProgress.isPending ? "Marking..." : "Mark as Complete"}
-                </Button>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Bottom tabs */}
-            <BottomTabs
-              userId={userId}
-              lectureId={activeLectureId}
-              resources={currentLecture?.resources ?? []}
-              lectureDescription={currentLecture?.description ?? null}
-            />
-          </div>
-
-          <div className="border-t border-border bg-background lg:hidden">
-            <div className="px-3 py-3 sm:px-4">
-              <p className="text-sm font-semibold">Course Content</p>
-              <p className="text-xs text-muted-foreground">
-                Continue from any lecture
-              </p>
-            </div>
-            <div className="h-[58vh] min-h-[360px] border-t border-border">
-              {sidebarContent}
+              <div className="h-[58vh] min-h-[360px] border-t border-border">
+                {sidebarContent}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ─── Desktop sidebar ───────────────────────────────────── */}
-      <aside className="hidden lg:flex lg:w-[420px] lg:shrink-0 lg:border-l lg:border-border lg:bg-background xl:w-[460px]">
-        {sidebarContent}
-      </aside>
+        {/* ─── Desktop sidebar ───────────────────────────────────── */}
+        <aside className="hidden lg:flex lg:w-[420px] lg:shrink-0 lg:border-l lg:border-border lg:bg-background xl:w-[460px]">
+          {sidebarContent}
+        </aside>
       </div>
     </div>
   );
