@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   IconLayoutDashboard,
   IconBook,
+
+  
   IconLivePhoto,
   IconUser,
 } from "@tabler/icons-react";
@@ -50,11 +52,11 @@ export function DashboardMobileNav() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-border/60 bg-background/80 backdrop-blur-xl px-2 sm:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 flex h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] items-center justify-around border-t border-border/60 bg-background/80 backdrop-blur-xl px-2 sm:hidden">
       {mobileNavItems.map((item) => {
         const isActive = isRouteActive(item.href);
         const Icon = item.icon;
-        
+
         return (
           <Link
             key={item.title}
@@ -67,7 +69,7 @@ export function DashboardMobileNav() {
             <Icon
               className={cn(
                 "h-6 w-6 transition-transform",
-                isActive ? "scale-110" : ""
+                isActive ? "scale-110 mb-0.5" : "mb-0.5"
               )}
               stroke={isActive ? 2.5 : 1.5}
             />

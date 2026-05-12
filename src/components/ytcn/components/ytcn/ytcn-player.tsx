@@ -123,7 +123,7 @@ export function YtcnPlayer({
         "relative w-full bg-black select-none overflow-hidden",
         state.isFullscreen && !controlsVisible && "cursor-none",
         state.isFullscreen
-          ? "fixed inset-0 z-50"
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
           : "aspect-video rounded-lg group",
         className
       )}

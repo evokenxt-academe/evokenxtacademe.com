@@ -33,6 +33,7 @@ export function useFullscreen(
   containerRef: React.RefObject<HTMLDivElement | null>
 ): UseFullscreenReturn {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFallbackFullscreen, setIsFallbackFullscreen] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -45,35 +46,69 @@ export function useFullscreen(
     };
 
     document.addEventListener("fullscreenchange", handleChange);
+    document.addEventListener("webkitfullscreenchange", handleChange);
     return () => {
       mounted.current = false;
       document.removeEventListener("fullscreenchange", handleChange);
+      document.removeEventListener("webkitfullscreenchange", handleChange);
     };
   }, []);
 
   const enter = useCallback((): void => {
     try {
-      containerRef.current?.requestFullscreen();
+      const container = containerRef.current;
+      if (!container) return;
+      if (container.requestFullscreen) {
+        container.requestFullscreen().catch(() => {
+          setIsFallbackFullscreen(true);
+        });
+      } else if ((container as any).webkitRequestFullscreen) {
+        (container as any).webkitRequestFullscreen();
+      } else {
+        setIsFallbackFullscreen(true);
+      }
     } catch {
-      /* fullscreen may be denied by browser policy */
+      setIsFallbackFullscreen(true);
     }
   }, [containerRef]);
 
   const exit = useCallback((): void => {
+    if (isFallbackFullscreen) {
+      setIsFallbackFullscreen(false);
+      return;
+    }
     try {
-      if (document.fullscreenElement) document.exitFullscreen();
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitFullscreenElement) {
+        (document as any).webkitExitFullscreen();
+      }
     } catch {
       /* exit can throw if not in fullscreen */
     }
-  }, []);
+  }, [isFallbackFullscreen]);
 
   const toggle = useCallback((): void => {
-    if (document.fullscreenElement) {
+    if (document.fullscreenElement || (document as any).webkitFullscreenElement || isFallbackFullscreen) {
       exit();
     } else {
       enter();
     }
-  }, [enter, exit]);
+  }, [enter, exit, isFallbackFullscreen]);
 
-  return { isFullscreen, toggle, enter, exit };
+  const activeFullscreen = isFullscreen || isFallbackFullscreen;
+
+  // Add body class for fallback to hide scrollbars
+  useEffect(() => {
+    if (isFallbackFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFallbackFullscreen]);
+
+  return { isFullscreen: activeFullscreen, toggle, enter, exit };
 }

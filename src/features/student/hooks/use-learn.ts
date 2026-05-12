@@ -27,7 +27,9 @@ export function useCourseContent(courseId: string | null) {
     },
     enabled: !!courseId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
 
@@ -46,7 +48,10 @@ export function useLectureProgress(
       return getCourseLectureProgress(supabase, userId, lectureIds);
     },
     enabled: !!userId && lectureIds.length > 0,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Build a progress map for O(1) lookup

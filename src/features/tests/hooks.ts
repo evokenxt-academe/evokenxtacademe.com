@@ -134,9 +134,9 @@ export function useTestStats(
     const avgScore =
       submittedAttempts.length > 0
         ? Math.round(
-            submittedAttempts.reduce((sum, a) => sum + a.percentage, 0) /
-              submittedAttempts.length,
-          )
+          submittedAttempts.reduce((sum, a) => sum + a.percentage, 0) /
+          submittedAttempts.length,
+        )
         : 0;
 
     const bestScore =

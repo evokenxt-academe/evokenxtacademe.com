@@ -51,7 +51,9 @@ export function LiveStreamListClient({ initialTab }: { initialTab: string }) {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
-  if (isLoading) return <StreamsGridSkeleton />;
+  // Only show skeleton on true first load (no cached data).
+  // When cached data exists but a background refetch is running, show cached content.
+  if (isLoading && !streams) return <StreamsGridSkeleton />;
   if (error) {
     return (
       <div className="rounded-2xl border border-dashed bg-card/40 p-8 text-center">
@@ -78,16 +80,16 @@ export function LiveStreamListClient({ initialTab }: { initialTab: string }) {
       <div className="overflow-x-auto pb-1">
         <TabsList className="inline-flex h-auto w-fit min-w-max flex-nowrap items-center gap-1 rounded-xl border bg-card/60 p-1 shadow-sm">
           <TabsTrigger value="all" className="px-3 text-xs">
-          All ({counts.all})
+            All ({counts.all})
           </TabsTrigger>
           <TabsTrigger value="live" className="px-3 text-xs">
-          Live Now ({counts.live})
+            Live Now ({counts.live})
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="px-3 text-xs">
-          Upcoming ({counts.upcoming})
+            Upcoming ({counts.upcoming})
           </TabsTrigger>
           <TabsTrigger value="replays" className="px-3 text-xs">
-          Recordings ({counts.replays})
+            Recordings ({counts.replays})
           </TabsTrigger>
         </TabsList>
       </div>

@@ -17,8 +17,11 @@ export function useLiveStreamsList() {
   return useQuery({
     queryKey: ["live-streams"],
     queryFn: () => getStudentLiveStreams(),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 5 * 60 * 1000, // 5 min — match global config
+    gcTime: 10 * 60 * 1000,
+    refetchInterval: 60_000, // keep live data fresh in background
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }
 
@@ -27,6 +30,9 @@ export function useStreamDetail(streamId: string) {
     queryKey: ["stream", streamId],
     queryFn: () => getStreamById(streamId),
     enabled: !!streamId,
-    staleTime: 10_000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 }

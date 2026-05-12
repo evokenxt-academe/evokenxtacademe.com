@@ -168,8 +168,8 @@ function AttemptCard({ attempt }: { attempt: StudentAttemptAnalytics }) {
               {isSubmitted && (
                 <span
                   className={`text-xs font-medium ${passed
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-600 dark:text-red-400"
                     }`}
                 >
                   {percent}%
@@ -179,10 +179,10 @@ function AttemptCard({ attempt }: { attempt: StudentAttemptAnalytics }) {
             <Progress
               value={isSubmitted ? percent : 0}
               className={`h-1.5 bg-muted ${isSubmitted
-                  ? passed
-                    ? "*:data-[slot=progress-indicator]:bg-emerald-500"
-                    : "*:data-[slot=progress-indicator]:bg-red-500"
-                  : "*:data-[slot=progress-indicator]:bg-muted-foreground/30"
+                ? passed
+                  ? "*:data-[slot=progress-indicator]:bg-emerald-500"
+                  : "*:data-[slot=progress-indicator]:bg-red-500"
+                : "*:data-[slot=progress-indicator]:bg-muted-foreground/30"
                 }`}
             />
           </div>
@@ -378,7 +378,7 @@ export function TestDashboardPage() {
   // ── Compute stats from real data ───────────────────────────────
   const stats = useMemo(() => {
     if (!analytics) return { totalAttempts: 0, avgScore: 0, testsPassed: 0 };
-    
+
     const attempts = analytics.attempts || [];
     const submitted = attempts.filter((a) => a.status === "submitted");
     const totalAttempts = attempts.length;
