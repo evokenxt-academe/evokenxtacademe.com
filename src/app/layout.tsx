@@ -70,7 +70,7 @@ export default function RootLayout({
           href="/icons/icon-512x512.png"
         />
       </head>
-      <body className="min-h-full flex flex-col pb-16 sm:pb-0" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0" suppressHydrationWarning>
         <Providers>
           <GlobalLayoutWrapper>{children}</GlobalLayoutWrapper>
         </Providers>

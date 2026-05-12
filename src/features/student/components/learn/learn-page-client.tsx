@@ -212,7 +212,8 @@ export function LearnPageClient({
   }, [allLectureIds, progressMap]);
 
   // ─── Loading state ────────────────────────────────────────────
-  if (courseLoading) {
+  // Only show skeleton on first load (no cached data)
+  if (courseLoading && !course) {
     return (
       <div className="flex flex-col gap-6 p-4 lg:flex-row lg:p-6">
         <div className="flex-1">
@@ -264,7 +265,7 @@ export function LearnPageClient({
             </div>
 
             {/* Video Player */}
-            <div className=" px-0 py-0 sm:px-4 sm:pt-4 lg:px-8 lg:pt-6">
+            <div className="w-full px-0 py-0 sm:px-4 sm:pt-4 lg:px-8 lg:pt-6">
               <VideoPlayer
                 lecture={currentLecture}
                 isCompleted={isCurrentCompleted}

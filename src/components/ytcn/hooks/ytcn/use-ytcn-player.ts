@@ -256,6 +256,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
 
       playerRef.current = new yt.Player(newDiv, {
         videoId,
+        width: "100%",
+        height: "100%",
         playerVars,
         events: {
           onReady: (event: any) => {

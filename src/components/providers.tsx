@@ -20,7 +20,21 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(() => new QueryClient());
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000, // 5 minutes — prevents refetch on tab switch
+            gcTime: 10 * 60 * 1000, // 10 minutes — keeps cache in memory
+            refetchOnWindowFocus: false,
+            refetchOnMount: false, // reuse cache when remounting on tab switch
+            refetchOnReconnect: "always",
+            retry: 1,
+          },
+        },
+      }),
+  );
 
   return (
     <ThemeProvider

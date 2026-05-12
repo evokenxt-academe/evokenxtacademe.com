@@ -5,6 +5,7 @@ import { IconCalendarEvent, IconClockHour4, IconUsers } from "@tabler/icons-reac
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { StreamStatusBadge } from "./StreamStatusBadge";
+import { formatDuration } from "@/lib/utils/video";
 
 interface StreamCardProps {
   stream: LiveStreamItem;
@@ -109,7 +110,7 @@ export function LiveStreamCard({ stream, className }: StreamCardProps) {
         {isReplay && stream.duration_sec ? (
           <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-xs text-white">
             <IconClockHour4 className="size-3" />
-            {Math.round(stream.duration_sec / 60)}m
+            {formatDuration(stream.duration_sec)}
           </div>
         ) : null}
       </div>

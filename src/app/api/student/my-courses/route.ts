@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { fetchDashboardPageData } from "@/features/student/lib/dashboard-queries";
+import { fetchMyCoursesV21 } from "@/app/dashboard/my-courses/_lib/my-courses-data";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -13,12 +13,12 @@ export async function GET() {
   }
 
   try {
-    const data = await fetchDashboardPageData(supabase, user.id);
+    const data = await fetchMyCoursesV21(supabase, user.id);
     return NextResponse.json(data);
   } catch (err) {
-    console.error("[api/student/dashboard] Error:", err);
+    console.error("[api/student/my-courses] Error:", err);
     return NextResponse.json(
-      { error: "Failed to fetch dashboard data" },
+      { error: "Failed to fetch courses" },
       { status: 500 },
     );
   }

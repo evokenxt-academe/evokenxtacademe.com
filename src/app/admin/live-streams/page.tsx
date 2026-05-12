@@ -44,6 +44,7 @@ import {
   IconExternalLink,
 } from "@tabler/icons-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatDuration } from "@/lib/utils/video";
 
 interface Stream {
   id: string;
@@ -714,7 +715,7 @@ function StreamCardMobile({ stream }: { stream: Stream }) {
           <StatItemMobile label="Messages" value={stream.totalChatMsgs || 0} />
           <StatItemMobile
             label="Duration"
-            value={`${Math.round((stream.durationSec || 0) / 60)}m`}
+            value={formatDuration(stream.durationSec || 0)}
           />
         </div>
 

@@ -1,12 +1,13 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import type { DashboardPageData } from "@/features/student/types/dashboard";
 
 const DASHBOARD_KEY = ["student", "dashboard"] as const;
-const STALE_TIME = 2 * 60 * 1000; // 2 minutes
+const STALE_TIME = 5 * 60 * 1000; // 5 minutes — prevents refetch on tab switch
+const GC_TIME = 10 * 60 * 1000; // 10 minutes — keeps data in cache
 
 // ─── Main dashboard data hook ──────────────────────────────────────
 
@@ -20,7 +21,10 @@ export function useDashboardData(initialData: DashboardPageData) {
     },
     initialData,
     staleTime: STALE_TIME,
-    refetchOnWindowFocus: true,
+    gcTime: GC_TIME,
+    refetchOnWindowFocus: false, // tab switch uses cached data
+    refetchOnMount: false, // reuse cache when re-entering page
+    placeholderData: keepPreviousData, // keep old data while refetching
   });
 }
 

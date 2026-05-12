@@ -408,12 +408,12 @@ export default async function DashboardPage() {
                           ? "Happening now"
                           : s.scheduled_at
                             ? new Date(s.scheduled_at).toLocaleString("en-US", {
-                                weekday: "short",
-                                month: "short",
-                                day: "numeric",
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })
                             : "—"}
                       </p>
                     </div>

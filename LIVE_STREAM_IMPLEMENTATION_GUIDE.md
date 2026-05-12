@@ -18,7 +18,7 @@ A full-featured live streaming system has been built for Evoke EduGlobal, enabli
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Admin Dashboard                           │
-│  (/admin/live-streams/page.tsx)                             │
+│   (/admin/live-streams/page.tsx)                             │
 │  - Stream overview with filters                             │
 │  - Live now banner                                          │
 │  - Create, Edit, Duplicate, Cancel, Delete actions         │

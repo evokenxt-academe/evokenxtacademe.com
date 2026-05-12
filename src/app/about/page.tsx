@@ -2,12 +2,54 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { Stars, FileText, Video, Users, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Stars, FileText, Video, Users, ChevronRight, Award, ShieldCheck, Lightbulb, Globe, Rocket, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SuccessTimeline } from "@/components/success-timeline";
 import { LmsClassesStripSection } from "@/components/lms-classes-strip-section";
 import TeamSection from "@/components/team-section";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+
+
+
+const VALUES = [
+  {
+    title: "Excellence",
+    description:
+      "Setting the gold standard in ACCA and professional accounting education worldwide.",
+    icon: Award,
+  },
+  {
+    title: "Integrity",
+    description:
+      "Upholding the highest ethical standards in every student journey and interaction.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Innovation",
+    description:
+      "Pioneering AI-driven learning paths and digital-first educational experiences.",
+    icon: Lightbulb,
+  },
+  {
+    title: "Impact",
+    description:
+      "Creating real-world career transformations for a global community of professionals.",
+    icon: Globe,
+  },
+] as const;
+
+
+
+
+const STATS = [
+  { value: "16+", label: "Years of excellence" },
+  { value: "3,000+", label: "Global graduates" },
+  { value: "95%", label: "Pass rate improvement" },
+  { value: "40+", label: "Countries reached" },
+] as const;
+
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AboutPage() {
@@ -38,55 +80,80 @@ export default function AboutPage() {
 
 
 
+      <section className="w-full bg-background py-16 px-6 md:px-12 lg:px-24 my-10">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-center items-center gap-10 lg:gap-16">
 
-      {/* HERO SECTION */}
-      <section className="relative w-full min-h-[40vh] md:min-h-[50vh] flex items-center justify-center border-b border-border bg-background">
-        {/* Fixed Background Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-fixed"
-          style={{ backgroundImage: "url('/wallpaper.jpeg')" }}
-        />
-        {/* Adaptive overlay for text readability */}
-        <div className="absolute inset-0 bg-background/85" />
+          {/* ── Left Content ── */}
+          <div className="flex-1 flex flex-col items-start gap-6 max-w-xl">
 
-        {/* Content */}
-        <div className="relative z-10 container mx-auto px-6 text-center py-20 md:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col items-center"
-          >
-            <div className="mb-6">
-              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground uppercase tracking-widest font-semibold">
-                <span className="w-8 h-[2px] bg-primary" />
-                About Evokenxt
+            {/* Badge */}
+            <span className="inline-block border border-gray-300 text-sm px-5 py-2 rounded-full tracking-wide">
+              Solution for client-facing businesses
+            </span>
+
+            {/* Heading */}
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] tracking-tight text-balance">
+              Helping You Build and Grow a Thriving{' '}
+              <span className="relative inline-block">
+                {/* dashed selection-box mimicking the image */}
+                <span
+                  className="absolute -inset-x-1 -inset-y-0.5 border-2 border-dashed border-gray-400 rounded-sm pointer-events-none"
+                  aria-hidden="true"
+                />
+                Efficient
               </span>
-            </div>
-
-            <h1 className="text-5xl md:text-7xl lg:text-[6rem] font-extrabold text-foreground mb-8 leading-[0.95] tracking-tight">
-              Empowering the <br className="hidden md:block" />
-              <span className="text-primary">Next Generation</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto font-medium leading-relaxed mb-10">
-              We deliver world-class ACCA education and industry-driven programs to bridge the gap between learning and global career success.
+            {/* Description */}
+            <p className=" text-base md:text-[17px] leading-relaxed">
+              In today&apos;s fast-paced world, staying ahead means taking bold steps to expand,
+              innovate, and lead. We&apos;re here to equip you with the right strategies, insights,
+              and tools to drive growth and turn your business goals into reality. Let&apos;s
+              transform your vision into measurable success.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" className="rounded-none h-12 px-8 text-base font-semibold" asChild>
-                <Link href="/courses">Explore Programs</Link>
-              </Button>
-              <Button variant="outline" size="lg" className="rounded-none h-12 px-8 text-base font-semibold border-border bg-transparent hover:bg-muted" asChild>
-                <Link href="#team">Meet the Team</Link>
-              </Button>
+            {/* CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button className="flex items-center gap-2 bg-gray-950 text-white text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-gray-800 transition-colors duration-200">
+                Schedule A Demo
+                <Rocket className="w-4 h-4" aria-hidden="true" />
+              </button>
+              <button className="flex items-center gap-2 border border-gray-300  text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-gray-50 transition-colors duration-200">
+                Watch Video
+                <Play className="w-4 h-4 fill-gray-900" aria-hidden="true" />
+              </button>
             </div>
-          </motion.div>
+          </div>
+
+          {/* ── Right Image Block ── */}
+          <div className="flex-shrink-0 hidden lg:flex justify-end relative">
+            {/* Main card */}
+            <div className="relative w-[380px] h-[420px] rounded-3xl overflow-hidden bg-gray-600">
+              <Image
+                src="/images/about-hero.jpg"
+                alt="LMS instructor smiling and pointing"
+                fill
+                className="object-cover object-top"
+                priority
+              />
+            </div>
+
+            {/* Overlapping small card — bottom-right corner */}
+            <div className="absolute -bottom-4 -right-4 w-[150px] h-[170px] rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-gray-200">
+              <Image
+                src="/images/about-hero.jpg"
+                alt="LMS instructor portrait close-up"
+                fill
+                className="object-cover object-center scale-125"
+              />
+            </div>
+          </div>
+
         </div>
       </section>
 
       {/* MISSION & VISION CONTENT */}
-      <div className="relative z-20 bg-muted/30 border-y">
+      < div className="relative z-20 bg-muted/30 border-y" >
         <div className="container mx-auto px-6 py-16">
           <div className="max-w-[1220px] mx-auto">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center mb-16">
@@ -198,79 +265,64 @@ export default function AboutPage() {
       {/* FULL WIDTH SUCCESS TIMELINE SECTION */}
       <SuccessTimeline />
 
-      {/* CORE VALUES SECTION */}
-      <section className="py-24 bg-background relative border-t border-border">
-        <div className="container mx-auto px-6 max-w-[1220px]">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-[1px] bg-primary" />
-                <span className="text-primary font-bold text-[10px] uppercase tracking-[0.4em]">Our Ethos</span>
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-foreground tracking-tighter leading-[1.05] mb-6">
-                The Values That <br />
-                <span className="text-primary">Drive Evokenxt.</span>
+      <section className="border-t bg-muted/20">
+        <div className="container mx-auto px-6 py-20 max-w-5xl">
+
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
+            <div>
+              <Badge variant="secondary" className="mb-4 text-xs uppercase tracking-widest">
+                Our Ethos
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
+                Values That{" "}
+                <span className="text-primary">Drive Evokenxt</span>
               </h2>
             </div>
-            <p className="text-muted-foreground font-medium text-lg max-w-sm leading-relaxed mb-4">
-              Beyond education, we are committed to building a foundation of global professional ethics.
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs md:text-right">
+              Beyond education, we are committed to building a foundation of
+              global professional ethics.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
-            {[
-              {
-                title: "Excellence",
-                desc: "Setting the gold standard in ACCA and professional accounting education worldwide.",
-                icon: <Stars className="w-6 h-6" />
-              },
-              {
-                title: "Integrity",
-                desc: "Upholding the highest ethical standards in every student journey and interaction.",
-                icon: <FileText className="w-6 h-6" />
-              },
-              {
-                title: "Innovation",
-                desc: "Pioneering AI-driven learning paths and digital-first educational experiences.",
-                icon: <Video className="w-6 h-6" />
-              },
-              {
-                title: "Impact",
-                desc: "Creating real-world career transformations for a global community of professionals.",
-                icon: <Users className="w-6 h-6" />
-              }
-            ].map((value, idx) => (
+          {/* Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {VALUES.map(({ title, description, icon: Icon }, i) => (
               <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
+                key={title}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1, duration: 0.5 }}
                 viewport={{ once: true }}
-                className="group relative"
+                transition={{ delay: i * 0.08, duration: 0.45, ease: "easeOut" }}
               >
-                <div className="text-muted/30 text-8xl font-black absolute -top-10 -left-4 z-0 group-hover:text-primary/10 transition-colors pointer-events-none">
-                  0{idx + 1}
-                </div>
-                <div className="relative z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-muted text-primary flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 shadow-sm border border-border">
-                    {value.icon}
-                  </div>
-                  <h4 className="text-xl font-bold text-foreground mb-3 uppercase tracking-tight">{value.title}</h4>
-                  <p className="text-muted-foreground text-sm font-medium leading-relaxed">
-                    {value.desc}
-                  </p>
-                  <div className="w-8 group-hover:w-full h-[2px] bg-primary mt-6 transition-all duration-500" />
-                </div>
+                <Card className="h-full border shadow-none group">
+                  <CardContent className="p-6 flex flex-col gap-4">
+                    {/* Icon */}
+                    <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                      <Icon className="w-5 h-5" />
+                    </div>
+
+                    {/* Text */}
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-foreground text-sm tracking-wide">
+                        {title}
+                      </h4>
+                      <p className="text-muted-foreground text-sm leading-relaxed">
+                        {description}
+                      </p>
+                    </div>
+
+                    {/* Animated underline */}
+                    <div className="w-6 h-px bg-primary mt-auto group-hover:w-full transition-all duration-500" />
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
+
         </div>
       </section>
 
-      {/* STRIP SECTION (Now After Feature Cards) */}
-      <div className="relative z-30 mt-0 pointer-events-none">
-        <LmsClassesStripSection />
-      </div>
 
       <TeamSection />
 

@@ -8,6 +8,7 @@ import {
   IconMoon,
   IconSun,
   IconMenu2,
+  IconArrowLeft,
 } from "@tabler/icons-react";
 import { useTheme } from "next-themes";
 
@@ -62,6 +63,15 @@ export function DashboardNavbar({ user }: DashboardNavbarProps) {
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-background/80 px-4 backdrop-blur-xl md:px-6">
      <div className="flex items-center gap-1 w-full">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="sm:hidden -ml-2 size-9 rounded-xl"
+        onClick={() => router.back()}
+      >
+        <IconArrowLeft className="size-5 text-muted-foreground" />
+        <span className="sr-only">Back</span>
+      </Button>
       <SidebarTrigger className="-ml-1 hidden sm:flex" />
      </div>
 

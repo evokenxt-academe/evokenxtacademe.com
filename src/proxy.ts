@@ -19,6 +19,7 @@ export async function proxy(req: NextRequest) {
 
     // Define auth routes that authenticated users shouldn't access
     const isAuthRoute = path.startsWith("/auth/");
+    const isLandingPage = path === "/";
 
     // Redirect to login if not authenticated and trying to access a protected route
     if (!user && isProtectedRoute) {
@@ -28,8 +29,8 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(redirectUrl);
     }
 
-    // Redirect based on role if authenticated and trying to access auth routes
-    if (user && isAuthRoute) {
+    // Redirect based on role if authenticated and trying to access auth routes or landing page
+    if (user && (isAuthRoute || isLandingPage)) {
         // Fetch user role
         const { data: dbUser } = await supabase
             .from('users')

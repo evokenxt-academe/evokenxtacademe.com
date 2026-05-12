@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { MyCourseRow } from "./_lib/my-courses-data";
+import { useStudentMyCourses } from "@/features/student/hooks/use-dashboard-queries";
 
 type SortKey = "last_accessed" | "progress" | "name" | "enrolled_at";
 type FilterKey = "all" | "ACCA" | "CFA" | "CMA";
@@ -34,7 +35,11 @@ function formatRelative(iso: string | null): string {
   return `${d}d ago`;
 }
 
-export function MyCoursesClient({ rows }: { rows: MyCourseRow[] }) {
+export function MyCoursesClient({ rows: initialRows }: { rows: MyCourseRow[] }) {
+  // Use TanStack Query cache — on first visit SSR data is used as initialData.
+  // On tab re-visits, cached data is served instantly (no skeleton).
+  const { data: rows = initialRows } = useStudentMyCourses(initialRows);
+
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sort, setSort] = useState<SortKey>("last_accessed");
   const [query, setQuery] = useState("");

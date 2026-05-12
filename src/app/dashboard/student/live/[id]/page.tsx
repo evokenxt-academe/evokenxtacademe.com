@@ -22,6 +22,7 @@ import { useStreamRealtime } from "@/hooks/useStreamRealtime";
 import { StreamStatusBadge } from "@/components/live-stream/StreamStatusBadge";
 import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
 import { extractYouTubeId } from "@/features/student/components/learn/use-youtube-player";
+import { formatDuration } from "@/lib/utils/video";
 
 export default function WatchStreamPage() {
   const params = useParams<{ id: string }>();
@@ -63,7 +64,8 @@ export default function WatchStreamPage() {
     }
   }
 
-  if (isLoading) return <WatchPageSkeleton />;
+  // Only show skeleton on true first load (no cached data)
+  if (isLoading && !stream) return <WatchPageSkeleton />;
   if (!stream) return <div className="p-8 text-center text-muted-foreground">Stream not found.</div>;
 
   const course = stream.courses;
@@ -204,10 +206,7 @@ export default function WatchStreamPage() {
                 {isEnded && stream.duration_sec ? (
                   <span className="flex items-center gap-1.5">
                     <IconClockHour4 className="size-4 text-muted-foreground/70" />
-                    {Math.floor(stream.duration_sec / 3600) > 0
-                      ? `${Math.floor(stream.duration_sec / 3600)}h ${Math.floor((stream.duration_sec % 3600) / 60)}m`
-                      : `${Math.floor(stream.duration_sec / 60)}m`}{" "}
-                    recording
+                    {formatDuration(stream.duration_sec)} recording
                   </span>
                 ) : null}
               </div>
