@@ -27,17 +27,17 @@ type QuizAccessRow = {
   passing_marks: number | null;
   time_limit_sec: number | null;
   section:
+  | {
+    id: string;
+    title: string | null;
+    course:
     | {
-        id: string;
-        title: string | null;
-        course:
-          | {
-              id: string;
-              name: string | null;
-            }
-          | null;
-      }
+      id: string;
+      name: string | null;
+    }
     | null;
+  }
+  | null;
 };
 
 function toNumber(value: unknown): number {
@@ -88,7 +88,7 @@ export async function GET(
   const { data: quizRow, error: quizError } = await adminClient
     .from("quizzes")
     .select(
-      "id, title, description, total_marks, passing_marks, time_limit_sec, section:sections(id, title, course:courses(id, name))",
+      "id, title, description, total_marks, passing_marks, time_limit_sec, section:sections(id, title, course:courses(id, name:title))",
     )
     .eq("id", quizId)
     .eq("is_published", true)

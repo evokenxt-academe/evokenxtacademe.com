@@ -55,7 +55,7 @@ export default async function CertificatesPage() {
     const { data, error } = await supabase
       .from("certificates")
       .select(
-        "id, user_id, course_id, issued_at, certificate_url, courses(name, slug, level, thumbnail_url)",
+        "id, user_id, course_id, issued_at, certificate_url, courses(name:title, slug, level, thumbnail_url)",
       )
       .eq("user_id", user.id)
       .order("issued_at", { ascending: false });
@@ -80,7 +80,9 @@ export default async function CertificatesPage() {
           <CardContent className="flex items-center gap-3 p-4">
             <IconAward className="size-5 text-amber-500" />
             <div>
-              <div className="text-2xl font-semibold">{certificates.length}</div>
+              <div className="text-2xl font-semibold">
+                {certificates.length}
+              </div>
               <div className="text-xs text-muted-foreground">Earned</div>
             </div>
           </CardContent>
@@ -91,7 +93,9 @@ export default async function CertificatesPage() {
         <Card>
           <CardHeader>
             <CardTitle>Your Certificates</CardTitle>
-            <CardDescription>Download or share your credentials.</CardDescription>
+            <CardDescription>
+              Download or share your credentials.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -124,13 +128,19 @@ export default async function CertificatesPage() {
                     <TableCell className="text-right">
                       {cert.certificate_url ? (
                         <Button asChild size="sm" variant="outline">
-                          <a href={cert.certificate_url} target="_blank" rel="noreferrer">
+                          <a
+                            href={cert.certificate_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
                             <IconDownload className="mr-1 size-4" />
                             Download
                           </a>
                         </Button>
                       ) : (
-                        <span className="text-sm text-muted-foreground">Pending</span>
+                        <span className="text-sm text-muted-foreground">
+                          Pending
+                        </span>
                       )}
                     </TableCell>
                   </TableRow>

@@ -18,7 +18,7 @@ export async function GET(
 
     const { data: stream, error: streamError } = await supabase
         .from("live_streams")
-        .select("id, title, course_id, yt_video_id, status, started_at, ended_at, courses(name)")
+        .select("id, title, course_id, yt_video_id, status, started_at, ended_at, courses(name:title)")
         .eq("id", streamId)
         .maybeSingle()
 

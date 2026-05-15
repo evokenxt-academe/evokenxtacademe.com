@@ -189,7 +189,7 @@ async function buildActivityFeed(
       `lecture_id, is_completed, watched_seconds, last_watched_at,
        lecture:lectures(id, title,
          section:sections(course_id,
-           course:courses(name, slug)
+           course:courses(name:title, slug)
          )
        )`,
     )
