@@ -195,7 +195,25 @@ export async function fetchCourses(
   const { data, error, count } = await query.range(from, to);
 
   if (error) throw error;
-  return { data: (data || []) as unknown as CourseListItem[], count: count || 0 };
+
+  // Ensure total_students reflects actual enrollment counts when missing or zero
+  const courses = (data || []) as unknown as CourseListItem[];
+  const coursesWithCounts = await Promise.all(
+    courses.map(async (course) => {
+      if (course.total_students && course.total_students > 0) return course;
+      const { count: studentCount, error: cntError } = await supabase
+        .from("enrollments")
+        .select("id", { count: "exact", head: true })
+        .eq("course_id", course.id);
+      if (cntError) {
+        console.warn("Failed to fetch student count for course", course.id, cntError);
+        return course;
+      }
+      return { ...course, total_students: studentCount ?? 0 } as CourseListItem;
+    })
+  );
+
+  return { data: coursesWithCounts, count: count || 0 };
 }
 
 export async function fetchCourseById(id: string) {

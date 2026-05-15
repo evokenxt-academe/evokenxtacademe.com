@@ -1,69 +1,34 @@
 "use client";
 
-import type { Instructor } from "@/features/courses/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { IconBook, IconUsers } from "@tabler/icons-react";
+import { Separator } from "@/components/ui/separator";
 
-interface InstructorCardProps {
-  instructor: Instructor | null | undefined;
-  studentCount: number;
-  courseCount: number;
+interface InstructorSectionProps {
+  name: string;
+  avatar: string | null;
 }
 
-function getInitials(name: string | null) {
-  if (!name) return "IN";
-  const parts = name.split(" ").filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-}
-
-export function InstructorCard({
-  instructor,
-  studentCount,
-  courseCount,
-}: InstructorCardProps) {
-  if (!instructor) return null;
-
+export function InstructorSection({ name, avatar }: InstructorSectionProps) {
   return (
-    <Card className="rounded-xl">
-      <CardHeader>
-        <CardTitle>Instructor</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="size-14">
-            <AvatarImage src={instructor.avatar ?? ""} />
-            <AvatarFallback>{getInitials(instructor.name)}</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-base font-semibold text-foreground">
-              {instructor.name || "Instructor"}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {instructor.email || ""}
-            </span>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Instructor</h2>
 
-        <p className="text-sm text-muted-foreground">
-          {instructor.bio ||
-            "Experienced educator focused on clear explanations and practical outcomes."}
-        </p>
+      <div className="flex items-start gap-5">
+        <Avatar className="h-16 w-16 border">
+          {avatar && <AvatarImage src={avatar} alt={name} />}
+          <AvatarFallback className="text-xl font-bold bg-muted">
+            {name?.charAt(0).toUpperCase() || "I"}
+          </AvatarFallback>
+        </Avatar>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="secondary">Instructor</Badge>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <IconUsers />
-            <span>{studentCount} students</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <IconBook />
-            <span>{courseCount} courses</span>
-          </div>
+        <div className="space-y-1 pt-0.5">
+          <h3 className="text-lg font-semibold leading-snug">{name}</h3>
+          <p className="text-sm text-muted-foreground">Instructor</p>
+          <p className="text-sm text-muted-foreground leading-relaxed pt-1">
+            Expert instructor at Evoke EduGlobal
+          </p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

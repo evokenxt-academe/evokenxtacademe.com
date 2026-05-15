@@ -490,7 +490,7 @@ export async function fetchStudentLearningOverview(
     supabase
       .from("enrollments")
       .select(
-        "id, user_id, course_id, status, enrolled_at, expires_at, course:courses(id, name, slug, description, level, thumbnail_url, instructor_id, price, discount_price, status, created_at, instructor:users!instructor_id(id, name, avatar))",
+        "id, user_id, course_id, status, enrolled_at, expires_at, course:courses(id, name:title, slug, description, level, thumbnail_url, instructor_id, price, discount_price, status, created_at, instructor:users!instructor_id(id, name, avatar))",
       )
       .eq("user_id", userId)
       .eq("status", "active")

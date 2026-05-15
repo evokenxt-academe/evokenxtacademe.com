@@ -47,10 +47,15 @@ export async function getPublishedCourses(
   const { data, error } = await supabase
     .from("courses")
     .select(
-      `id, slug, name, description, level, thumbnail_url, price, discount_price, status, created_at,
+      `id, slug, name:title, description, thumbnail_url, status, created_at,
        instructor:users!instructor_id(name, avatar),
        reviews(rating),
-       sections(id)`
+       subject:subjects!inner(
+         id,
+         program_level:program_levels!inner(label, program:programs(body))
+       ),
+       pricing:course_pricing(base_price, discounted_price, is_active),
+       chapters(id)`
     )
     .eq("status", "published")
     .order("created_at", { ascending: false });
@@ -58,7 +63,36 @@ export async function getPublishedCourses(
   const errMsg = handleError("getPublishedCourses", error);
   if (errMsg) return { data: null, error: errMsg };
 
-  return { data: (data ?? []) as unknown as CatalogCourse[], error: null };
+  const deriveLevel = (label?: string | null): CourseLevel => {
+    switch (label) {
+      case "Applied Knowledge":
+      case "Level I":
+      case "Part 1":
+        return "knowledge";
+      case "Applied Skills":
+      case "Level II":
+        return "skills";
+      case "Strategic Professional":
+      case "Level III":
+      case "Part 2":
+        return "professional";
+      default:
+        return "professional";
+    }
+  };
+
+  const mapped = (data ?? []).map((course: any) => {
+    const activePricing = (course.pricing ?? []).find((tier: any) => tier?.is_active);
+    return {
+      ...course,
+      level: deriveLevel(course.subject?.program_level?.label),
+      price: activePricing?.discounted_price ?? activePricing?.base_price ?? 0,
+      discount_price: activePricing?.discounted_price ?? null,
+      sections: (course.chapters ?? []).map((chapter: any) => ({ id: chapter.id })),
+    };
+  });
+
+  return { data: mapped as unknown as CatalogCourse[], error: null };
 }
 
 /**
@@ -71,7 +105,7 @@ export async function getCourseBySlug(
   const { data, error } = await supabase
     .from("courses")
     .select(
-      `id, slug, name, description, level, thumbnail_url, price, discount_price, status, created_at,
+      `id, slug, name:title, description, level, thumbnail_url, price, discount_price, status, created_at,
        instructor:users!instructor_id(name, avatar),
        reviews(rating),
        sections(id)`
@@ -119,7 +153,7 @@ export async function getStudentEnrollments(
     .select(
       `id, user_id, course_id, status, enrolled_at, expires_at,
         course:courses(
-          id, name, slug, description, level, thumbnail_url, price, discount_price,
+          id, name:title, slug, description, level, thumbnail_url, price, discount_price,
          instructor:users!instructor_id(name, avatar)
        )`
     )
@@ -190,7 +224,7 @@ export async function getStudentCertificates(
     .from("certificates")
     .select(
       `id, cert_url, issued_at,
-       course:courses(id, name, slug, thumbnail_url)`
+      course:courses(id, name:title, slug, thumbnail_url)`
     )
     .eq("user_id", userId)
     .order("issued_at", { ascending: false });
@@ -240,7 +274,7 @@ export async function getRecentActivity(
       `lecture_id, is_completed, watched_seconds, last_watched_at,
        lecture:lectures(id, title, duration_sec,
          section:sections(id, title, course_id,
-           course:courses(id, name, slug)
+           course:courses(id, name:title, slug)
          )
        )`
     )

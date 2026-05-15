@@ -1,5 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+
+const ROTATING_WORDS = ["Efficient", "Innovative", "Scalable", "Dynamic"];
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Stars, FileText, Video, Users, ChevronRight, Award, ShieldCheck, Lightbulb, Globe, Rocket, Play } from "lucide-react";
@@ -53,7 +55,14 @@ const STATS = [
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AboutPage() {
+  const [wordIndex, setWordIndex] = useState(0);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % ROTATING_WORDS.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
 
@@ -94,13 +103,21 @@ export default function AboutPage() {
             {/* Heading */}
             <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] tracking-tight text-balance">
               Helping You Build and Grow a Thriving{' '}
-              <span className="relative inline-block">
-                {/* dashed selection-box mimicking the image */}
-                <span
-                  className="absolute -inset-x-1 -inset-y-0.5 border-2 border-dashed border-gray-400 rounded-sm pointer-events-none"
-                  aria-hidden="true"
-                />
-                Efficient
+              <span
+                className="relative inline-flex items-center h-[1.3em] min-w-[200px] md:min-w-[240px] align-bottom overflow-hidden rounded-xl border border-white/20 bg-primary/10 backdrop-blur-md shadow-lg shadow-primary/10"
+              >
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={wordIndex}
+                    initial={{ opacity: 0, y: 40, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, y: -40, filter: "blur(4px)" }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                    className="absolute inset-0 flex items-center justify-center text-primary font-bold px-4"
+                  >
+                    {ROTATING_WORDS[wordIndex]}
+                  </motion.span>
+                </AnimatePresence>
               </span>
             </h1>
 
@@ -128,25 +145,18 @@ export default function AboutPage() {
           {/* ── Right Image Block ── */}
           <div className="flex-shrink-0 hidden lg:flex justify-end relative">
             {/* Main card */}
-            <div className="relative w-[380px] h-[420px] rounded-3xl overflow-hidden bg-gray-600">
-              <Image
-                src="/images/about-hero.jpg"
-                alt="LMS instructor smiling and pointing"
-                fill
-                className="object-cover object-top"
-                priority
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="relative w-[380px] h-[420px] rounded-3xl overflow-hidden shadow-2xl bg-muted"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800"
+                alt="Professional team collaborating"
+                className="w-full h-full object-cover object-center"
               />
-            </div>
-
-            {/* Overlapping small card — bottom-right corner */}
-            <div className="absolute -bottom-4 -right-4 w-[150px] h-[170px] rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-gray-200">
-              <Image
-                src="/images/about-hero.jpg"
-                alt="LMS instructor portrait close-up"
-                fill
-                className="object-cover object-center scale-125"
-              />
-            </div>
+            </motion.div>
           </div>
 
         </div>
@@ -265,57 +275,57 @@ export default function AboutPage() {
       {/* FULL WIDTH SUCCESS TIMELINE SECTION */}
       <SuccessTimeline />
 
-      <section className="border-t bg-muted/20">
-        <div className="container mx-auto px-6 py-20 max-w-5xl">
+      <section className="bg-background">
+        <div className="container mx-auto px-6 py-24 max-w-6xl">
 
           {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14">
-            <div>
-              <Badge variant="secondary" className="mb-4 text-xs uppercase tracking-widest">
-                Our Ethos
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
-                Values That{" "}
-                <span className="text-primary">Drive Evokenxt</span>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <span className="text-primary font-bold text-xs uppercase tracking-widest">Our Ethos</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-foreground leading-[1.1]">
+                Values That Drive <br />
+                <span className="text-primary">EvokeNXT</span>
               </h2>
             </div>
-            <p className="text-muted-foreground text-sm leading-relaxed max-w-xs md:text-right">
+            <p className="text-muted-foreground text-[15px] leading-relaxed max-w-sm md:text-right font-medium">
               Beyond education, we are committed to building a foundation of
-              global professional ethics.
+              global professional ethics and continuous growth.
             </p>
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {VALUES.map(({ title, description, icon: Icon }, i) => (
               <motion.div
                 key={title}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.08, duration: 0.45, ease: "easeOut" }}
+                transition={{ delay: i * 0.1, duration: 0.5, ease: "easeOut" }}
+                className="h-full"
               >
-                <Card className="h-full border shadow-none group">
-                  <CardContent className="p-6 flex flex-col gap-4">
-                    {/* Icon */}
-                    <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                      <Icon className="w-5 h-5" />
-                    </div>
+                <div className="h-full relative overflow-hidden rounded-2xl bg-background border border-border p-8 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-primary/20 transition-all duration-500 group flex flex-col">
+                  {/* Subtle Background Gradient */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 transition-opacity duration-500 opacity-0 group-hover:opacity-100" />
 
-                    {/* Text */}
-                    <div className="space-y-1.5">
-                      <h4 className="font-semibold text-foreground text-sm tracking-wide">
-                        {title}
-                      </h4>
-                      <p className="text-muted-foreground text-sm leading-relaxed">
-                        {description}
-                      </p>
-                    </div>
+                  {/* Icon */}
+                  <div className="relative mb-8 w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
+                    <Icon className="w-7 h-7 stroke-[1.5]" />
+                  </div>
 
-                    {/* Animated underline */}
-                    <div className="w-6 h-px bg-primary mt-auto group-hover:w-full transition-all duration-500" />
-                  </CardContent>
-                </Card>
+                  {/* Text */}
+                  <div className="relative mt-auto space-y-3">
+                    <h4 className="font-bold text-foreground text-lg tracking-tight">
+                      {title}
+                    </h4>
+                    <p className="text-muted-foreground text-sm leading-relaxed font-medium">
+                      {description}
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>

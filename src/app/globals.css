@@ -128,3 +128,10 @@
     @apply font-sans;
   }
 }
+
+/* Course features responsive grid */
+@media (max-width: 640px) {
+  .course-features-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
