@@ -1,9 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import {
-  IconReceipt,
-  IconCalendar,
-} from "@tabler/icons-react";
+import { IconReceipt, IconCalendar } from "@tabler/icons-react";
 import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +52,9 @@ function formatCurrency(amount: number, currency: string): string {
   }).format(amount);
 }
 
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+function getStatusVariant(
+  status: string,
+): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case "paid":
       return "default";
@@ -81,7 +80,7 @@ export default async function PaymentsPage() {
   const { data, error } = await supabase
     .from("payments")
     .select(
-      "id, user_id, course_id, amount, currency, status, gateway, gateway_payment_id, created_at, courses(name, slug)",
+      "id, user_id, course_id, amount, currency, status, gateway, gateway_payment_id, created_at, courses(name:title, slug)",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
@@ -100,7 +99,9 @@ export default async function PaymentsPage() {
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold md:text-3xl">Payment History</h1>
+          <h1 className="text-2xl font-semibold md:text-3xl">
+            Payment History
+          </h1>
           <p className="text-sm text-muted-foreground">
             All transactions linked to your account.
           </p>
@@ -114,7 +115,9 @@ export default async function PaymentsPage() {
           </Card>
           <Card className="w-fit">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-semibold">{formatCurrency(totalPaid, "INR")}</div>
+              <div className="text-2xl font-semibold">
+                {formatCurrency(totalPaid, "INR")}
+              </div>
               <div className="text-xs text-muted-foreground">Total paid</div>
             </CardContent>
           </Card>
@@ -125,7 +128,9 @@ export default async function PaymentsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Transaction Log</CardTitle>
-            <CardDescription>Full payment history from Supabase.</CardDescription>
+            <CardDescription>
+              Full payment history from Supabase.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -145,10 +150,16 @@ export default async function PaymentsPage() {
                       {payment.courses?.name ?? "Course"}
                     </TableCell>
                     <TableCell className="font-mono">
-                      {formatCurrency(Number(payment.amount), payment.currency || "INR")}
+                      {formatCurrency(
+                        Number(payment.amount),
+                        payment.currency || "INR",
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(payment.status)} className="capitalize">
+                      <Badge
+                        variant={getStatusVariant(payment.status)}
+                        className="capitalize"
+                      >
                         {payment.status}
                       </Badge>
                     </TableCell>
@@ -156,9 +167,12 @@ export default async function PaymentsPage() {
                       {payment.gateway}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(payment.created_at).toLocaleDateString("en-IN", {
-                        dateStyle: "medium",
-                      })}
+                      {new Date(payment.created_at).toLocaleDateString(
+                        "en-IN",
+                        {
+                          dateStyle: "medium",
+                        },
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -175,7 +189,8 @@ export default async function PaymentsPage() {
             <div>
               <h4 className="text-lg font-semibold">No payments yet</h4>
               <p className="text-sm text-muted-foreground">
-                Transaction history will appear here when you enroll in a paid course.
+                Transaction history will appear here when you enroll in a paid
+                course.
               </p>
             </div>
             <Button asChild>

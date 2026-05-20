@@ -432,7 +432,7 @@ export function LearnPage({ initialData, slug }: LearnPageProps) {
         {/* Top bar */}
         <div className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between border-b border-border bg-background/95 px-3 backdrop-blur lg:px-5">
           <div className="flex items-center gap-2">
-            <SidebarTrigger />
+            <SidebarTrigger className="hidden sm:flex" />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -131,7 +131,7 @@ async function resolveCourseRecord(supabase: any, identifier: string) {
 
 async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRecord = true) {
     const sectionIdsResult = await supabase
-        .from("sections")
+        .from("chapters")
         .select("id")
         .eq("course_id", courseId);
 
@@ -145,7 +145,7 @@ async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRec
         const lectureIdsResult = await supabase
             .from("lectures")
             .select("id")
-            .in("section_id", sectionIds);
+            .in("chapter_id", sectionIds);
 
         if (lectureIdsResult.error) {
             return { error: lectureIdsResult.error.message } as const;
@@ -155,7 +155,7 @@ async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRec
 
         if (lectureIds.length > 0) {
             const { error: resourceDeleteError } = await supabase
-                .from("resources")
+                .from("lecture_resources")
                 .delete()
                 .in("lecture_id", lectureIds);
 
@@ -167,14 +167,14 @@ async function deleteCourseTree(supabase: any, courseId: string, deleteCourseRec
         const { error: lectureDeleteError } = await supabase
             .from("lectures")
             .delete()
-            .in("section_id", sectionIds);
+            .in("chapter_id", sectionIds);
 
         if (lectureDeleteError) {
             return { error: lectureDeleteError.message } as const;
         }
 
         const { error: sectionDeleteError } = await supabase
-            .from("sections")
+            .from("chapters")
             .delete()
             .eq("course_id", courseId);
 
@@ -234,7 +234,7 @@ export async function GET(
     const userMap = createLookupMap(users);
 
     const sectionsResult = await supabase
-        .from("sections")
+        .from("chapters")
         .select("*")
         .eq("course_id", courseId)
         .order("position", { ascending: true });
@@ -246,7 +246,7 @@ export async function GET(
     const sections = (sectionsResult.data ?? []).map((row) => {
         const record = row as Row;
         return {
-            id: pickString(record, ["id", "section_id"]),
+            id: pickString(record, ["id", "chapter_id"]),
             title: pickString(record, ["title", "name"], "Untitled section"),
             position: pickNumber(record, ["position", "sort_order"]),
         };
@@ -257,7 +257,7 @@ export async function GET(
         ? await supabase
             .from("lectures")
             .select("*")
-            .in("section_id", sectionIds)
+            .in("chapter_id", sectionIds)
             .order("position", { ascending: true })
         : { data: [], error: null };
 
@@ -269,7 +269,7 @@ export async function GET(
         const record = row as Row;
         return {
             id: pickString(record, ["id", "lecture_id"]),
-            sectionId: pickString(record, ["section_id"]),
+            sectionId: pickString(record, ["chapter_id"]),
             title: pickString(record, ["title", "name"], "Untitled lecture"),
             description: pickString(record, ["description", "summary"], ""),
             videoUrl: pickString(record, ["video_url", "videoUrl"], ""),
@@ -282,7 +282,7 @@ export async function GET(
     const lectureIds = lectures.map((lecture) => lecture.id);
     const resourcesResult = lectureIds.length
         ? await supabase
-            .from("resources")
+            .from("lecture_resources")
             .select("*")
             .in("lecture_id", lectureIds)
         : { data: [], error: null };
@@ -475,7 +475,7 @@ export async function PUT(
             return NextResponse.json(
                 {
                     error:
-                        "Supabase still has an integer id column. courses.id, sections.course_id, lectures.section_id, and resources.lecture_id must be uuid.",
+                        "Supabase still has an integer id column. courses.id, chapters.course_id, lectures.chapter_id, and lecture_resources.lecture_id must be uuid.",
                 },
                 { status: 500 },
             );
@@ -488,20 +488,20 @@ export async function PUT(
     const incomingResourceIds = (body.sections ?? []).flatMap((s: any) => (s.lectures ?? []).flatMap((l: any) => (l.resources ?? []).map((r: any) => r.id))).filter(Boolean);
 
     // Fetch existing hierarchy to delete orphaned records safely
-    const { data: existingSections } = await supabase.from('sections').select('id').eq('course_id', courseId);
+    const { data: existingSections } = await supabase.from('chapters').select('id').eq('course_id', courseId);
     const existingSectionIds = (existingSections || []).map((s: any) => s.id);
     
     if (existingSectionIds.length > 0) {
-        const { data: existingLectures } = await supabase.from('lectures').select('id').in('section_id', existingSectionIds);
+        const { data: existingLectures } = await supabase.from('lectures').select('id').in('chapter_id', existingSectionIds);
         const existingLectureIds = (existingLectures || []).map((l: any) => l.id);
         
         if (existingLectureIds.length > 0) {
-            const { data: existingResources } = await supabase.from('resources').select('id').in('lecture_id', existingLectureIds);
+            const { data: existingResources } = await supabase.from('lecture_resources').select('id').in('lecture_id', existingLectureIds);
             const existingResourceIds = (existingResources || []).map((r: any) => r.id);
             
             const resourcesToDelete = existingResourceIds.filter((id: string) => !incomingResourceIds.includes(id));
             if (resourcesToDelete.length > 0) {
-                await supabase.from('resources').delete().in('id', resourcesToDelete);
+                await supabase.from('lecture_resources').delete().in('id', resourcesToDelete);
             }
         }
         
@@ -513,19 +513,20 @@ export async function PUT(
     
     const sectionsToDelete = existingSectionIds.filter((id: string) => !incomingSectionIds.includes(id));
     if (sectionsToDelete.length > 0) {
-        await supabase.from('sections').delete().in('id', sectionsToDelete);
+        await supabase.from('chapters').delete().in('id', sectionsToDelete);
     }
 
     // Upsert remaining hierarchy
     for (const section of body.sections ?? []) {
         const sectionId = section.id || crypto.randomUUID();
         const { data: upsertedSection, error: sectionError } = await supabase
-            .from("sections")
+            .from("chapters")
             .upsert({
                 id: sectionId,
                 course_id: courseId,
                 title: section.title,
                 position: section.position,
+                is_published: true
             })
             .select("id")
             .single();
@@ -536,7 +537,7 @@ export async function PUT(
                 return NextResponse.json(
                     {
                         error:
-                            "Supabase still has an integer id/foreign-key column. sections.id and sections.course_id must be uuid.",
+                            "Supabase still has an integer id/foreign-key column. chapters.id and chapters.course_id must be uuid.",
                     },
                     { status: 500 },
                 );
@@ -553,13 +554,14 @@ export async function PUT(
                 .from("lectures")
                 .upsert({
                     id: lectureId,
-                    section_id: upsertedSection.id,
+                    chapter_id: upsertedSection.id,
                     title: lecture.title,
                     video_url: lecture.videoUrl || null,
                     description: lecture.description || null,
                     duration_sec: lecture.durationSec || 0,
                     position: lecture.position,
                     is_preview: lecture.isPreview || false,
+                    is_published: true
                 })
                 .select("id")
                 .single();
@@ -569,7 +571,7 @@ export async function PUT(
                     return NextResponse.json(
                         {
                             error:
-                                "Supabase still has an integer id/foreign-key column. lectures.id and lectures.section_id must be uuid.",
+                                "Supabase still has an integer id/foreign-key column. lectures.id and lectures.chapter_id must be uuid.",
                         },
                         { status: 500 },
                     );
@@ -587,7 +589,7 @@ export async function PUT(
 
                 const resourceId = resource.id || crypto.randomUUID();
                 const { error: resourceError } = await supabase
-                    .from("resources")
+                    .from("lecture_resources")
                     .upsert({
                         id: resourceId,
                         lecture_id: upsertedLecture.id,
@@ -599,7 +601,7 @@ export async function PUT(
                         return NextResponse.json(
                             {
                                 error:
-                                    "Supabase still has an integer id/foreign-key column. resources.id and resources.lecture_id must be uuid.",
+                                    "Supabase still has an integer id/foreign-key column. lecture_resources.id and lecture_resources.lecture_id must be uuid.",
                             },
                             { status: 500 },
                         );

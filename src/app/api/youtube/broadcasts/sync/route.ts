@@ -38,9 +38,6 @@ export async function POST(req: NextRequest) {
     for (const yt of ytBroadcasts) {
       const lifecycle = yt.status?.lifeCycleStatus;
       
-      // Only sync streams that are actually live or in testing
-      if (lifecycle !== 'live' && lifecycle !== 'testing') continue;
-
       const broadcastId = yt.id;
       const title = yt.snippet?.title;
       const description = yt.snippet?.description;
@@ -65,9 +62,23 @@ export async function POST(req: NextRequest) {
               yt_live_chat_id: liveChatId 
             })
             .eq('id', existingStream.id);
+          results.push({ id: existingStream.id, title, status: 'updated_to_live' });
         }
-        results.push({ id: existingStream.id, title, status: 'updated' });
+        // Update status to ended if it was live/scheduled but is now complete
+        else if (existingStream.status !== 'ended' && lifecycle === 'complete') {
+          await supabase
+            .from('live_streams')
+            .update({ 
+              status: 'ended', 
+              ended_at: new Date().toISOString()
+            })
+            .eq('id', existingStream.id);
+          results.push({ id: existingStream.id, title, status: 'updated_to_ended' });
+        }
       } else {
+        // Only create new stream record if it's currently live or testing
+        if (lifecycle !== 'live' && lifecycle !== 'testing') continue;
+
         // 3. Create new stream record
         const { data: newStream, error: insertError } = await supabase
           .from('live_streams')
@@ -101,6 +112,27 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error('Sync error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    const message = error?.message || '';
+    
+    // Detect insufficient scopes or auth errors
+    if (message.includes('insufficient authentication scopes') || 
+        message.includes('insufficientPermissions')) {
+      return NextResponse.json({ 
+        error: message,
+        code: 'INSUFFICIENT_SCOPES',
+        action: 'reauth',
+      }, { status: 403 });
+    }
+    
+    if (message.includes('invalid_grant') || message.includes('Token has been expired')) {
+      return NextResponse.json({ 
+        error: message,
+        code: 'TOKEN_EXPIRED',
+        action: 'reauth',
+      }, { status: 401 });
+    }
+    
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -14,7 +14,9 @@ export function LiveStreamList() {
   const replays =
     streams?.filter((s: any) => s.status === "ended" || s.status === "replay") ?? [];
 
-  if (isLoading) {
+  // Only show skeleton on very first load (no cached data).
+  // On tab re-visits, cached data renders immediately — no flash.
+  if (isLoading && !streams) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2">

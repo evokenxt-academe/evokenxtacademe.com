@@ -3,65 +3,69 @@
 import React, { useState } from "react";
 import { Play, ArrowRight, X, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export function StorySection() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   return (
     <>
-      <section className="py-24 overflow-hidden relative">
-        <div className="container mx-auto px-6 max-w-7xl relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+      <section className="py-20 md:py-28 overflow-hidden relative">
+        <div className="container mx-auto px-6 max-w-6xl relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
             {/* Left Column: Text Content */}
             <div className="flex flex-col justify-center order-2 lg:order-1">
-              <div className="inline-flex items-center gap-3 mb-6">
-                <span className="w-8 h-[2px] bg-primary"></span>
-                <span className="text-sm font-bold text-primary uppercase tracking-widest">
-                  Evoke EduGlobal
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                <span className="text-xs font-bold text-primary uppercase tracking-[0.15em]">
+                  Evokenxt
                 </span>
               </div>
-              <h2 className="text-4xl md:text-5xl font-extrabold text-foreground leading-[1.15] mb-6 tracking-tight">
+
+              <h2 className="text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-foreground leading-[1.1] mb-5 tracking-tight">
                 Transforming Ambition Into{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-600 dark:from-sky-400 dark:to-indigo-500">
-                  Excellence
-                </span>
+                <span className="text-primary">Excellence</span>
               </h2>
 
-              <p className="text-lg text-muted-foreground leading-relaxed mb-10">
-                Experience education without boundaries. Evoke EduGlobal brings the classroom directly to you with crystal-clear 4K video lessons, highly interactive live lectures, and rigorous mock exams designed to guarantee your professional success.
+              <p className="text-base text-muted-foreground leading-relaxed mb-8 max-w-md">
+                Experience education without boundaries. Evokenxt brings the
+                classroom directly to you with crystal-clear 4K video lessons,
+                highly interactive live lectures, and rigorous mock exams
+                designed to guarantee your professional success.
               </p>
 
-              {/* Features Bullet Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 gap-x-8 mb-12">
+              {/* Features */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 mb-8">
                 {[
                   "Premium 4K Videos",
                   "Live Interactive Lectures",
                   "Comprehensive Exams",
                   "24/7 Expert Support",
                 ].map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-foreground font-semibold">{item}</span>
+                  <div key={item} className="flex items-center gap-2.5">
+                    <CheckCircle2 className="size-4.5 text-primary flex-shrink-0" />
+                    <span className="text-sm font-semibold text-foreground">{item}</span>
                   </div>
                 ))}
               </div>
 
-              {/* CTA Button */}
+              {/* CTA */}
               <div>
-                <a
-                  href="#"
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground font-bold rounded-none hover:bg-primary/90 transition-colors shadow-lg"
-                >
-                  Join The Platform <ArrowRight className="w-4 h-4" strokeWidth={2.5} />
-                </a>
+                <Button size="lg" className="h-12 px-8 rounded-none font-bold" asChild>
+                  <Link href="/auth/login">
+                    Join The Platform
+                    <ArrowRight className="ml-2 size-4" />
+                  </Link>
+                </Button>
               </div>
             </div>
 
             {/* Right Column: Video Card */}
             <div className="relative mx-auto w-full order-1 lg:order-2">
-              {/* Offset accent block behind the video */}
-              <div className="absolute top-6 -right-4 w-full h-full border border-primary/20 z-0 bg-primary/5"></div>
+              {/* Offset accent block */}
+              <div className="absolute top-6 -right-4 w-full h-full border border-primary/15 z-0 bg-primary/[0.03]" />
 
               <div className="relative z-10 bg-card shadow-xl aspect-[4/3] w-full border border-border overflow-hidden">
                 <img
@@ -75,8 +79,8 @@ export function StorySection() {
                   className="absolute inset-0 flex items-center justify-center bg-black/40 group cursor-pointer hover:bg-black/50 transition-colors"
                   onClick={() => setIsVideoOpen(true)}
                 >
-                  <button className="w-24 h-24 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-all duration-300 shadow-2xl border border-white">
-                    <Play className="w-10 h-10 ml-2" fill="currentColor" />
+                  <button className="w-20 h-20 md:w-24 md:h-24 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-all duration-300 shadow-2xl border border-white">
+                    <Play className="w-8 h-8 md:w-10 md:h-10 ml-1.5" fill="currentColor" />
                   </button>
                 </div>
               </div>
@@ -95,14 +99,14 @@ export function StorySection() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-background/95 backdrop-blur-xl"
           >
-            <div className="absolute inset-0 z-0 cursor-pointer" onClick={() => setIsVideoOpen(false)}></div>
+            <div className="absolute inset-0 z-0 cursor-pointer" onClick={() => setIsVideoOpen(false)} />
 
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="relative z-10 w-full max-w-6xl bg-black shadow-2xl border border-border"
+              className="relative z-10 w-full max-w-5xl bg-black shadow-2xl border border-border"
             >
               <button
                 onClick={() => setIsVideoOpen(false)}
@@ -118,7 +122,7 @@ export function StorySection() {
                   className="absolute inset-0 w-full h-full border-none"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                ></iframe>
+                />
               </div>
             </motion.div>
           </motion.div>

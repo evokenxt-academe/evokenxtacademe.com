@@ -8,6 +8,7 @@ import { LmsClassesStripSection } from "@/components/lms-classes-strip-section";
 import { CourseSection } from "@/components/course-section";
 import { Separator } from "@/components/ui/separator";
 import { Testimonials01 } from "@/components/testimonials-01";
+import CTAInstall from "@/components/CTAInstall";
 
 export default function Home() {
   return (
@@ -20,8 +21,8 @@ export default function Home() {
       <Testimonials01 />
       <Separator />
       <FaqSection />
-      <LmsClassesStripSection />
       <HowProcessSection />
+      <CTAInstall />
     </main>
   );
 }

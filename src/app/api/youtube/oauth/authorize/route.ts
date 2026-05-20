@@ -7,14 +7,21 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const scopes = [
+    'https://www.googleapis.com/auth/youtube',
     'https://www.googleapis.com/auth/youtube.force-ssl',
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/userinfo.email',
   ];
 
+  // Build the redirect URI dynamically for production vs local
+  // Ignore process.env.YOUTUBE_REDIRECT_URI because it might be hardcoded to localhost in .env
+  const protocol = req.headers.get('x-forwarded-proto') || 'https';
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host;
+  const redirectUri = `${protocol}://${host}/api/youtube/oauth/callback`;
+
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: process.env.YOUTUBE_REDIRECT_URI!,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: scopes.join(' '),
     access_type: 'offline',

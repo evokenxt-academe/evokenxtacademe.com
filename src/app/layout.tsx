@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { GlobalLayoutWrapper } from "@/components/global-layout-wrapper";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
+import { WhatsAppFloat } from "@/components/whatsapp-float";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
@@ -18,15 +20,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Evoke Edu Global — ACCA Courses & Professional Qualifications",
+  title: "Evokenxt — ACCA Courses & Professional Qualifications",
   description:
     "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate. Study online, learn at your pace, succeed globally.",
   manifest: "/manifest.json",
-  applicationName: "Evoke EduGlobal",
+  applicationName: "Evokenxt",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Evoke EduGlobal",
+    title: "Evokenxt",
   },
   other: {
     "mobile-web-app-capable": "yes",
@@ -69,10 +71,12 @@ export default function RootLayout({
           href="/icons/icon-512x512.png"
         />
       </head>
-      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-0" suppressHydrationWarning>
         <Providers>
           <GlobalLayoutWrapper>{children}</GlobalLayoutWrapper>
         </Providers>
+        <DashboardMobileNav />
+        <WhatsAppFloat />
         <Toaster />
       </body>
     </html>

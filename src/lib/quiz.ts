@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * Evoke EduGlobal LMS v2.0.0 - Quiz Engine
+ * Evokenxt LMS v2.0.0 - Quiz Engine
  * ============================================================
  * Supports 7 question types with validation & scoring
  */

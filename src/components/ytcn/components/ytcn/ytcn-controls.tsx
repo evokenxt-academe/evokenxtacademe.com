@@ -86,7 +86,7 @@ export function YtcnControls({
       onMouseMove={onInteraction}
       className={cn(
         "absolute inset-x-0 bottom-0 z-30 flex flex-col transition-opacity duration-300",
-        state.isFullscreen
+        state.isFullscreen || isTouchDevice
           ? visible ? "opacity-100" : "opacity-0 pointer-events-none"
           : "opacity-0 group-hover:opacity-100"
       )}
@@ -131,6 +131,7 @@ export function YtcnControls({
             isMuted={state.isMuted}
             onVolumeChange={onVolumeChange}
             onToggleMute={onToggleMute}
+            isTouchDevice={isTouchDevice}
           />
 
           {/* Time display */}

@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { IconArrowLeft, IconBell, IconClockHour4, IconUsers, IconMessageCircle } from "@tabler/icons-react";
+import { IconArrowLeft, IconBell, IconClockHour4, IconUsers } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
+
 import { createClient } from "@/lib/supabase/client";
 import {
   markStreamAttendance,
@@ -19,10 +19,10 @@ import {
 } from "@/lib/supabase/live-stream-queries";
 import { useStreamDetail } from "@/hooks/useLiveStreams";
 import { useStreamRealtime } from "@/hooks/useStreamRealtime";
-import { LiveChat } from "@/components/live-stream/LiveChat";
 import { StreamStatusBadge } from "@/components/live-stream/StreamStatusBadge";
 import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
 import { extractYouTubeId } from "@/features/student/components/learn/use-youtube-player";
+import { formatDuration } from "@/lib/utils/video";
 
 export default function WatchStreamPage() {
   const params = useParams<{ id: string }>();
@@ -64,7 +64,8 @@ export default function WatchStreamPage() {
     }
   }
 
-  if (isLoading) return <WatchPageSkeleton />;
+  // Only show skeleton on true first load (no cached data)
+  if (isLoading && !stream) return <WatchPageSkeleton />;
   if (!stream) return <div className="p-8 text-center text-muted-foreground">Stream not found.</div>;
 
   const course = stream.courses;
@@ -87,9 +88,9 @@ export default function WatchStreamPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
+      <div className="flex flex-col gap-6">
         {/* Main Content Area */}
-        <div className="min-w-0 flex flex-col gap-5">
+        <div className="min-w-0 flex flex-col gap-5 w-full max-w-5xl mx-auto">
           {/* Player Section */}
           <div className="relative bg-black md:rounded-2xl md:border shadow-sm overflow-hidden aspect-video">
             {/* Mobile Back Button (overlay on video before play or just above video) */}
@@ -205,48 +206,13 @@ export default function WatchStreamPage() {
                 {isEnded && stream.duration_sec ? (
                   <span className="flex items-center gap-1.5">
                     <IconClockHour4 className="size-4 text-muted-foreground/70" />
-                    {Math.floor(stream.duration_sec / 3600) > 0
-                      ? `${Math.floor(stream.duration_sec / 3600)}h ${Math.floor((stream.duration_sec % 3600) / 60)}m`
-                      : `${Math.floor(stream.duration_sec / 60)}m`}{" "}
-                    recording
+                    {formatDuration(stream.duration_sec)} recording
                   </span>
                 ) : null}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Desktop & Tablet Chat Panel (Hidden on mobile) */}
-        <div className="hidden md:block lg:sticky lg:top-6 lg:h-[calc(100vh-3rem)] h-[450px]">
-          <LiveChat streamId={id} isLive={isLive} />
-        </div>
-      </div>
-
-      {/* Mobile Floating Chat Toggle & Bottom Sheet */}
-      <div className="md:hidden">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button
-              size="icon"
-              className="fixed bottom-6 right-5 size-14 rounded-full shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground z-40 transition-transform active:scale-95"
-            >
-              <IconMessageCircle className="size-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="bottom" className="h-[80dvh] p-0 flex flex-col rounded-t-3xl sm:rounded-t-3xl border-t-0 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
-            <SheetHeader className="px-5 py-4 border-b text-left bg-muted/30 flex-none hidden">
-               <SheetTitle>Live Chat</SheetTitle>
-            </SheetHeader>
-            {/* The LiveChat component itself has a header, so we hide the SheetHeader visually or omit it. 
-                We use VisuallyHidden or just hidden on the SheetHeader so screen readers get a title if needed. */}
-            <div className="flex-1 overflow-hidden p-2 pb-0 bg-background rounded-t-3xl">
-               {/* Pass a class to strip outer border/radius since it's in a sheet */}
-               <div className="h-full [&>div]:border-0 [&>div]:rounded-t-2xl [&>div]:shadow-none">
-                  <LiveChat streamId={id} isLive={isLive} />
-               </div>
-            </div>
-          </SheetContent>
-        </Sheet>
       </div>
     </div>
   );
@@ -289,8 +255,8 @@ function UpcomingPlaceholder({
 function WatchPageSkeleton() {
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1480px] pb-10 md:px-6 lg:px-8 mt-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
-        <div className="space-y-6 px-4 md:px-0">
+      <div className="flex flex-col gap-6">
+        <div className="space-y-6 px-4 md:px-0 w-full max-w-5xl mx-auto">
           <Skeleton className="aspect-video w-full rounded-2xl" />
           <div className="space-y-4 rounded-2xl border bg-card p-6">
             <Skeleton className="h-8 w-3/4" />
@@ -305,9 +271,6 @@ function WatchPageSkeleton() {
               </div>
             </div>
           </div>
-        </div>
-        <div className="hidden lg:block h-[calc(100vh-3rem)]">
-          <Skeleton className="size-full rounded-2xl" />
         </div>
       </div>
     </div>

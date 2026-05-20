@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { fetchStudentDashboardV21 } from "@/app/dashboard/_lib/dashboard-data";
+import { fetchDashboardPageData } from "@/features/student/lib/dashboard-queries";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -13,7 +13,7 @@ export async function GET() {
   }
 
   try {
-    const data = await fetchStudentDashboardV21(supabase, user.id);
+    const data = await fetchDashboardPageData(supabase, user.id);
     return NextResponse.json(data);
   } catch (err) {
     console.error("[api/student/dashboard] Error:", err);

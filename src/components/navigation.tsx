@@ -103,22 +103,13 @@ export function Navigation() {
             <Link
               href="/"
               className="flex shrink-0 items-center gap-2.5"
-              aria-label="Evoke EduGlobal home"
+              aria-label="Evokenxt home"
             >
               <div className="relative size-10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.jpg" alt="Evoke EduGlobal Logo" className="size-full object-contain" />
+                <img src="/evoke-logo.svg" alt="Evoke EduGlobal Logo" className="rounded-lg object-contain" />
               </div>
-              <span
-                className={cn(
-                  "font-semibold tracking-tight transition-all duration-300",
-                  isScrolled
-                    ? "text-sm text-foreground"
-                    : "text-base text-white"
-                )}
-              >
-                Evoke EduGlobal
-              </span>
+
             </Link>
 
             {/* ── Desktop Nav Links ── */}
@@ -154,7 +145,7 @@ export function Navigation() {
                 )}
                 asChild
               >
-                <Link href="/login">Sign in</Link>
+                <Link href="/auth/login">Sign in</Link>
               </Button>
 
               <Button
@@ -240,7 +231,7 @@ export function Navigation() {
               onClick={() => setIsMobileMenuOpen(false)}
               asChild
             >
-              <Link href="/login">Sign in</Link>
+              <Link href="/auth/login">Sign in</Link>
             </Button>
             <Button
               className="h-12 w-full text-base"

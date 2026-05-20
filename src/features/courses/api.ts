@@ -46,21 +46,61 @@ export async function fetchPublishedCatalogCourses(): Promise<CatalogCourse[]> {
   const result = await supabase
     .from("courses")
     .select(
-      `id, slug, name, description, level, thumbnail_url, price, discount_price, status, created_at,
+      `id, slug, name:title, description, thumbnail_url, status, created_at,
        instructor:users!instructor_id(name, avatar),
        reviews(rating),
-       sections(id)`
+       subject:subjects!inner(
+         id,
+         program_level:program_levels!inner(label, program:programs(body))
+       ),
+       pricing:course_pricing(base_price, discounted_price, is_active),
+       chapters(id)`
     )
     .eq("status", "published")
     .order("created_at", { ascending: false });
 
-  return throwIfError(
+  const raw = throwIfError(
     result as {
-      data: CatalogCourse[] | null;
+      data: Array<
+        CatalogCourse & {
+          chapters?: Array<{ id: string }>;
+          subject?: { program_level?: { label?: string | null; program?: { body?: string | null } } | null } | null;
+          pricing?: Array<{ base_price: number; discounted_price: number | null; is_active: boolean }>;
+        }
+      > | null;
       error: { message: string } | null;
     },
     "fetchPublishedCatalogCourses"
   );
+
+  const deriveLevel = (label?: string | null): CatalogCourse["level"] => {
+    switch (label) {
+      case "Applied Knowledge":
+      case "Level I":
+      case "Part 1":
+        return "knowledge";
+      case "Applied Skills":
+      case "Level II":
+        return "skills";
+      case "Strategic Professional":
+      case "Level III":
+      case "Part 2":
+        return "professional";
+      default:
+        return "professional";
+    }
+  };
+
+  // Map DB `chapters` (new schema) to the legacy `sections` shape expected by consumers
+  const mapped: CatalogCourse[] = (raw ?? []).map((c: any) => ({
+    ...c,
+    level: deriveLevel(c.subject?.program_level?.label),
+    price: c.pricing?.find((tier: any) => tier?.is_active)?.discounted_price ?? c.pricing?.find((tier: any) => tier?.is_active)?.base_price ?? 0,
+    discount_price: c.pricing?.find((tier: any) => tier?.is_active)?.discounted_price ?? null,
+    sections: (c.chapters ?? []).map((ch: any) => ({ id: ch.id })),
+  }));
+
+  return mapped;
 }
 
 /** Throw a descriptive error if a Supabase call fails. */
@@ -99,6 +139,7 @@ export async function fetchCourseWithCurriculum(
     .select(
       `
       *,
+      name:title,
       instructor:users!instructor_id(*),
       sections (
         *,
@@ -129,7 +170,7 @@ export async function fetchCourseWithCurriculum(
         })),
     }));
 
-  return { ...(raw as any), sections } as CourseWithCurriculum;
+  return { ...(raw as any), name: (raw as any).title ?? (raw as any).name, sections } as CourseWithCurriculum;
 }
 
 /**
@@ -146,6 +187,7 @@ export async function fetchCourseBySlug(
     .select(
       `
       *,
+      name:title,
       instructor:users!instructor_id(*),
       sections (
         *,
@@ -176,7 +218,7 @@ export async function fetchCourseBySlug(
         })),
     }));
 
-  return { ...(raw as any), sections } as CourseWithCurriculum;
+  return { ...(raw as any), name: (raw as any).title ?? (raw as any).name, sections } as CourseWithCurriculum;
 }
 
 /**

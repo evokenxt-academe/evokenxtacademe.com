@@ -1,107 +1,193 @@
 "use client";
 
-import type { Section } from "@/features/courses/types";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { IconLock, IconPlayerPlay } from "@tabler/icons-react";
+import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
+import { Lock, PlayCircle, Clock } from "lucide-react";
+import {
+  formatDuration,
+  formatLectureDuration,
+  type ChapterWithLectures,
+  type LectureRow,
+} from "@/lib/supabase/queries/course-detail";
 
 interface CurriculumAccordionProps {
-  sections: Section[];
+  chapters: ChapterWithLectures[];
 }
 
-function formatLectureDuration(durationSeconds: number) {
-  if (!Number.isFinite(durationSeconds)) return "0m";
-  const minutes = Math.round(durationSeconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const remaining = minutes % 60;
-  return `${hours}h ${remaining}m`;
-}
+export function CurriculumAccordion({ chapters }: CurriculumAccordionProps) {
+  const [activePreview, setActivePreview] = useState<string | null>(null);
 
-export function CurriculumAccordion({ sections }: CurriculumAccordionProps) {
-  const isEnrolled = false;
+  const totals = useMemo(() => {
+    let lectures = 0;
+    let duration = 0;
+    for (const ch of chapters) {
+      lectures += ch.lectures.length;
+      for (const l of ch.lectures) {
+        duration += l.duration_sec;
+      }
+    }
+    return { lectures, duration };
+  }, [chapters]);
 
-  if (sections.length === 0) {
+  const perChapter = useMemo(
+    () =>
+      chapters.map((ch) => ({
+        count: ch.lectures.length,
+        duration: ch.lectures.reduce((s, l) => s + l.duration_sec, 0),
+      })),
+    [chapters]
+  );
+
+  if (chapters.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-        Curriculum will be available once the course launches.
-      </div>
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Course Curriculum</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-6">
+            Curriculum content is being prepared.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Accordion type="multiple" className="flex flex-col gap-3">
-      {sections.map((section) => (
-        <AccordionItem
-          key={section.id}
-          value={section.id}
-          className="rounded-xl border px-4"
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+          <CardTitle className="text-xl">Course Curriculum</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {chapters.length} chapter{chapters.length !== 1 ? "s" : ""}
+            {" · "}
+            {totals.lectures} lecture{totals.lectures !== 1 ? "s" : ""}
+            {" · "}
+            {formatDuration(totals.duration)}
+          </p>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 px-4 sm:px-6">
+        <Accordion type="multiple" className="w-full -mx-0">
+          {chapters.map((chapter, idx) => (
+            <AccordionItem
+              key={chapter.id}
+              value={chapter.id}
+              className="border rounded-lg mb-2 last:mb-0 px-0 overflow-hidden"
+            >
+              <AccordionTrigger className="hover:no-underline px-4 py-3.5 text-sm hover:bg-muted/50 [&[data-state=open]]:bg-muted/30">
+                <div className="flex flex-1 items-center justify-between pr-3 gap-3">
+                  <span className="font-semibold text-left leading-snug">
+                    {chapter.title}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap tabular-nums">
+                    {perChapter[idx].count} lecture
+                    {perChapter[idx].count !== 1 ? "s" : ""}
+                    {" · "}
+                    {formatDuration(perChapter[idx].duration)}
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-2 pb-2 pt-0">
+                <div className="space-y-px">
+                  {chapter.lectures.map((lecture) => (
+                    <LectureItem
+                      key={lecture.lecture_id}
+                      lecture={lecture}
+                      isActive={activePreview === lecture.lecture_id}
+                      onToggle={() =>
+                        setActivePreview((prev) =>
+                          prev === lecture.lecture_id
+                            ? null
+                            : lecture.lecture_id
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Lecture Item ──────────────────────────────────────────
+
+interface LectureItemProps {
+  lecture: LectureRow;
+  isActive: boolean;
+  onToggle: () => void;
+}
+
+function LectureItem({ lecture, isActive, onToggle }: LectureItemProps) {
+  const canPreview = lecture.is_preview && lecture.yt_video_id;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          if (canPreview) onToggle();
+        }}
+        className={`
+          w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-left transition-colors
+          ${canPreview ? "cursor-pointer hover:bg-muted/60" : "cursor-default"}
+          ${isActive ? "bg-muted" : ""}
+          ${!canPreview ? "opacity-60" : ""}
+        `}
+        disabled={!canPreview}
+      >
+        {/* Icon */}
+        <span
+          className={`shrink-0 ${
+            canPreview ? "text-primary" : "text-muted-foreground/50"
+          }`}
         >
-          <AccordionTrigger className="py-4">
-            <div className="flex w-full flex-wrap items-center justify-between gap-2 text-left">
-              <span className="text-sm font-medium text-foreground">
-                {section.title}
-              </span>
-              <Badge variant="secondary">
-                {section.lectures.length} lectures
-              </Badge>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="pb-4">
-            <div className="flex flex-col gap-3">
-              {section.lectures.map((lecture) => {
-                const canPreview = lecture.is_preview && !!lecture.video_url;
-                const isLocked = !isEnrolled && !canPreview;
+          {canPreview ? (
+            <PlayCircle className="h-4 w-4" />
+          ) : (
+            <Lock className="h-3.5 w-3.5" />
+          )}
+        </span>
 
-                return (
-                  <div
-                    key={lecture.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {isLocked ? <IconLock /> : <IconPlayerPlay />}
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {lecture.title}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatLectureDuration(lecture.duration_sec)}
-                        </span>
-                      </div>
-                    </div>
+        {/* Title */}
+        <span className="flex-1 min-w-0 truncate">{lecture.lecture_title}</span>
 
-                    <div className="flex items-center gap-2">
-                      {canPreview ? (
-                        <Button size="sm" variant="secondary" asChild>
-                          <a
-                            href={lecture.video_url ?? "#"}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <IconPlayerPlay data-icon="inline-start" />
-                            Preview
-                          </a>
-                        </Button>
-                      ) : (
-                        <Button size="sm" variant="ghost" disabled>
-                          <IconLock data-icon="inline-start" />
-                          Locked
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+        {/* Meta: Preview badge + duration */}
+        <span className="flex items-center gap-2 shrink-0">
+          {lecture.is_preview && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 leading-tight font-normal border-green-500/30 text-green-600 bg-green-500/10 dark:text-green-400 dark:bg-green-500/10">
+              Free
+            </Badge>
+          )}
+          <span className="text-[11px] text-muted-foreground tabular-nums flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatLectureDuration(lecture.duration_sec)}
+          </span>
+        </span>
+      </button>
+
+      {/* Inline video player for preview lectures */}
+      {isActive && canPreview && lecture.yt_video_id && (
+        <div className="mx-3 mb-2 mt-1 rounded-lg overflow-hidden border bg-black aspect-video">
+          <YtcnPlayer
+            videoId={lecture.yt_video_id}
+            autoplay={true}
+            className="w-full h-full"
+          />
+        </div>
+      )}
+    </div>
   );
 }

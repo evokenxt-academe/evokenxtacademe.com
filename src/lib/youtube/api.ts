@@ -73,6 +73,9 @@ export async function createLiveBroadcast(
       contentDetails: {
         enableDvr: options.enableDvr !== false,
         enableEmbed: true,
+        enableAutoStart: true,
+        enableAutoStop: true,
+        recordFromStart: true,
         enableMonitorStream: false, // Bypass testing status for direct go-live
       },
     }),
