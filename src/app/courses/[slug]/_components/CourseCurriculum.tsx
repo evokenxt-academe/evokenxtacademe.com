@@ -93,11 +93,10 @@ export function CourseCurriculum({
                       >
                         {/* Icon */}
                         <span
-                          className={`shrink-0 ${
-                            canPreview
+                          className={`shrink-0 ${canPreview
                               ? "text-primary"
                               : "text-muted-foreground/50"
-                          }`}
+                            }`}
                         >
                           {canPreview ? (
                             <PlayCircle className="h-4 w-4" />

@@ -4,23 +4,36 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   Mail,
-  Phone,
   MapPin,
+  Phone,
   Clock,
   ArrowRight,
-  ChevronRight,
+  Headphones,
+  Send,
+  GraduationCap,
+  BookOpen,
+  Users,
+  Zap,
 } from "lucide-react";
-import { 
-  IconBrandX, 
-  IconBrandLinkedin, 
-  IconBrandYoutube, 
-  IconBrandInstagram 
+import {
+  IconBrandInstagram,
+  IconBrandLinkedin,
+  IconBrandYoutube,
+  IconBrandX,
 } from "@tabler/icons-react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -28,13 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import Link from "next/link";
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,223 +48,298 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate network request
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    
     toast.success("Message sent successfully!", {
-      description: "We'll get back to you within 24 hours.",
+      description: "Our team will get back to you within 24 hours.",
     });
-    
     setIsSubmitting(false);
     (e.target as HTMLFormElement).reset();
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-24 relative overflow-hidden">
-      {/* Decorative background glow */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-background text-foreground">
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-32">
-        {/* Page Header */}
-        <div className="max-w-2xl mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
-          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6 font-medium">
-            <Link href="/" className="hover:text-primary transition-colors">
-              Home
-            </Link>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-foreground">Contact</span>
-          </nav>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-            Get in <span className="text-primary">Touch</span>
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Have a question about your course, billing, or a partnership? We typically respond within 24 hours.
-          </p>
+      {/* ═══════════════════════════════════════════════════════════
+          HERO — Self-contained dark section, works in both themes
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="relative w-full overflow-hidden bg-zinc-950">
+        {/* Background Photo */}
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1800&auto=format&fit=crop"
+            alt="Modern classroom with students learning"
+            className="size-full object-cover opacity-30 select-none"
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
-          {/* Left Column - Contact Info */}
-          <div className="lg:col-span-5 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 ease-out fill-mode-both">
-            <div className="space-y-4">
-              <ContactCard
-                icon={<Mail className="w-5 h-5 text-primary" />}
-                label="Email Support"
-                value="support@evokenxt.com"
-              />
-              <ContactCard
-                icon={<Phone className="w-5 h-5 text-primary" />}
-                label="Phone"
-                value="+91 98765 43210"
-              />
-              <ContactCard
-                icon={<MapPin className="w-5 h-5 text-primary" />}
-                label="Location"
-                value="Mumbai, Maharashtra, India"
-              />
-              <ContactCard
-                icon={<Clock className="w-5 h-5 text-primary" />}
-                label="Response Time"
-                value="Monday–Friday, 9am–6pm IST"
-              />
-            </div>
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
 
-            <div className="pt-8 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-6">
-                For partnership inquiries:{" "}
-                <a
-                  href="mailto:partnerships@evokenxt.com"
-                  className="text-foreground hover:text-primary transition-colors"
-                >
-                  partnerships@evokenxt.com
-                </a>
-              </p>
-              <div className="flex items-center space-x-4">
-                <SocialIcon href="#" icon={<IconBrandX className="w-4 h-4" />} label="Twitter" />
-                <SocialIcon href="#" icon={<IconBrandLinkedin className="w-4 h-4" />} label="LinkedIn" />
-                <SocialIcon href="#" icon={<IconBrandYoutube className="w-4 h-4" />} label="YouTube" />
-                <SocialIcon href="#" icon={<IconBrandInstagram className="w-4 h-4" />} label="Instagram" />
-              </div>
-            </div>
+        {/* Content */}
+        <div className="relative z-10 mx-auto max-w-6xl px-6 pt-28 md:pt-36 pb-14 md:pb-20">
+          <div className="max-w-xl">
+            <Badge
+              variant="outline"
+              className="mb-5 border-white/15 bg-white/5 text-white/80 backdrop-blur-sm text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full"
+            >
+              <Headphones className="size-3 mr-1.5 text-primary" />
+              Support Center
+            </Badge>
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] text-white mb-4">
+              Get in Touch
+            </h1>
+            <p className="text-sm md:text-base text-zinc-400 leading-relaxed max-w-md">
+              Have questions about ACCA courses, enrollment, or platform access? Our academic advisors typically respond within 24 hours.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom fade to match any theme */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          MAIN — Two-column layout with proper card boundaries
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-6xl px-6 py-12 md:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-10">
+
+          {/* ── LEFT: Info Cards ── */}
+          <div className="lg:col-span-2 flex flex-col gap-5">
+
+            {/* Contact Details */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Contact Details</CardTitle>
+                <CardDescription className="text-xs">
+                  Reach out through any of these channels.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[
+                  { icon: Mail, label: "Email", value: "support@evokeeduglobal.com", href: "mailto:support@evokeeduglobal.com" },
+                  { icon: Phone, label: "Phone", value: "+91 98765 43210", href: "tel:+919876543210" },
+                  { icon: MapPin, label: "Location", value: "Mumbai, Maharashtra, India" },
+                  { icon: Clock, label: "Hours", value: "Mon – Fri, 9 am – 6 pm IST" },
+                ].map(({ icon: Icon, label, value, href }) => (
+                  <div key={label} className="flex items-center gap-3">
+                    <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Icon className="size-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                      {href ? (
+                        <a href={href} className="text-[13px] font-medium hover:text-primary transition-colors truncate block">{value}</a>
+                      ) : (
+                        <p className="text-[13px] font-medium truncate">{value}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Quick Links */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base">Quick Help</CardTitle>
+                <CardDescription className="text-xs">
+                  Common topics students ask about.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-2.5">
+                {[
+                  { icon: GraduationCap, label: "Enrollment" },
+                  { icon: BookOpen, label: "Courses" },
+                  { icon: Users, label: "Live Classes" },
+                  { icon: Zap, label: "Mock Tests" },
+                ].map(({ icon: Icon, label }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2.5 rounded-lg border border-border p-3 hover:border-primary/30 hover:bg-primary/[0.03] transition-all cursor-pointer group"
+                  >
+                    <Icon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span className="text-xs font-semibold">{label}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Social */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Connect With Us</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  {[
+                    { icon: IconBrandInstagram, href: "#", label: "Instagram" },
+                    { icon: IconBrandLinkedin, href: "#", label: "LinkedIn" },
+                    { icon: IconBrandX, href: "#", label: "Twitter" },
+                    { icon: IconBrandYoutube, href: "#", label: "YouTube" },
+                  ].map(({ icon: Icon, href, label }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className="size-10 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all"
+                    >
+                      <Icon className="size-[18px]" />
+                    </a>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Right Column - Form */}
-          <div className="lg:col-span-7 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 ease-out fill-mode-both">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition duration-1000" />
-              <div className="relative bg-card text-card-foreground border border-border backdrop-blur-md rounded-2xl p-6 sm:p-8 md:p-10 shadow-xl">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      required
-                      placeholder="Jane Doe"
-                    />
+          {/* ── RIGHT: Contact Form ── */}
+          <div className="lg:col-span-3">
+            <Card className="relative overflow-hidden">
+              {/* Decorative accent line at top */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent" />
+
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Send a Message</CardTitle>
+                <CardDescription className="text-xs">
+                  Fill out the details below and our academic team will respond within 24 hours.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+
+                  {/* Name row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-first-name" className="text-xs font-semibold">First Name</Label>
+                      <Input
+                        id="contact-first-name"
+                        required
+                        placeholder="Your first name"
+                        className="h-10 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-last-name" className="text-xs font-semibold">Last Name</Label>
+                      <Input
+                        id="contact-last-name"
+                        required
+                        placeholder="Your last name"
+                        className="h-10 text-sm"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      required
-                      placeholder="jane@example.com"
-                    />
+                  {/* Email + Phone row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-email" className="text-xs font-semibold">Email</Label>
+                      <Input
+                        id="contact-email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
+                        className="h-10 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contact-phone" className="text-xs font-semibold">Phone</Label>
+                      <Input
+                        id="contact-phone"
+                        type="tel"
+                        placeholder="+91 00000 00000"
+                        className="h-10 text-sm"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Select required name="subject">
-                      <SelectTrigger>
-                        <SelectValue placeholder="How can we help you?" />
+                  {/* Topic */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Topic</Label>
+                    <Select name="subject">
+                      <SelectTrigger className="h-10 text-sm">
+                        <SelectValue placeholder="Select a topic" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="course">Course Support</SelectItem>
+                        <SelectItem value="enrollment">Enrollment Help</SelectItem>
                         <SelectItem value="billing">Billing & Payments</SelectItem>
                         <SelectItem value="technical">Technical Issue</SelectItem>
-                        <SelectItem value="partnership">Partnership / B2B</SelectItem>
+                        <SelectItem value="liveclass">Live Class Support</SelectItem>
                         <SelectItem value="general">General Inquiry</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
+                  {/* Message */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="contact-message" className="text-xs font-semibold">Message</Label>
                     <Textarea
-                      id="message"
+                      id="contact-message"
                       required
-                      placeholder="Please describe your issue or inquiry in detail..."
-                      className="min-h-[120px] resize-none"
+                      placeholder="Tell us how we can help you..."
+                      className="min-h-[120px] resize-none text-sm"
                     />
                   </div>
 
+                  {/* Submit */}
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full group"
                     size="lg"
+                    className="w-full h-11 font-bold text-sm"
                   >
                     {isSubmitting ? "Sending..." : "Send Message"}
-                    {!isSubmitting && (
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    )}
+                    {!isSubmitting && <Send className="size-3.5 ml-2" />}
                   </Button>
 
-                  <p className="text-xs text-muted-foreground text-center mt-4">
-                    We respect your privacy. Your data is never shared with third parties.
+                  <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+                    By submitting, you agree to be contacted regarding this inquiry.
                   </p>
                 </form>
-              </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          MAP — Minimal, clean
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <h2 className="text-base font-bold tracking-tight mb-0.5">Our Location</h2>
+              <p className="text-xs text-muted-foreground">Mumbai, Maharashtra, India</p>
             </div>
+            <Button variant="outline" size="sm" className="w-fit rounded-full text-xs" asChild>
+              <a href="https://maps.google.com/?q=Mumbai,Maharashtra,India" target="_blank" rel="noopener noreferrer">
+                Open in Maps <ArrowRight className="size-3 ml-1.5" />
+              </a>
+            </Button>
+          </div>
+          <div className="rounded-xl overflow-hidden border border-border h-[280px] md:h-[360px]">
+            <iframe
+              title="Evoke EduGlobal Location"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d241317.11609823277!2d72.74109995709657!3d19.08219783948915!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c6306644edc1%3A0x5da4ed8f8d648c69!2sMumbai%2C%20Maharashtra%2C%20India!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              className="w-full h-full border-0 grayscale hover:grayscale-0 transition-all duration-700"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </div>
-
-        {/* Bottom Section - FAQ */}
-        <div className="mt-32 max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 ease-out fill-mode-both">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold mb-4">Frequently Asked Questions</h2>
-            <p className="text-muted-foreground">Quick answers to our most common inquiries.</p>
-          </div>
-          
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            <AccordionItem value="item-1" className="border bg-card px-6 rounded-xl">
-              <AccordionTrigger className="hover:text-primary hover:no-underline text-left">
-                How long does support take to respond?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
-                We aim to respond to all inquiries within 24 hours during regular business days. For urgent technical issues with course access, our team often responds within 2-4 hours.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-2" className="border bg-card px-6 rounded-xl">
-              <AccordionTrigger className="hover:text-primary hover:no-underline text-left">
-                Can I request a refund for a course?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
-                Yes, we offer a 14-day money-back guarantee on most of our courses, provided you have not completed more than 20% of the curriculum. Please select "Billing & Payments" in the contact form to initiate a request.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-3" className="border bg-card px-6 rounded-xl">
-              <AccordionTrigger className="hover:text-primary hover:no-underline text-left">
-                Do you offer institutional or bulk licensing?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
-                Absolutely. We work with universities and corporations to provide bulk access to our learning platform. Please select "Partnership / B2B" in the form above and provide details about your organization's size and needs.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-      </div>
+      </section>
     </div>
-  );
-}
-
-function ContactCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="group flex items-start p-4 -ml-4 rounded-xl border border-transparent hover:border-border hover:bg-muted/50 transition-all cursor-default relative overflow-hidden">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-      <div className="flex-shrink-0 mt-1 p-3 bg-muted rounded-lg border border-border group-hover:border-primary/20 transition-colors">
-        {icon}
-      </div>
-      <div className="ml-5">
-        <h3 className="text-sm font-medium text-muted-foreground mb-1">{label}</h3>
-        <p className="text-base font-medium">{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function SocialIcon({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
-  return (
-    <a
-      href={href}
-      aria-label={label}
-      className="p-2.5 rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/10 transition-all duration-300"
-    >
-      {icon}
-    </a>
   );
 }

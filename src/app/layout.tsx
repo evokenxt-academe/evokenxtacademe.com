@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
 import { GlobalLayoutWrapper } from "@/components/global-layout-wrapper";
 import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
+import { WhatsAppFloat } from "@/components/whatsapp-float";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
@@ -75,6 +76,7 @@ export default function RootLayout({
           <GlobalLayoutWrapper>{children}</GlobalLayoutWrapper>
         </Providers>
         <DashboardMobileNav />
+        <WhatsAppFloat />
         <Toaster />
       </body>
     </html>

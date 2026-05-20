@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import { CourseCatalog } from "./_components/course-catalog";
+import CourseHeroSection from "@/components/hero-sections-05";
+import { CourseFaqSection } from "./_components/course-faq-section";
 
 export const metadata: Metadata = {
   title: "Course Catalog — Evoke Edu Global",
@@ -10,19 +12,19 @@ export const metadata: Metadata = {
 export default function CoursesCatalogPage() {
   return (
     <div className="min-h-screen bg-background">
+      <main className="flex w-full flex-col gap-8 pb-4 pt-12 md:pt-20">
+        {/* Hero Section */}
+        <CourseHeroSection />
 
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-24 pt-40 md:px-6 lg:pt-48">
-        {/* Page header */}
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Course Catalog
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Browse professional courses designed to accelerate your ACCA career.
-          </p>
+        {/* Catalog Section */}
+        <div className="mx-auto w-full max-w-6xl px-4 md:px-6">
+          <CourseCatalog />
         </div>
 
-        <CourseCatalog />
+        {/* Minimalist FAQ Section */}
+        <div className="border-t border-border/45 mt-8">
+          <CourseFaqSection />
+        </div>
       </main>
     </div>
   );
