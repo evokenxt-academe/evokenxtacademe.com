@@ -1,9 +1,5 @@
-import { notFound } from "next/navigation";
-import { createServerClient_ } from "@/lib/supabase/server";
-import {
-  fetchCourseBySlugDetail,
-  fetchChaptersWithLectures,
-} from "@/lib/supabase/queries/course-detail";
+import { createClient } from "@supabase/supabase-js";
+import { fetchCourseBySlugDetail } from "@/lib/supabase/queries/course-detail";
 import { CourseDetailClient } from "./_components/course-preview-page";
 import type { Metadata } from "next";
 
@@ -11,12 +7,17 @@ interface CoursePageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Secure service role client for server-side RLS bypassing
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export async function generateMetadata({
   params,
 }: CoursePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createServerClient_();
-  const course = await fetchCourseBySlugDetail(supabase as any, slug);
+  const course = await fetchCourseBySlugDetail(supabaseAdmin as any, slug);
 
   if (!course) {
     return { title: "Course Not Found — Evoke EduGlobal" };
@@ -35,15 +36,8 @@ export const revalidate = 3600;
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { slug } = await params;
-  const supabase = await createServerClient_();
+  const course = await fetchCourseBySlugDetail(supabaseAdmin as any, slug);
 
-  const course = await fetchCourseBySlugDetail(supabase as any, slug);
-
-  if (!course) {
-    notFound();
-  }
-
-  const chapters = await fetchChaptersWithLectures(supabase as any, course.id);
-
-  return <CourseDetailClient course={course} chapters={chapters} />;
+  return <CourseDetailClient slug={slug} initialCourse={course} />;
 }
+

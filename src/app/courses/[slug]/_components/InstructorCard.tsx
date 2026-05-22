@@ -10,17 +10,52 @@ interface InstructorCardProps {
   totalStudents: number;
 }
 
+// Teacher Profile Dictionary for dynamic credentials and stats
+interface TeacherProfile {
+  credentials: string[];
+  yearsExperience: string;
+  positionsCount: string;
+  fallbackStudents: string;
+  roleBadge: string;
+}
+
+const TEACHER_PROFILES: Record<string, TeacherProfile> = {
+  "Amar Biradar": {
+    credentials: [
+      "18+ years of teaching experience.",
+      "20+ global and nationwide positions.",
+      "Expertise in bridging complex accounting theories with practical business applications.",
+    ],
+    yearsExperience: "18+",
+    positionsCount: "60+",
+    fallbackStudents: "10,000+",
+    roleBadge: "Teacher",
+  },
+};
+
+const DEFAULT_PROFILE: TeacherProfile = {
+  credentials: [
+    "Certified industry professional.",
+    "Extensive teaching and hands-on professional experience.",
+    "Expertise in bridging complex theories with practical business applications.",
+  ],
+  yearsExperience: "5+",
+  positionsCount: "10+",
+  fallbackStudents: "1,000+",
+  roleBadge: "Instructor",
+};
+
 export function InstructorCard({
   name,
   avatar,
   subjectName,
   totalStudents,
 }: InstructorCardProps) {
-  const credentials = [
-    "18+ years of teaching experience.",
-    "20+ global and nationwide positions.",
-    "Expertise in bridging complex accounting theories with practical business applications.",
-  ];
+  // Safe, case-insensitive profile lookup
+  const profileKey = Object.keys(TEACHER_PROFILES).find(
+    (k) => k.toLowerCase() === name?.trim().toLowerCase()
+  ) || "";
+  const profile = TEACHER_PROFILES[profileKey] || DEFAULT_PROFILE;
 
   return (
     <div className="space-y-6">
@@ -46,7 +81,7 @@ export function InstructorCard({
                 variant="secondary"
                 className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-500 border-amber-500/20"
               >
-                Teacher
+                {profile.roleBadge}
               </Badge>
             </div>
 
@@ -58,7 +93,7 @@ export function InstructorCard({
 
             {/* Credentials */}
             <ul className="space-y-1.5 pt-1">
-              {credentials.map((item, i) => (
+              {profile.credentials.map((item, i) => (
                 <li
                   key={i}
                   className="flex items-start gap-2.5 text-sm text-muted-foreground"
@@ -80,7 +115,7 @@ export function InstructorCard({
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }} className="text-center">
           <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">18+</p>
+            <p className="text-2xl font-bold text-foreground">{profile.yearsExperience}</p>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
               Years of Experience
             </p>
@@ -91,14 +126,14 @@ export function InstructorCard({
             <p className="text-2xl font-bold text-foreground">
               {totalStudents > 0
                 ? `${totalStudents.toLocaleString()}+`
-                : "1000+"}
+                : profile.fallbackStudents}
             </p>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
               No of Students
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-2xl font-bold text-foreground">60+</p>
+            <p className="text-2xl font-bold text-foreground">{profile.positionsCount}</p>
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
               Position Count
             </p>
@@ -108,3 +143,4 @@ export function InstructorCard({
     </div>
   );
 }
+

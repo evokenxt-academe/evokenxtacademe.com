@@ -20,7 +20,7 @@ export function AdminPageShell({
   return (
     <section
       className={cn(
-        "mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6",
+        "mx-auto flex w-full max-w-7xl flex-col gap-5 p-4 sm:p-6 lg:p-8",
         className,
       )}
     >

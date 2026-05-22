@@ -48,7 +48,7 @@ export function CurriculumAccordion({ chapters }: CurriculumAccordionProps) {
 
   if (chapters.length === 0) {
     return (
-      <Card>
+      <Card className="rounded-none">
         <CardHeader className="pb-4">
           <CardTitle className="text-xl">Course Curriculum</CardTitle>
         </CardHeader>
@@ -62,7 +62,7 @@ export function CurriculumAccordion({ chapters }: CurriculumAccordionProps) {
   }
 
   return (
-    <Card>
+    <Card className="rounded-none">
       <CardHeader className="pb-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
           <CardTitle className="text-xl">Course Curriculum</CardTitle>
@@ -75,13 +75,13 @@ export function CurriculumAccordion({ chapters }: CurriculumAccordionProps) {
           </p>
         </div>
       </CardHeader>
-      <CardContent className="pt-0 px-4 sm:px-6">
-        <Accordion type="multiple" className="w-full -mx-0">
+      <CardContent className="pt-0 px-4 sm:px-6 rounded-none">
+        <Accordion type="multiple" className="w-full mx-0">
           {chapters.map((chapter, idx) => (
             <AccordionItem
               key={chapter.id}
               value={chapter.id}
-              className="border rounded-lg mb-2 last:mb-0 px-0 overflow-hidden"
+              className="border rounded-none mb-2 last:mb-0 px-0 overflow-hidden"
             >
               <AccordionTrigger className="hover:no-underline px-4 py-3.5 text-sm hover:bg-muted/50 [&[data-state=open]]:bg-muted/30">
                 <div className="flex flex-1 items-center justify-between pr-3 gap-3">
@@ -150,9 +150,8 @@ function LectureItem({ lecture, isActive, onToggle }: LectureItemProps) {
       >
         {/* Icon */}
         <span
-          className={`shrink-0 ${
-            canPreview ? "text-primary" : "text-muted-foreground/50"
-          }`}
+          className={`shrink-0 ${canPreview ? "text-primary" : "text-muted-foreground/50"
+            }`}
         >
           {canPreview ? (
             <PlayCircle className="h-4 w-4" />

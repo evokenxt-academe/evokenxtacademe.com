@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
 
 interface VideoPreviewProps {
   videoId: string | null;
@@ -39,13 +40,10 @@ export function VideoPreview({ videoId, courseTitle }: VideoPreviewProps) {
       className={`w-full ${isSticky ? "lg:sticky lg:top-24" : ""}`}
     >
       <div className="w-full aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl shadow-blue-950/50 bg-black">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`}
-          title={`Preview: ${courseTitle}`}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
+        <YtcnPlayer
+          videoId={videoId}
+          autoplay={false}
           className="w-full h-full"
-          loading="lazy"
         />
       </div>
     </div>

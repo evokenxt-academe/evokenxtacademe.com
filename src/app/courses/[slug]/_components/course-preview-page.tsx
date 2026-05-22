@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { createClient } from "@/utils/supabase/client";
 import { CourseHero } from "./CourseHero";
 import { CourseCurriculum } from "./CourseCurriculum";
 import { VideoPreview } from "./VideoPreview";
@@ -8,14 +10,15 @@ import { InstructorCard } from "./InstructorCard";
 import { CourseFeatures } from "./CourseFeatures";
 import { EnrollButton } from "./EnrollButton";
 import { Separator } from "@/components/ui/separator";
-import type {
-  CourseDetailData,
-  ChapterWithLectures,
+import {
+  fetchCourseBySlugDetail,
+  fetchChaptersWithLectures,
 } from "@/lib/supabase/queries/course-detail";
+import type { CourseDetailData } from "@/lib/supabase/queries/course-detail";
 
 interface CourseDetailClientProps {
-  course: CourseDetailData;
-  chapters: ChapterWithLectures[];
+  slug: string;
+  initialCourse?: CourseDetailData | null;
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -33,12 +36,50 @@ function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-export function CourseDetailClient({
-  course,
-  chapters,
-}: CourseDetailClientProps) {
+export function CourseDetailClient({ slug, initialCourse }: CourseDetailClientProps) {
+  const supabase = createClient();
+
+  // Automatically scroll to the top when page loads or slug changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, [slug]);
+
+  const { data: rawCourse, isPending: isCoursePending } = useQuery({
+    queryKey: ["publicCourseDetail", slug],
+    queryFn: () => fetchCourseBySlugDetail(supabase as any, slug),
+    initialData: initialCourse ?? undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutes stale time
+  });
+
+  const course = useMemo(() => {
+    if (!rawCourse) return null;
+
+    // Check if the query returned a placeholder or null for instructor due to RLS
+    const hasRealInstructor = rawCourse.instructor_name && rawCourse.instructor_name !== "Instructor";
+
+    return {
+      ...rawCourse,
+      instructor_name: hasRealInstructor
+        ? rawCourse.instructor_name
+        : (initialCourse?.instructor_name || "Amar Biradar"),
+      instructor_avatar: hasRealInstructor
+        ? rawCourse.instructor_avatar
+        : (initialCourse?.instructor_avatar || null),
+    };
+  }, [rawCourse, initialCourse]);
+
+
+  const { data: chapters = [], isPending: isChaptersPending } = useQuery({
+    queryKey: ["publicCourseChapters", course?.id],
+    queryFn: () => fetchChaptersWithLectures(supabase as any, course!.id),
+    enabled: !!course?.id,
+  });
+
   // Find first preview lecture video id as default
   const defaultVideoId = useMemo(() => {
+    if (!course) return null;
     // Try course preview_video_url first
     if (course.preview_video_url) {
       const id = extractYouTubeId(course.preview_video_url);
@@ -53,11 +94,15 @@ export function CourseDetailClient({
       }
     }
     return null;
-  }, [course.preview_video_url, chapters]);
+  }, [course?.preview_video_url, chapters]);
 
-  const [activeVideoId, setActiveVideoId] = useState<string | null>(
-    defaultVideoId
-  );
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (defaultVideoId && !activeVideoId) {
+      setActiveVideoId(defaultVideoId);
+    }
+  }, [defaultVideoId, activeVideoId]);
 
   const handleLectureClick = useCallback((ytVideoId: string) => {
     setActiveVideoId(ytVideoId);
@@ -80,6 +125,23 @@ export function CourseDetailClient({
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [defaultVideoId]);
+
+  if (isCoursePending) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20">
+        <p className="text-muted-foreground animate-pulse">Loading course details...</p>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center py-20 gap-4">
+        <h2 className="text-2xl font-semibold">Course Not Found</h2>
+        <p className="text-muted-foreground">The course you are looking for does not exist or has been removed.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
