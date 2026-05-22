@@ -18,6 +18,7 @@ import type { CourseDetailData } from "@/lib/supabase/queries/course-detail";
 
 interface CourseDetailClientProps {
   slug: string;
+  initialCourse?: CourseDetailData | null;
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -35,13 +36,40 @@ function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-export function CourseDetailClient({ slug }: CourseDetailClientProps) {
+export function CourseDetailClient({ slug, initialCourse }: CourseDetailClientProps) {
   const supabase = createClient();
 
-  const { data: course, isPending: isCoursePending } = useQuery({
+  // Automatically scroll to the top when page loads or slug changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo(0, 0);
+    }
+  }, [slug]);
+
+  const { data: rawCourse, isPending: isCoursePending } = useQuery({
     queryKey: ["publicCourseDetail", slug],
     queryFn: () => fetchCourseBySlugDetail(supabase as any, slug),
+    initialData: initialCourse ?? undefined,
+    staleTime: 1000 * 60 * 5, // 5 minutes stale time
   });
+
+  const course = useMemo(() => {
+    if (!rawCourse) return null;
+
+    // Check if the query returned a placeholder or null for instructor due to RLS
+    const hasRealInstructor = rawCourse.instructor_name && rawCourse.instructor_name !== "Instructor";
+
+    return {
+      ...rawCourse,
+      instructor_name: hasRealInstructor
+        ? rawCourse.instructor_name
+        : (initialCourse?.instructor_name || "Amar Biradar"),
+      instructor_avatar: hasRealInstructor
+        ? rawCourse.instructor_avatar
+        : (initialCourse?.instructor_avatar || null),
+    };
+  }, [rawCourse, initialCourse]);
+
 
   const { data: chapters = [], isPending: isChaptersPending } = useQuery({
     queryKey: ["publicCourseChapters", course?.id],
