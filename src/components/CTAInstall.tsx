@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Download,
@@ -27,6 +29,93 @@ const stats = [
 ];
 
 export default function CTAInstall() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Check if already installed
+    if (
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone)
+    ) {
+      setIsInstalled(true);
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    }
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+      toast.success("App installed successfully! Thank you!");
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("appinstalled", handleAppInstalled);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        window.removeEventListener("appinstalled", handleAppInstalled);
+      }
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (isInstalled) {
+      toast.info("EvokeNext LMS is already installed as a PWA!");
+      return;
+    }
+
+    if (!deferredPrompt) {
+      // Check if it's iOS Safari
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      const isSafari =
+        /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+      if (isIOS && isSafari) {
+        toast.info(
+          "To install: Tap the Share button at the bottom of Safari, then select 'Add to Home Screen' 📲",
+          { duration: 6000 }
+        );
+      } else {
+        toast.info(
+          "PWA installation is ready! If you don't see the prompt, check your browser's address bar for an install icon (⊕) or menu option.",
+          { duration: 6000 }
+        );
+      }
+      return;
+    }
+
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        toast.success("PWA install accepted!");
+        setIsInstalled(true);
+        setIsInstallable(false);
+        setDeferredPrompt(null);
+      } else {
+        toast.warning("PWA install dismissed.");
+      }
+    } catch (err) {
+      console.error("Installation failed:", err);
+      toast.error("An error occurred during installation.");
+    }
+  };
+
   return (
     <section className="w-full min-h-screen flex items-center bg-background">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
@@ -74,17 +163,11 @@ export default function CTAInstall() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
               <Button
                 size="lg"
-                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 h-12 sm:h-14 rounded-xl shadow-md hover:shadow-lg transition-all"
+                onClick={handleInstallClick}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 h-12 sm:h-14 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
               >
-                Start Free Trial
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground font-semibold px-8 h-12 sm:h-14 rounded-xl gap-2 transition-all"
-              >
-                <PlayCircle className="h-5 w-5" />
-                Watch Demo
+                <Download className="h-5 w-5 group-hover:translate-y-0.5 transition-transform duration-200" />
+                {isInstalled ? "App Installed" : "Install PWA App"}
               </Button>
             </div>
           </div>

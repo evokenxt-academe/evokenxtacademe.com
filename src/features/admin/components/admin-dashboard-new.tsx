@@ -617,7 +617,7 @@ export function AdminDashboard() {
                       position="right"
                       className="fill-foreground"
                       fontSize={11}
-                      formatter={(v: number) => `${v}%`}
+                      formatter={(v: any) => `${v}%`}
                     />
                   </Bar>
                 </BarChart>
