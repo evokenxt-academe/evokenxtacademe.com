@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -57,93 +56,7 @@ const stats = [
 ];
 
 export default function CTAInstall() {
-
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    // Check if already installed
-    if (
-      typeof window !== "undefined" &&
-      (window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone)
-    ) {
-      setIsInstalled(true);
-    }
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    }
-
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
-      setIsInstallable(false);
-      setDeferredPrompt(null);
-      toast.success("App installed successfully! Thank you!");
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("appinstalled", handleAppInstalled);
-    }
-
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-        window.removeEventListener("appinstalled", handleAppInstalled);
-      }
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (isInstalled) {
-      toast.info("EvokeNext LMS is already installed as a PWA!");
-      return;
-    }
-
-    if (!deferredPrompt) {
-      // Check if it's iOS Safari
-      const isIOS =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-      const isSafari =
-        /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-      if (isIOS && isSafari) {
-        toast.info(
-          "To install: Tap the Share button at the bottom of Safari, then select 'Add to Home Screen' 📲",
-          { duration: 6000 }
-        );
-      } else {
-        toast.info(
-          "PWA installation is ready! If you don't see the prompt, check your browser's address bar for an install icon (⊕) or menu option.",
-          { duration: 6000 }
-        );
-      }
-      return;
-    }
-
-    try {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        toast.success("PWA install accepted!");
-        setIsInstalled(true);
-        setIsInstallable(false);
-        setDeferredPrompt(null);
-      } else {
-        toast.warning("PWA install dismissed.");
-      }
-    } catch (err) {
-      console.error("Installation failed:", err);
-      toast.error("An error occurred during installation.");
-    }
-  };
+  const [startStatsCount, setStartStatsCount] = useState(false);
 
   return (
     <section className="w-full bg-background relative overflow-hidden border-t border-border/40 py-24 md:py-32">

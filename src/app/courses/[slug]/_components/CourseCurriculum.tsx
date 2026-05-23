@@ -96,7 +96,6 @@ export function CourseCurriculum({
                           className={`shrink-0 ${canPreview
                               ? "text-primary"
                               : "text-muted-foreground/50"
-
                             }`}
                         >
                           {canPreview ? (
