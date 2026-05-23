@@ -1,9 +1,5 @@
-import { notFound } from "next/navigation";
 import { createServerClient_ } from "@/lib/supabase/server";
-import {
-  fetchCourseBySlugDetail,
-  fetchChaptersWithLectures,
-} from "@/lib/supabase/queries/course-detail";
+import { fetchCourseBySlugDetail } from "@/lib/supabase/queries/course-detail";
 import { CourseDetailClient } from "./_components/course-preview-page";
 import type { Metadata } from "next";
 
@@ -35,15 +31,6 @@ export const revalidate = 3600;
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { slug } = await params;
-  const supabase = await createServerClient_();
 
-  const course = await fetchCourseBySlugDetail(supabase as any, slug);
-
-  if (!course) {
-    notFound();
-  }
-
-  const chapters = await fetchChaptersWithLectures(supabase as any, course.id);
-
-  return <CourseDetailClient course={course} chapters={chapters} />;
+  return <CourseDetailClient slug={slug} />;
 }

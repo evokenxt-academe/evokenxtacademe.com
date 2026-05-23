@@ -50,15 +50,15 @@ export function CourseCurriculum({
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-foreground">Course Curriculum</h2>
 
-      <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
-        <Accordion type="multiple" className="w-full">
+      <div className="rounded-none border border-border/50 bg-card/30 overflow-hidden">
+        <Accordion type="multiple" className="w-full rounded-none">
           {chapters.map((chapter, idx) => (
             <AccordionItem
               key={chapter.id}
               value={chapter.id}
-              className="border-b border-border/30 last:border-b-0 px-0"
+              className="border-b last:border-b-0 px-0 rounded-none"
             >
-              <AccordionTrigger className="hover:no-underline px-4 py-3.5 text-sm hover:bg-muted/30 transition-colors [&[data-state=open]]:bg-muted/20">
+              <AccordionTrigger className="hover:no-underline px-4 py-3.5 text-sm hover:bg-muted/30 transition-colors [&[data-state=open]]:bg-muted/20 rounded-none">
                 <div className="flex flex-1 items-center justify-between pr-3 gap-3">
                   <span className="font-semibold text-left leading-snug text-primary/90">
                     {chapter.title}
@@ -71,7 +71,7 @@ export function CourseCurriculum({
                   </span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="px-2 pb-2 pt-0">
+              <AccordionContent className="hover:rounded-none pb-2 pt-0 ">
                 <div className="space-y-px">
                   {chapter.lectures.map((lecture) => {
                     const canPreview =
@@ -87,7 +87,7 @@ export function CourseCurriculum({
                         }}
                         disabled={!canPreview}
                         className={`
-                          w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-left transition-colors
+                          w-full flex items-center gap-3 px-3 py-2.5 rounded-none text-sm text-left transition-colors
                           ${canPreview ? "cursor-pointer hover:bg-muted/40" : "cursor-default opacity-60"}
                         `}
                       >
@@ -96,6 +96,7 @@ export function CourseCurriculum({
                           className={`shrink-0 ${canPreview
                               ? "text-primary"
                               : "text-muted-foreground/50"
+
                             }`}
                         >
                           {canPreview ? (
