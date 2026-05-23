@@ -5,6 +5,7 @@ import { ArrowRight, UserCheck, Users, MonitorPlay, TrendingUp } from "lucide-re
 
 import { GlowCardGrid } from "@/components/glow-card-grid"
 import { cn } from "@/lib/utils"
+import { BlurFade } from "@/components/ui/blur-fade"
 
 const stats = [
   {
@@ -131,35 +132,43 @@ export function HowProcessSection() {
 
           {/* ─── Left Column: Text ─── */}
           <div>
-            {/* Label */}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="w-6 h-[2px] bg-primary inline-block"></span>
-              <span className="text-xs font-bold uppercase tracking-widest text-primary">How It Works</span>
-            </div>
+            <BlurFade delay={0.1} inView>
+              {/* Label */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className="w-6 h-[2px] bg-primary inline-block"></span>
+                <span className="text-xs font-bold uppercase tracking-widest text-primary">How It Works</span>
+              </div>
 
-            {/* Headline */}
-            <h2 className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight leading-tight mb-4">
-              Welcome to <br />
-              <span className="text-primary">Evokenxt</span>
-            </h2>
+              {/* Headline */}
+              <h2 className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight leading-tight mb-4">
+                Welcome to <br />
+                <span className="text-primary">Evokenxt</span>
+              </h2>
 
-            {/* Blockquote */}
-            <blockquote className="border-l-4 border-amber-400 pl-4 mb-10">
-              <p className="text-muted-foreground text-base leading-relaxed">
-                Our proven methodology is designed to guide you from foundational learning all the way seamlessly to your final examination success — taught in Urdu & Hindi by ACCA qualified professionals.
-              </p>
-            </blockquote>
+              {/* Blockquote */}
+              <blockquote className="border-l-4 border-amber-400 pl-4 mb-10">
+                <p className="text-muted-foreground text-base leading-relaxed">
+                  Our proven methodology is designed to guide you from foundational learning all the way seamlessly to your final examination success — taught in Urdu & Hindi by ACCA qualified professionals.
+                </p>
+              </blockquote>
+            </BlurFade>
 
             {/* Feature cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
-              {features.map((f) => (
-                <div key={f.id} className="border-t-2 border-primary pt-4">
-                  <h4 className="text-base font-bold text-foreground mb-2">{f.title}</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{f.desc}</p>
-                  <a href="#" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-background bg-foreground px-4 py-2.5 hover:bg-primary hover:text-primary-foreground transition-colors">
-                    <ArrowRight className="w-3.5 h-3.5" /> Learn More
-                  </a>
-                </div>
+              {features.map((f, idx) => (
+                <BlurFade key={f.id} delay={0.2 + idx * 0.1} inView>
+                  <div className="border-t-2 border-primary pt-4 h-full flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-base font-bold text-foreground mb-2">{f.title}</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4">{f.desc}</p>
+                    </div>
+                    <div>
+                      <a href="#" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-background bg-foreground px-4 py-2.5 hover:bg-primary hover:text-primary-foreground transition-colors">
+                        <ArrowRight className="w-3.5 h-3.5" /> Learn More
+                      </a>
+                    </div>
+                  </div>
+                </BlurFade>
               ))}
             </div>
           </div>
@@ -167,8 +176,10 @@ export function HowProcessSection() {
           {/* ─── Right Column: 2×2 Stats Grid ─── */}
           <div className="w-full">
             <GlowCardGrid className="grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-4">
-              {stats.map((stat) => (
-                <StatGlowCard key={stat.id} stat={stat} />
+              {stats.map((stat, idx) => (
+                <BlurFade key={stat.id} delay={0.3 + idx * 0.08} inView>
+                  <StatGlowCard stat={stat} />
+                </BlurFade>
               ))}
             </GlowCardGrid>
           </div>

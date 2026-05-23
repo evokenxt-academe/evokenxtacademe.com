@@ -9,20 +9,44 @@ import { CourseSection } from "@/components/course-section";
 import { Separator } from "@/components/ui/separator";
 import { Testimonials01 } from "@/components/testimonials-01";
 import CTAInstall from "@/components/CTAInstall";
+import { BlurFade } from "@/components/ui/blur-fade";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen bg-background">
-      <HeroSection />
-      <StorySection />
+    <main className="relative min-h-screen bg-background overflow-x-hidden">
+      <BlurFade delay={0.1}>
+        <HeroSection />
+      </BlurFade>
+      
+      <BlurFade inView>
+        <StorySection />
+      </BlurFade>
+      
       <Separator />
-      <CourseSection />
+      
+      <BlurFade inView>
+        <CourseSection />
+      </BlurFade>
+      
       <Separator />
-      <Testimonials01 />
+      
+      <BlurFade inView>
+        <Testimonials01 />
+      </BlurFade>
+      
       <Separator />
-      <FaqSection />
-      <HowProcessSection />
-      <CTAInstall />
+      
+      <BlurFade inView>
+        <FaqSection />
+      </BlurFade>
+      
+      <BlurFade inView>
+        <HowProcessSection />
+      </BlurFade>
+      
+      <BlurFade inView>
+        <CTAInstall />
+      </BlurFade>
     </main>
   );
 }
