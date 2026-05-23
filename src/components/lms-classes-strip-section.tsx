@@ -39,7 +39,7 @@ const lmsStats = [
 export function LmsClassesStripSection() {
   return (
     <section className="relative py-16 md:py-20 border-y border-border/40 overflow-hidden">
-      
+
       {/* ─── PURE PHOTO (No gradients, no smoke, no overlays) ─── */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-fixed"
@@ -48,9 +48,9 @@ export function LmsClassesStripSection() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-          
+
           {/* ─── Left Column: Explicit Light/Dark Text Colors ─── */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -66,7 +66,7 @@ export function LmsClassesStripSection() {
           </motion.div>
 
           {/* ─── Right Column: Clean shadcn Cards (No Border Radius) ─── */}
-          <motion.div 
+          <motion.div
             initial="hidden"
             whileInView="show"
             viewport={{ once: true }}

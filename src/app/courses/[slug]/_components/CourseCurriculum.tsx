@@ -94,8 +94,8 @@ export function CourseCurriculum({
                         {/* Icon */}
                         <span
                           className={`shrink-0 ${canPreview
-                            ? "text-primary"
-                            : "text-muted-foreground/50"
+                              ? "text-primary"
+                              : "text-muted-foreground/50"
                             }`}
                         >
                           {canPreview ? (

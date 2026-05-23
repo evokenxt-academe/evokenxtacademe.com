@@ -13,8 +13,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 
-
-
 const VALUES = [
   {
     title: "Excellence",
@@ -42,16 +40,12 @@ const VALUES = [
   },
 ] as const;
 
-
-
-
 const STATS = [
   { value: "16+", label: "Years of excellence" },
   { value: "3,000+", label: "Global graduates" },
   { value: "95%", label: "Pass rate improvement" },
   { value: "40+", label: "Countries reached" },
 ] as const;
-
 
 // ── Component ──────────────────────────────────────────────────────────────
 export default function AboutPage() {
@@ -65,7 +59,6 @@ export default function AboutPage() {
   }, []);
 
   return (
-
     <main className="relative min-h-screen bg-background text-foreground selection:bg-primary/20 overflow-hidden">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -87,8 +80,7 @@ export default function AboutPage() {
         }
       `}</style>
 
-
-
+      {/* ─── RESTORED ORIGINAL HERO SECTION ─── */}
       <section className="w-full bg-background py-16 px-6 md:px-12 lg:px-24 my-10">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-center items-center gap-10 lg:gap-16">
 
@@ -96,15 +88,15 @@ export default function AboutPage() {
           <div className="flex-1 flex flex-col items-start gap-6 max-w-xl">
 
             {/* Badge */}
-            <span className="inline-block border border-gray-300 text-sm px-5 py-2 rounded-full tracking-wide">
+            <span className="inline-block border border-border text-muted-foreground bg-muted/30 text-sm px-5 py-2 rounded-full tracking-wide">
               Solution for client-facing businesses
             </span>
 
             {/* Heading */}
-            <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] tracking-tight text-balance">
+            <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] tracking-tight text-balance text-foreground">
               Helping You Build and Grow a Thriving{' '}
               <span
-                className="relative inline-flex items-center h-[1.3em] min-w-[200px] md:min-w-[240px] align-bottom overflow-hidden rounded-xl border border-white/20 bg-primary/10 backdrop-blur-md shadow-lg shadow-primary/10"
+                className="relative inline-flex items-center h-[1.3em] min-w-[200px] md:min-w-[240px] align-bottom overflow-hidden rounded-[1.25rem] border border-primary/20 bg-primary/10 backdrop-blur-md shadow-[0_8px_30px_-4px_rgba(var(--primary),0.15)] ml-1"
               >
                 <AnimatePresence mode="popLayout">
                   <motion.span
@@ -122,7 +114,7 @@ export default function AboutPage() {
             </h1>
 
             {/* Description */}
-            <p className=" text-base md:text-[17px] leading-relaxed">
+            <p className="text-base md:text-[17px] leading-relaxed text-muted-foreground">
               In today&apos;s fast-paced world, staying ahead means taking bold steps to expand,
               innovate, and lead. We&apos;re here to equip you with the right strategies, insights,
               and tools to drive growth and turn your business goals into reality. Let&apos;s
@@ -131,19 +123,19 @@ export default function AboutPage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button className="flex items-center gap-2 bg-gray-950 text-white text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-gray-800 transition-colors duration-200">
+              <Button size="lg" className="rounded-full px-7 h-12 font-semibold">
                 Schedule A Demo
-                <Rocket className="w-4 h-4" aria-hidden="true" />
-              </button>
-              <button className="flex items-center gap-2 border border-gray-300  text-sm font-semibold px-7 py-3.5 rounded-full hover:bg-gray-50 transition-colors duration-200">
+                <Rocket className="w-4 h-4 ml-2" aria-hidden="true" />
+              </Button>
+              <Button size="lg" variant="outline" className="rounded-full px-7 h-12 font-semibold bg-background hover:bg-accent text-foreground">
                 Watch Video
-                <Play className="w-4 h-4 fill-gray-900" aria-hidden="true" />
-              </button>
+                <Play className="w-4 h-4 ml-2 fill-current" aria-hidden="true" />
+              </Button>
             </div>
           </div>
 
           {/* ── Right Image Block ── */}
-          <div className="flex-shrink-0 hidden lg:flex justify-end relative">
+          <div className="flex-shrink-0 flex justify-center lg:justify-end relative mt-8 lg:mt-0 w-full lg:w-auto">
             {/* Main card */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -163,7 +155,7 @@ export default function AboutPage() {
       </section>
 
       {/* MISSION & VISION CONTENT */}
-      < div className="relative z-20 bg-muted/30 border-y" >
+      <div className="relative z-20 bg-muted/30 border-y">
         <div className="container mx-auto px-6 py-16">
           <div className="max-w-[1220px] mx-auto">
             <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center mb-16">
@@ -240,7 +232,7 @@ export default function AboutPage() {
                   <div className="flex gap-6 group">
                     <div className="w-14 h-14 shrink-0 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
                       <svg className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                     </div>
                     <div>
@@ -329,41 +321,98 @@ export default function AboutPage() {
               </motion.div>
             ))}
           </div>
-
         </div>
       </section>
 
-
-      <TeamSection />
-
       {/* ─── FINAL CTA ─── */}
-      <section className="py-16 bg-muted/20 border-t">
-        <div className="container mx-auto px-6 max-w-4xl text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
-              Ready to Start Your ACCA Journey?
-            </h2>
-            <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Join thousands of students and take the next step in advancing your global career in accounting.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="font-bold px-8 w-full sm:w-auto" asChild>
-                <Link href="/courses">View All Courses</Link>
-              </Button>
-              <Button size="lg" variant="outline" className="font-bold px-8 w-full sm:w-auto" asChild>
-                <Link href="/contact">Talk to an Advisor</Link>
-              </Button>
+      <section className="w-full bg-muted/30 border-t border-border overflow-hidden py-10 lg:py-12">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <div className="grid lg:grid-cols-2 gap-8 items-center">
+            
+            {/* Left Content */}
+            <div className="max-w-xl">
+              <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+                Premium Learning Platform
+              </p>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground mb-4 leading-[1.1] text-balance">
+                Stop struggling. <br />
+                Start mastering.
+              </h2>
+              <p className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed">
+                Run your ACCA preparation with zero guesswork. Get expert guidance, live classes, and mock tests to achieve results in months.
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <Button size="lg" className="h-11 px-6 rounded-xl font-bold shadow-sm hover:scale-[1.02] transition-transform">
+                  Start free trial
+                </Button>
+                <Button size="lg" variant="outline" className="h-11 px-6 rounded-xl font-bold bg-background shadow-sm hover:scale-[1.02] transition-transform">
+                  See how it works
+                </Button>
+              </div>
+              
+              <p className="text-[11px] md:text-xs text-muted-foreground/80 font-medium">
+                No credit card required · 14-day free trial · Cancel anytime
+              </p>
             </div>
-          </motion.div>
+
+            {/* Right Mockup Cards */}
+            <div className="relative w-full h-[300px] flex items-center justify-center lg:justify-end">
+              
+              {/* Variant A Card */}
+              <div className="absolute left-0 sm:left-4 md:left-10 top-4 w-[220px] sm:w-[260px] bg-background border border-border rounded-2xl shadow-xl overflow-hidden z-10 transform -rotate-2 hover:rotate-0 transition-all duration-500 hover:z-30">
+                <div className="bg-muted/40 border-b border-border p-2.5 flex items-center gap-2">
+                  <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary">A</div>
+                  <span className="text-xs font-bold text-foreground">Live Classes</span>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="w-full h-[90px] rounded-xl overflow-hidden bg-muted border border-border/50 relative group">
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=400" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Live Class" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Play className="w-6 h-6 text-white fill-white drop-shadow-md" />
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="h-2 bg-muted rounded-full w-3/4"></div>
+                    <div className="h-2 bg-muted rounded-full w-full"></div>
+                    <div className="h-2 bg-muted rounded-full w-5/6"></div>
+                  </div>
+                  <div className="pt-1">
+                    <div className="h-8 bg-primary/10 rounded-lg w-1/2 flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-primary">Join Demo</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Variant B Card */}
+              <div className="absolute right-0 sm:right-4 md:right-8 bottom-4 w-[220px] sm:w-[260px] bg-background border border-border rounded-2xl shadow-xl overflow-hidden z-20 transform rotate-2 hover:rotate-0 transition-all duration-500 hover:z-30">
+                <div className="bg-muted/40 border-b border-border p-2.5 flex items-center gap-2">
+                  <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-[9px] font-black text-primary">B</div>
+                  <span className="text-xs font-bold text-foreground">Mock Tests</span>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div className="w-full h-[90px] rounded-xl overflow-hidden bg-muted border border-border/50 relative group">
+                    <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=400" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Mock Test" />
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="h-2 bg-muted rounded-full w-5/6"></div>
+                    <div className="h-2 bg-muted rounded-full w-full"></div>
+                    <div className="h-2 bg-muted rounded-full w-4/6"></div>
+                  </div>
+                  <div className="pt-1">
+                    <div className="h-8 bg-muted rounded-lg w-1/2 flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-muted-foreground">Start Test</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
         </div>
       </section>
     </main>
-
-
   );
 }
