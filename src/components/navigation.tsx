@@ -209,7 +209,7 @@ export function Navigation() {
       <div
         aria-hidden={!isMobileMenuOpen}
         className={cn(
-          "fixed inset-0 z-40 flex flex-col bg-background transition-all duration-300 ease-in-out md:hidden",
+          "fixed inset-0 z-30 flex flex-col bg-background transition-all duration-300 ease-in-out md:hidden",
           isMobileMenuOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",
@@ -246,7 +246,7 @@ export function Navigation() {
           <Separator className="my-6" />
 
           {/* CTA Buttons */}
-          <div className="mt-auto flex flex-col gap-3">
+          <div className="mt-60 flex flex-col gap-3">
             <Button
               variant="outline"
               className="h-12 w-full text-base"

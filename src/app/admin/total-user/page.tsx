@@ -12,6 +12,11 @@ import {
   IconSearch,
   IconUser,
   IconUserPlus,
+  IconBook,
+  IconPlaylistAdd,
+  IconCircleCheck,
+  IconAward,
+  IconClock,
 } from "@tabler/icons-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,6 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminPageShell } from "@/features/admin/components/admin-page-shell";
 import { AdminResourceTable } from "@/features/admin/components/admin-resource-table";
 import { adminApi } from "@/features/admin/lib/admin-api";
@@ -54,6 +60,426 @@ const roleStyles: Record<AdminUser["role"], string> = {
   admin:
     "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
+
+interface StudentDetails {
+  enrollments: Array<{
+    id: string;
+    status: string;
+    enrolled_at: string;
+    expires_at: string | null;
+    course_id: string;
+    course: {
+      id: string;
+      title: string;
+      slug: string;
+      thumbnail_url: string | null;
+    } | null;
+  }>;
+  stats: {
+    totalCoursesEnrolled: number;
+    activeEnrollments: number;
+    lecturesWatchedToday: number;
+    lecturesCompletedToday: number;
+    totalWatchedTodaySeconds: number;
+    totalLecturesWatched: number;
+    totalLecturesCompleted: number;
+    quizzesAttempted: number;
+    quizzesPassed: number;
+    certificatesEarned: number;
+  };
+  recentActivity: {
+    quizAttempts: Array<{
+      id: string;
+      quiz_id: string;
+      score: number;
+      total_marks: number;
+      passed: boolean;
+      status: string;
+      submitted_at: string;
+      quiz: { id: string; title: string; passing_marks: number } | null;
+    }>;
+    certificates: Array<{
+      id: string;
+      issued_at: string;
+      course: { name: string } | null;
+    }>;
+  };
+  error?: string;
+}
+
+function formatTimeCompact(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
+function StudentDetailsDialog({
+  user,
+  open,
+  onOpenChange,
+}: {
+  user: AdminUser;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const {
+    data: studentData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["student-details", user.id],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/admin/student-details?studentId=${user.id}`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch student details");
+      }
+      return (await response.json()) as StudentDetails;
+    },
+    enabled: open && user.role === "student",
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Student Profile</DialogTitle>
+          <DialogDescription>
+            Comprehensive details for the selected student account.
+          </DialogDescription>
+        </DialogHeader>
+
+        {user.role === "student" ? (
+          isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">
+                Loading student details...
+              </p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-2">
+                Failed to load student details
+              </p>
+              <p className="text-sm text-muted-foreground">{error.message}</p>
+            </div>
+          ) : studentData ? (
+            <div className="space-y-6">
+              {/* User Info */}
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <Avatar className="size-14">
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <p className="font-semibold text-lg">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Member since {formatDate(user.createdAt)}
+                  </p>
+                </div>
+                <Badge className="capitalize bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20">
+                  {user.role}
+                </Badge>
+              </div>
+
+              {/* Tabs with Different Views */}
+              <Tabs defaultValue="overview" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="courses">Courses</TabsTrigger>
+                  <TabsTrigger value="activity">Activity</TabsTrigger>
+                </TabsList>
+
+                {/* Overview Tab */}
+                <TabsContent value="overview" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Today's Learning */}
+                    <div className="rounded-lg border border-border/70 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconClock className="size-4 text-amber-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Today's Learning
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {formatTimeCompact(
+                          studentData.stats.totalWatchedTodaySeconds,
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {studentData.stats.lecturesWatchedToday} lecture
+                        {studentData.stats.lecturesWatchedToday !== 1
+                          ? "s"
+                          : ""}{" "}
+                        watched
+                      </p>
+                    </div>
+
+                    {/* Total Courses */}
+                    <div className="rounded-lg border border-border/70 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconBook className="size-4 text-blue-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Enrolled Courses
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {studentData.stats.totalCoursesEnrolled}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {studentData.stats.activeEnrollments} active
+                      </p>
+                    </div>
+
+                    {/* Total Lectures */}
+                    <div className="rounded-lg border border-border/70 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconPlaylistAdd className="size-4 text-purple-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Lectures Completed
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {studentData.stats.totalLecturesCompleted}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        of {studentData.stats.totalLecturesWatched} total
+                      </p>
+                    </div>
+
+                    {/* Quizzes */}
+                    <div className="rounded-lg border border-border/70 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconCircleCheck className="size-4 text-green-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Quizzes Passed
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {studentData.stats.quizzesPassed}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        of {studentData.stats.quizzesAttempted} attempts
+                      </p>
+                    </div>
+
+                    {/* Certificates */}
+                    <div className="rounded-lg border border-border/70 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <IconAward className="size-4 text-yellow-500" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Certificates
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {studentData.stats.certificatesEarned}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        certificates earned
+                      </p>
+                    </div>
+
+                    {/* Progress */}
+                    <div className="rounded-lg border border-border/70 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Progress
+                        </span>
+                      </div>
+                      <p className="text-lg font-semibold">
+                        {studentData.stats.totalLecturesWatched > 0
+                          ? Math.round(
+                              (studentData.stats.totalLecturesCompleted /
+                                studentData.stats.totalLecturesWatched) *
+                                100,
+                            )
+                          : 0}
+                        %
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        overall completion
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Courses Tab */}
+                <TabsContent value="courses" className="space-y-3">
+                  {studentData.enrollments.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground py-4">
+                      No courses enrolled yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {studentData.enrollments.map((enrollment) => (
+                        <div
+                          key={enrollment.id}
+                          className="rounded-lg border border-border/70 p-3 flex items-start justify-between"
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">
+                              {enrollment.course?.title || "Unknown Course"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Status:{" "}
+                              <Badge
+                                variant="outline"
+                                className={
+                                  enrollment.status === "active"
+                                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
+                                }
+                              >
+                                {enrollment.status}
+                              </Badge>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Enrolled: {formatDate(enrollment.enrolled_at)}
+                            </p>
+                            {enrollment.expires_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Expires: {formatDate(enrollment.expires_at)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Activity Tab */}
+                <TabsContent value="activity" className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium mb-3">
+                      Recent Quiz Attempts
+                    </h4>
+                    {studentData.recentActivity.quizAttempts.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No quiz attempts yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {studentData.recentActivity.quizAttempts.map(
+                          (attempt) => (
+                            <div
+                              key={attempt.id}
+                              className="rounded-lg border border-border/70 p-3 text-sm"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium">
+                                    {attempt.quiz?.title || "Quiz"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatDate(attempt.submitted_at)}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold">
+                                    {attempt.score} / {attempt.total_marks}
+                                  </p>
+                                  <Badge
+                                    className={
+                                      attempt.passed
+                                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                                        : "bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/20"
+                                    }
+                                  >
+                                    {attempt.passed ? "Passed" : "Failed"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <h4 className="text-sm font-medium mb-3">
+                      Certificates Earned
+                    </h4>
+                    {studentData.recentActivity.certificates.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No certificates earned yet.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {studentData.recentActivity.certificates.map((cert) => (
+                          <div
+                            key={cert.id}
+                            className="rounded-lg border border-border/70 p-3 text-sm"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">
+                                  {cert.course?.name || "Course"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Issued: {formatDate(cert.issued_at)}
+                                </p>
+                              </div>
+                              <IconAward className="size-4 text-yellow-500" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                Failed to load student details
+              </p>
+            </div>
+          )
+        ) : (
+          /* Non-Student User Details */
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="size-12">
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{user.name}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
+              </div>
+            </div>
+            <div className="grid gap-3 rounded-xl border border-border/70 p-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Role</span>
+                <Badge
+                  className={`rounded-full border px-2.5 py-1 capitalize ${roleStyles[user.role]}`}
+                >
+                  {user.role}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Created</span>
+                <span>{formatDate(user.createdAt)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function UsersPageContent() {
   const { data, isLoading } = useQuery({
@@ -177,7 +603,10 @@ function UsersPageContent() {
                 {user.role !== "student" ? (
                   <DropdownMenuItem
                     onClick={() =>
-                      updateRoleMutation.mutate({ userId: user.id, role: "student" })
+                      updateRoleMutation.mutate({
+                        userId: user.id,
+                        role: "student",
+                      })
                     }
                   >
                     <IconUser />
@@ -187,7 +616,10 @@ function UsersPageContent() {
                 {user.role !== "instructor" ? (
                   <DropdownMenuItem
                     onClick={() =>
-                      updateRoleMutation.mutate({ userId: user.id, role: "instructor" })
+                      updateRoleMutation.mutate({
+                        userId: user.id,
+                        role: "instructor",
+                      })
                     }
                   >
                     <IconUserPlus />
@@ -269,50 +701,13 @@ function UsersPageContent() {
         }
       />
 
-      <Dialog
-        open={!!viewUser}
-        onOpenChange={(open) => !open && setViewUser(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>User profile</DialogTitle>
-            <DialogDescription>
-              Read-only details for the selected account.
-            </DialogDescription>
-          </DialogHeader>
-          {viewUser ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-12">
-                  <AvatarFallback className="bg-primary/10 text-primary">
-                    {getInitials(viewUser.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{viewUser.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {viewUser.email}
-                  </p>
-                </div>
-              </div>
-              <div className="grid gap-3 rounded-xl border border-border/70 p-4 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Role</span>
-                  <Badge
-                    className={`rounded-full border px-2.5 py-1 capitalize ${roleStyles[viewUser.role]}`}
-                  >
-                    {viewUser.role}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Created</span>
-                  <span>{formatDate(viewUser.createdAt)}</span>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {viewUser && (
+        <StudentDetailsDialog
+          user={viewUser}
+          open={!!viewUser}
+          onOpenChange={(open) => !open && setViewUser(null)}
+        />
+      )}
     </AdminPageShell>
   );
 }

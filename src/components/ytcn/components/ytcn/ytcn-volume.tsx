@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  IconVolume,
-  IconVolumeOff,
-  IconVolume2,
-} from "@tabler/icons-react";
+import { IconVolume, IconVolumeOff, IconVolume2 } from "@tabler/icons-react";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 
@@ -67,25 +63,23 @@ export function YtcnVolume({
       >
         <VolumeIcon className="size-5" />
       </button>
-      <div
-        className={cn(
-          "overflow-hidden transition-[width] duration-200",
-          isTouchDevice ? "w-20" : "w-0 group-hover/volume:w-20"
-        )}
-      >
-        <Slider
-          value={[isMuted ? 0 : volume]}
-          max={100}
-          step={1}
-          onValueChange={([val]) => {
-            // Guard for noUncheckedIndexedAccess — val could be undefined
-            if (val !== undefined) onVolumeChange(val);
-          }}
-          className="w-20 cursor-pointer"
-          aria-label="Volume"
-          onClick={(e) => e.stopPropagation()}
-        />
-      </div>
+      {/* Volume slider - only visible on desktop, completely hidden on mobile */}
+      {!isTouchDevice ? (
+        <div className="overflow-hidden transition-[width] duration-200 w-0 group-hover/volume:w-20">
+          <Slider
+            value={[isMuted ? 0 : volume]}
+            max={100}
+            step={1}
+            onValueChange={([val]) => {
+              // Guard for noUncheckedIndexedAccess — val could be undefined
+              if (val !== undefined) onVolumeChange(val);
+            }}
+            className="w-20 cursor-pointer"
+            aria-label="Volume"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

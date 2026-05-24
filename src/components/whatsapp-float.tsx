@@ -1,12 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 export function WhatsAppFloat() {
   const [visible, setVisible] = useState(false);
+  const pathname = usePathname();
+
+  // Hide on dashboard, admin, and learn routes
+  const shouldHide =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/learn");
 
   useEffect(() => {
+    if (shouldHide) return;
+
     // Show the button after a short scroll (100px) so it doesn't appear instantly
     const handleScroll = () => {
       setVisible(window.scrollY > 100);
@@ -22,7 +32,9 @@ export function WhatsAppFloat() {
       window.removeEventListener("scroll", handleScroll);
       clearTimeout(timer);
     };
-  }, []);
+  }, [shouldHide]);
+
+  if (shouldHide) return null;
 
   return (
     <>
@@ -49,7 +61,9 @@ export function WhatsAppFloat() {
           ${visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0 pointer-events-none"}
         `}
         style={{
-          animation: visible ? "whatsapp-pulse 2.5s ease-in-out infinite" : "none",
+          animation: visible
+            ? "whatsapp-pulse 2.5s ease-in-out infinite"
+            : "none",
         }}
       >
         <IconBrandWhatsapp className="size-7 text-white" stroke={1.75} />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { usePWA } from "@/context/PWAContext";
 import {
   Download,
   Users,
@@ -26,7 +27,11 @@ import Link from "next/link";
 import { motion } from "motion/react";
 
 /* ─── Animated Counter Hook ─── */
-function useCounter(end: number, duration: number = 2000, startCounting: boolean = false) {
+function useCounter(
+  end: number,
+  duration: number = 2000,
+  startCounting: boolean = false,
+) {
   const [count, setCount] = useState(0);
   const hasRun = useRef(false);
 
@@ -49,14 +54,40 @@ function useCounter(end: number, duration: number = 2000, startCounting: boolean
 }
 
 const stats = [
-  { icon: Download, numericValue: 2.5, suffix: "M+", label: "Downloads", accent: "from-violet-500/10 to-purple-600/10" },
-  { icon: Users, numericValue: 850, suffix: "K+", label: "Active Learners", accent: "from-blue-500/10 to-cyan-500/10" },
-  { icon: Star, numericValue: 4.9, suffix: "/5", label: "Average Rating", isDecimal: true, accent: "from-amber-500/10 to-orange-500/10" },
-  { icon: BookOpen, numericValue: 1200, suffix: "+", label: "Courses Offered", accent: "from-emerald-500/10 to-teal-500/10" },
+  {
+    icon: Download,
+    numericValue: 2.5,
+    suffix: "M+",
+    label: "Downloads",
+    accent: "from-violet-500/10 to-purple-600/10",
+  },
+  {
+    icon: Users,
+    numericValue: 850,
+    suffix: "K+",
+    label: "Active Learners",
+    accent: "from-blue-500/10 to-cyan-500/10",
+  },
+  {
+    icon: Star,
+    numericValue: 4.9,
+    suffix: "/5",
+    label: "Average Rating",
+    isDecimal: true,
+    accent: "from-amber-500/10 to-orange-500/10",
+  },
+  {
+    icon: BookOpen,
+    numericValue: 1200,
+    suffix: "+",
+    label: "Courses Offered",
+    accent: "from-emerald-500/10 to-teal-500/10",
+  },
 ];
 
 export default function CTAInstall() {
   const [startStatsCount, setStartStatsCount] = useState(false);
+  const { isInstallable, isInstalled, triggerInstall } = usePWA();
 
   return (
     <section className="w-full bg-background relative overflow-hidden border-t border-border/40 py-24 md:py-32">
@@ -74,7 +105,6 @@ export default function CTAInstall() {
 
       <div className="w-full max-w-6xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-12 items-center">
-
           {/* Left Column — Stunning Phone Mockup with scroll animation */}
           <motion.div
             initial={{ opacity: 0, x: -40, scale: 0.95 }}
@@ -119,7 +149,11 @@ export default function CTAInstall() {
                   initial={{ scaleX: 0 }}
                   whileInView={{ scaleX: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{
+                    duration: 0.8,
+                    delay: 0.5,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   className="absolute -bottom-1.5 left-0 right-0 h-[3px] bg-gradient-to-r from-primary to-violet-500 origin-left"
                 />
               </span>
@@ -127,7 +161,9 @@ export default function CTAInstall() {
 
             {/* Description */}
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-lg font-medium">
-              Access the ultimate portal to world-class business and financial learning. Combine structured expert courses, custom AI analytics, and a thriving community of peers.
+              Access the ultimate portal to world-class business and financial
+              learning. Combine structured expert courses, custom AI analytics,
+              and a thriving community of peers.
             </p>
 
             {/* Grid Stats with staggered animation */}
@@ -149,7 +185,7 @@ export default function CTAInstall() {
                   key={stat.label}
                   variants={{
                     hidden: { opacity: 0, y: 20, scale: 0.95 },
-                    show: { opacity: 1, y: 0, scale: 1 }
+                    show: { opacity: 1, y: 0, scale: 1 },
                   }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 >
@@ -172,26 +208,21 @@ export default function CTAInstall() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                duration: 0.6,
+                delay: 0.6,
+                ease: [0.16, 1, 0.3, 1],
+              }}
               className="flex flex-wrap gap-4 pt-6 border-t border-border/40 mt-4"
             >
               <Button
-                size="lg"   
-                className="h-13 px-8 font-bold rounded-none text-base group shadow-lg shadow-primary/10 hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
-                asChild
-              >
-                <Link href="/courses">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 size-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
                 size="lg"
-                className="h-13 px-8 font-bold rounded-none border-white/10 hover:border-primary/40 text-foreground bg-white/[0.02] hover:bg-white/[0.06] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                className="h-13 px-8 font-bold rounded-none text-base group shadow-lg shadow-primary/10 hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                onClick={() => triggerInstall()}
+                disabled={!isInstallable || isInstalled}
               >
-                <PlayCircle className="mr-2 size-5" />
-                Watch Demo
+                <Download className="mr-2 size-5 group-hover:translate-x-1 transition-transform" />
+                {isInstalled ? "App Installed" : "Install App"}
               </Button>
             </motion.div>
           </motion.div>
@@ -203,10 +234,34 @@ export default function CTAInstall() {
 
 export function MockPhone() {
   const chatMessages = [
-    { name: "Sarah Miller", msg: "Great course content!", time: "9:00AM", unread: 1, color: "bg-violet-500" },
-    { name: "John Davis", msg: "When is the next live session?", time: "10:00PM", unread: 3, color: "bg-blue-500" },
-    { name: "Emma Wilson", msg: "Thanks for the support!", time: "8:30AM", unread: 0, color: "bg-emerald-500" },
-    { name: "Alex Chen", msg: "Module 3 was incredible", time: "5:50AM", unread: 2, color: "bg-amber-500" },
+    {
+      name: "Sarah Miller",
+      msg: "Great course content!",
+      time: "9:00AM",
+      unread: 1,
+      color: "bg-violet-500",
+    },
+    {
+      name: "John Davis",
+      msg: "When is the next live session?",
+      time: "10:00PM",
+      unread: 3,
+      color: "bg-blue-500",
+    },
+    {
+      name: "Emma Wilson",
+      msg: "Thanks for the support!",
+      time: "8:30AM",
+      unread: 0,
+      color: "bg-emerald-500",
+    },
+    {
+      name: "Alex Chen",
+      msg: "Module 3 was incredible",
+      time: "5:50AM",
+      unread: 2,
+      color: "bg-amber-500",
+    },
   ];
 
   return (
@@ -232,7 +287,12 @@ export function MockPhone() {
 
         {/* Real miniature SVG sparkline */}
         <div className="h-8 w-full mt-3 opacity-85">
-          <svg className="w-full h-full" viewBox="0 0 100 30" fill="none" preserveAspectRatio="none">
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 100 30"
+            fill="none"
+            preserveAspectRatio="none"
+          >
             <path
               d="M0,25 Q15,20 30,12 T60,18 T90,5 L100,2"
               stroke="url(#sparkline-grad)"
@@ -266,7 +326,6 @@ export function MockPhone() {
       {/* Main Phone Device Mockup */}
       <div className="relative mx-auto w-60 sm:w-68 bg-zinc-950 border border-white/[0.08] rounded-[2.6rem] shadow-2xl p-2 z-10">
         <div className="bg-zinc-900/40 rounded-[2.3rem] overflow-hidden min-h-[440px] sm:min-h-[500px] border border-white/[0.04]">
-
           {/* Dynamic Island / Notch */}
           <div className="bg-zinc-950 h-7 flex items-center justify-center relative">
             <div className="w-20 h-4 bg-zinc-900 rounded-full flex items-center justify-between px-2.5">
@@ -278,7 +337,6 @@ export function MockPhone() {
 
           {/* Phone Screen Canvas */}
           <div className="px-3 sm:px-4 pb-4 space-y-4">
-
             {/* Header Navigation */}
             <div className="flex items-center justify-between py-2 border-b border-white/[0.06]">
               <ArrowLeft className="h-4 w-4 text-zinc-400" />
@@ -344,7 +402,9 @@ export function MockPhone() {
               </div>
               <div className="flex items-center gap-1.5 text-right">
                 <GraduationCap className="h-3 w-3 text-primary" />
-                <span className="text-[9px] text-primary font-bold">12 Courses</span>
+                <span className="text-[9px] text-primary font-bold">
+                  12 Courses
+                </span>
               </div>
             </div>
 
@@ -359,16 +419,31 @@ export function MockPhone() {
                   { name: "User Research & Interviews", checked: false },
                   { name: "Wireframing with Figma", checked: false },
                 ].map((item, i) => (
-                  <div key={item.name} className="flex items-center justify-between text-[9px] py-1 border-b border-white/[0.02]">
+                  <div
+                    key={item.name}
+                    className="flex items-center justify-between text-[9px] py-1 border-b border-white/[0.02]"
+                  >
                     <div className="flex items-center gap-2">
-                      <div className={`w-3.5 h-3.5 rounded-none flex items-center justify-center border ${item.checked ? "border-primary bg-primary/10" : "border-zinc-700 bg-transparent"}`}>
-                        {item.checked && <CheckCircle className="w-2.5 h-2.5 text-primary" />}
+                      <div
+                        className={`w-3.5 h-3.5 rounded-none flex items-center justify-center border ${item.checked ? "border-primary bg-primary/10" : "border-zinc-700 bg-transparent"}`}
+                      >
+                        {item.checked && (
+                          <CheckCircle className="w-2.5 h-2.5 text-primary" />
+                        )}
                       </div>
-                      <span className={item.checked ? "text-zinc-400 line-through" : "text-zinc-200 font-medium"}>
+                      <span
+                        className={
+                          item.checked
+                            ? "text-zinc-400 line-through"
+                            : "text-zinc-200 font-medium"
+                        }
+                      >
                         {item.name}
                       </span>
                     </div>
-                    <span className="text-[8px] text-zinc-500">{i === 0 ? "Completed" : "Next up"}</span>
+                    <span className="text-[8px] text-zinc-500">
+                      {i === 0 ? "Completed" : "Next up"}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -378,7 +453,6 @@ export function MockPhone() {
             <div className="bg-primary hover:bg-primary/95 text-white font-extrabold rounded-none py-2 text-center text-[10px] tracking-widest uppercase cursor-pointer hover:shadow-lg hover:shadow-primary/15 transition-all">
               Resume Course
             </div>
-
           </div>
         </div>
       </div>
@@ -401,10 +475,18 @@ export function MockPhone() {
 
         <div className="divide-y divide-white/[0.04]">
           {chatMessages.map((chat) => (
-            <div key={chat.name} className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/[0.01] transition-colors">
+            <div
+              key={chat.name}
+              className="flex items-center gap-2.5 px-3 py-2 hover:bg-white/[0.01] transition-colors"
+            >
               <Avatar className="h-7 w-7 shrink-0 rounded-none border border-white/[0.08]">
-                <AvatarFallback className={`${chat.color} text-white text-[8px] font-black rounded-none`}>
-                  {chat.name.split(" ").map((n) => n[0]).join("")}
+                <AvatarFallback
+                  className={`${chat.color} text-white text-[8px] font-black rounded-none`}
+                >
+                  {chat.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
@@ -412,7 +494,9 @@ export function MockPhone() {
                   <p className="text-[9px] font-extrabold text-white truncate">
                     {chat.name}
                   </p>
-                  <span className="text-[6.5px] text-zinc-500">{chat.time}</span>
+                  <span className="text-[6.5px] text-zinc-500">
+                    {chat.time}
+                  </span>
                 </div>
                 <p className="text-[8px] text-zinc-400 truncate mt-0.5">
                   {chat.msg}
@@ -455,19 +539,26 @@ export function StatCard({
   // Multiply decimals by 10 internally to allow integer count-up animation, then divide back for display
   const targetVal = isDecimal ? Math.round(numericValue * 10) : numericValue;
   const count = useCounter(targetVal, 2200 + index * 100, startCount);
-  const displayVal = isDecimal ? (count / 10).toFixed(1) : count.toLocaleString();
+  const displayVal = isDecimal
+    ? (count / 10).toFixed(1)
+    : count.toLocaleString();
 
   return (
     <div className="relative group cursor-pointer overflow-hidden bg-white/[0.02] backdrop-blur-md border border-white/[0.06] hover:border-primary/30 hover:bg-white/[0.04] transition-all duration-500 p-5 flex items-center gap-4 rounded-none">
       {/* Dynamic Hover Background Gradient Layer */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+      />
 
       {/* Top glowing accent border */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:via-primary/30 transition-all duration-500" />
 
       {/* Icon Frame */}
       <div className="size-11 shrink-0 rounded-none bg-white/[0.04] border border-white/[0.06] group-hover:bg-primary group-hover:border-primary/50 flex items-center justify-center transition-all duration-500 shadow-md group-hover:shadow-primary/20">
-        <Icon className="size-5 text-zinc-400 group-hover:text-white transition-colors duration-500" strokeWidth={1.5} />
+        <Icon
+          className="size-5 text-zinc-400 group-hover:text-white transition-colors duration-500"
+          strokeWidth={1.5}
+        />
       </div>
 
       {/* Text Values */}

@@ -14,39 +14,25 @@ import { BlurFade } from "@/components/ui/blur-fade";
 export default function Home() {
   return (
     <main className="relative min-h-screen bg-background overflow-x-hidden">
-      <BlurFade delay={0.1}>
-        <HeroSection />
-      </BlurFade>
-      
-      <BlurFade inView>
-        <StorySection />
-      </BlurFade>
-      
+      <HeroSection />
+
+      <StorySection />
+
       <Separator />
-      
-      <BlurFade inView>
-        <CourseSection />
-      </BlurFade>
-      
+
+      <CourseSection />
+
       <Separator />
-      
-      <BlurFade inView>
-        <Testimonials01 />
-      </BlurFade>
-      
+
+      <Testimonials01 />
+
       <Separator />
-      
-      <BlurFade inView>
-        <FaqSection />
-      </BlurFade>
-      
-      <BlurFade inView>
-        <HowProcessSection />
-      </BlurFade>
-      
-      <BlurFade inView>
-        <CTAInstall />
-      </BlurFade>
+
+      <FaqSection />
+
+      <HowProcessSection />
+
+      <CTAInstall />
     </main>
   );
 }
