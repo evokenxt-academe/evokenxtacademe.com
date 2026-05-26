@@ -9,16 +9,15 @@ import { ArrowRight, Play } from "lucide-react";
 
 const words = ["succeed", "excel", "qualify", "grow"];
 
-
 function BlurWord({ word, trigger }: { word: string; trigger: number }) {
   const letters = word.split("");
-  const STAGGER = 45;      // ms between each letter
-  const DURATION = 500;    // blur+opacity fade duration per letter
+  const STAGGER = 45; // ms between each letter
+  const DURATION = 500; // blur+opacity fade duration per letter
   const GRADIENT_HOLD = STAGGER * letters.length + DURATION + 200;
 
-  const [letterStates, setLetterStates] = useState<{ opacity: number; blur: number }[]>(
-    letters.map(() => ({ opacity: 0, blur: 20 }))
-  );
+  const [letterStates, setLetterStates] = useState<
+    { opacity: number; blur: number }[]
+  >(letters.map(() => ({ opacity: 0, blur: 20 })));
   const [showGradient, setShowGradient] = useState(true);
   const framesRef = useRef<number[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -40,7 +39,7 @@ function BlurWord({ word, trigger }: { word: string; trigger: number }) {
         const tick = (now: number) => {
           const progress = Math.min((now - start) / DURATION, 1);
           const eased = 1 - Math.pow(1 - progress, 3);
-          setLetterStates(prev => {
+          setLetterStates((prev) => {
             const next = [...prev];
             next[i] = { opacity: eased, blur: 20 * (1 - eased) };
             return next;
@@ -68,12 +67,19 @@ function BlurWord({ word, trigger }: { word: string; trigger: number }) {
   }, [trigger]);
 
   // gradient colours cycling across letter positions
-  const gradientColors = ["#eca8d6", "#a78bfa", "#67e8f9", "#fbbf24", "#eca8d6"];
+  const gradientColors = [
+    "#eca8d6",
+    "#a78bfa",
+    "#67e8f9",
+    "#fbbf24",
+    "#eca8d6",
+  ];
 
   return (
     <>
       {letters.map((char, i) => {
-        const colorIndex = (i / Math.max(letters.length - 1, 1)) * (gradientColors.length - 1);
+        const colorIndex =
+          (i / Math.max(letters.length - 1, 1)) * (gradientColors.length - 1);
         const lower = Math.floor(colorIndex);
         const upper = Math.min(lower + 1, gradientColors.length - 1);
         const t = colorIndex - lower;
@@ -146,8 +152,11 @@ export function HeroSection() {
         <div className="lg:max-w-[55%]">
           {/* Eyebrow */}
           <div
-            className={`mb-8 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              }`}
+            className={`mb-8 transition-all duration-700 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
           >
             <span className="inline-flex items-center gap-3 text-sm font-mono text-white/60">
               <span className="w-8 h-px bg-white/30" />
@@ -158,10 +167,15 @@ export function HeroSection() {
           {/* Main headline */}
           <div className="mb-10">
             <h1
-              className={`text-left text-[clamp(2rem,6vw,7rem)] font-display leading-[0.92] tracking-tight text-white transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-                }`}
+              className={`text-left text-[clamp(2rem,6vw,7rem)] font-display leading-[0.92] tracking-tight text-white transition-all duration-1000 ${
+                isVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-8"
+              }`}
             >
-              <span className="block whitespace-nowrap">Master your future,</span>
+              <span className="block whitespace-nowrap">
+                Master your future,
+              </span>
               <span className="block whitespace-nowrap">
                 learn to{" "}
                 <span className="relative inline-block">
@@ -173,14 +187,22 @@ export function HeroSection() {
 
           {/* Subtext and CTAs */}
           <div
-            className={`transition-all duration-1000 delay-200 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
+            className={`transition-all duration-1000 delay-200 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
+            }`}
           >
             <p className="mb-10 max-w-xl text-lg text-white/70 leading-relaxed font-medium">
-              Expert-led ACCA courses with structured learning, dynamic mock exams, and personalized mentor support to guarantee your success.
+              Expert-led ACCA courses with structured learning, dynamic mock
+              exams, and personalized mentor support to guarantee your success.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <Button size="lg" className="rounded-none h-12 px-8 text-base font-semibold" asChild>
+              <Button
+                size="lg"
+                className="rounded-none h-12 px-8 text-base font-semibold"
+                asChild
+              >
                 <Link href="/courses">
                   Explore Courses
                   <ArrowRight className="ml-2 size-5" />
@@ -201,19 +223,26 @@ export function HeroSection() {
 
       {/* Stats row */}
       <div
-        className={`relative z-10 border-t border-white/10 transition-all duration-700 delay-300 ${isVisible ? "opacity-100" : "opacity-0"
-          }`}
+        className={`relative z-10 border-t border-white/10 transition-all duration-700 delay-300 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
       >
         <div className="mx-auto max-w-6xl px-4 py-5 md:px-6 lg:px-8">
           <div className="flex items-center gap-8 lg:gap-12">
             {[
-              { value: "12,000+", label: "Students enrolled" },
-              { value: "95%", label: "Exam pass rate" },
+              { value: "500+", label: "Students enrolled" },
+              { value: "98%", label: "Exam pass rate" },
               { value: "13", label: "ACCA papers covered" },
             ].map((stat, i) => (
-              <div key={stat.label} className="flex items-center gap-8 lg:gap-12">
+              <div
+                key={stat.label}
+                className="flex items-center gap-8 lg:gap-12"
+              >
                 {i > 0 && (
-                  <Separator orientation="vertical" className="h-8 bg-white/10" />
+                  <Separator
+                    orientation="vertical"
+                    className="h-8 bg-white/10"
+                  />
                 )}
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xl font-semibold tracking-tight text-white lg:text-2xl">

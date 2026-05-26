@@ -88,17 +88,16 @@ export function CourseHero({
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-3.5 w-3.5 ${i < Math.round(course.avg_rating)
+                    className={`h-3.5 w-3.5 ${
+                      i < Math.round(course.avg_rating)
                         ? "fill-amber-400 text-amber-400"
                         : "fill-none text-slate-500"
-                      }`}
+                    }`}
                   />
                 ))}
               </div>
               <span className="text-sm font-bold text-amber-400 tabular-nums">
-                {course.avg_rating > 0
-                  ? course.avg_rating.toFixed(1)
-                  : "New"}
+                {course.avg_rating > 0 ? course.avg_rating.toFixed(1) : "New"}
               </span>
             </div>
 
@@ -122,13 +121,6 @@ export function CourseHero({
           {/* CTA Buttons */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {enrollButton}
-            <button
-              type="button"
-              onClick={onPreviewClick}
-              className="h-11 px-6 rounded-md border border-white/20 bg-transparent text-white text-sm font-semibold uppercase tracking-wide hover:bg-white/5 hover:border-white/30 transition-all duration-200 cursor-pointer"
-            >
-              Preview Course
-            </button>
           </div>
         </div>
       </div>

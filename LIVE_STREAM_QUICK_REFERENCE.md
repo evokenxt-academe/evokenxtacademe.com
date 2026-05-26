@@ -4,7 +4,7 @@
 
 ### Access the Live Streams Dashboard
 ```
-/admin/live-streams/
+/admin/live-streams/    
 ```
 
 ### Create a New Stream

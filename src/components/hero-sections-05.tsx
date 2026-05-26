@@ -29,7 +29,10 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number] },
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94] as [number, number, number, number],
+    },
   },
 };
 
@@ -66,7 +69,7 @@ export default function CourseHeroSection() {
         <div className="absolute -left-32 top-0 size-[500px] rounded-full bg-primary/10 blur-[130px] dark:bg-primary/5" />
         <div className="absolute -right-32 bottom-0 size-[400px] rounded-full bg-violet-600/10 blur-[110px] dark:bg-violet-600/5" />
         <div className="absolute left-1/3 top-1/4 size-[300px] rounded-full bg-emerald-500/[0.04] blur-[90px]" />
-        
+
         {/* Dynamic Matrix-Like Dot Grid */}
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
@@ -123,26 +126,6 @@ export default function CourseHeroSection() {
               </p>
             </motion.div>
 
-            <motion.div
-              variants={fadeUp}
-              className="grid grid-cols-2 gap-3 sm:gap-4 lg:flex lg:justify-start"
-            >
-              <Button
-                size="lg"
-                className="group w-full rounded-full bg-primary px-4 text-xs font-semibold shadow-lg shadow-primary/25 transition-all hover:scale-[1.02] hover:shadow-primary/35 sm:px-8 sm:text-sm lg:w-auto"
-              >
-                Explore Courses
-                <ArrowRight className="ml-1 size-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full rounded-full border-border/80 px-4 text-xs font-semibold backdrop-blur-sm transition-all hover:bg-muted hover:scale-[1.02] sm:px-8 sm:text-sm lg:w-auto"
-              >
-                Start Free Trial
-              </Button>
-            </motion.div>
-
             {/* Social proof */}
             <motion.div
               variants={fadeUp}
@@ -150,18 +133,32 @@ export default function CourseHeroSection() {
             >
               <div className="flex -space-x-2">
                 {[
-                  { src: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=100&h=100", fb: "U1" },
-                  { src: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100", fb: "U2" },
-                  { src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100", fb: "U3" },
+                  {
+                    src: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=100&h=100",
+                    fb: "U1",
+                  },
+                  {
+                    src: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100",
+                    fb: "U2",
+                  },
+                  {
+                    src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100",
+                    fb: "U3",
+                  },
                 ].map((u, i) => (
-                  <Avatar key={i} className="size-7 border-2 border-background ring-1 ring-border/50">
+                  <Avatar
+                    key={i}
+                    className="size-7 border-2 border-background ring-1 ring-border/50"
+                  >
                     <AvatarImage src={u.src} />
-                    <AvatarFallback className="text-[10px]">{u.fb}</AvatarFallback>
+                    <AvatarFallback className="text-[10px]">
+                      {u.fb}
+                    </AvatarFallback>
                   </Avatar>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">27,000+</span>{" "}
+                <span className="font-semibold text-foreground">500+</span>{" "}
                 students already enrolled
               </p>
             </motion.div>
@@ -209,14 +206,14 @@ export default function CourseHeroSection() {
                 {/* Neon blur radial background */}
                 <div className="absolute -right-10 -top-10 -z-10 size-24 rounded-full bg-primary/10 blur-xl transition-all group-hover:bg-primary/20" />
                 <div className="absolute -right-6 -top-6 size-16 rounded-full border border-primary/[0.06] sm:size-20" />
-                
+
                 <div className="relative flex h-full flex-col justify-between gap-3 sm:gap-4">
                   <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-inner transition-colors group-hover:from-primary/35">
                     <Users className="size-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-xl font-bold tracking-tight text-foreground sm:text-2xl md:text-3xl">
-                      <Counter target={27} suffix="k+" />
+                      <Counter target={500} suffix="+" />
                     </p>
                     <p className="text-[10px] font-semibold text-muted-foreground sm:text-xs">
                       Enrolled Students
@@ -239,7 +236,7 @@ export default function CourseHeroSection() {
                   </div>
                   <div>
                     <p className="text-xl font-bold tracking-tight text-foreground sm:text-2xl md:text-3xl">
-                      <Counter target={95} suffix="%" />
+                      <Counter target={98} suffix="%" />
                     </p>
                     <p className="text-[10px] font-semibold text-muted-foreground sm:text-xs">
                       Exam Pass Rate
@@ -250,7 +247,11 @@ export default function CourseHeroSection() {
                         initial={{ width: 0 }}
                         whileInView={{ width: "95%" }}
                         viewport={{ once: true }}
-                        transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{
+                          duration: 1.2,
+                          delay: 0.4,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
                       />
                     </div>
                   </div>
@@ -263,30 +264,41 @@ export default function CourseHeroSection() {
               <div className="group relative h-full overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] to-transparent p-4 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/[0.05] sm:p-5">
                 {/* Decorative dynamic glows */}
                 <div className="absolute -bottom-8 -right-8 size-20 rounded-full bg-primary/[0.08] blur-xl transition-all group-hover:scale-110" />
-                
+
                 <div className="relative flex h-full flex-col justify-between gap-3 sm:gap-4">
                   <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 shadow-sm transition-colors group-hover:from-primary/40">
                     <Zap className="size-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-xl font-bold tracking-tight text-foreground sm:text-2xl md:text-3xl">
-                      <Counter target={80} suffix="k+" />
+                      <Counter target={1} suffix="k+" />
                     </p>
                     <p className="mb-2.5 text-[10px] font-semibold text-muted-foreground sm:text-xs">
                       Active Members
                     </p>
                     <div className="flex -space-x-1.5">
                       {[
-                        { src: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=100&h=100", fallback: "U1" },
-                        { src: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100", fallback: "U2" },
-                        { src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100", fallback: "U3" },
+                        {
+                          src: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=100&h=100",
+                          fallback: "U1",
+                        },
+                        {
+                          src: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100",
+                          fallback: "U2",
+                        },
+                        {
+                          src: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=100&h=100",
+                          fallback: "U3",
+                        },
                       ].map((user, i) => (
                         <Avatar
                           key={i}
                           className="size-6 border-2 border-background ring-1 ring-border/30 sm:size-7"
                         >
                           <AvatarImage src={user.src} />
-                          <AvatarFallback className="text-[8px]">{user.fallback}</AvatarFallback>
+                          <AvatarFallback className="text-[8px]">
+                            {user.fallback}
+                          </AvatarFallback>
                         </Avatar>
                       ))}
                       <div className="flex size-6 items-center justify-center rounded-full border-2 border-background bg-primary/10 text-[8px] font-bold text-primary ring-1 ring-primary/20 sm:size-7">
@@ -315,13 +327,28 @@ export default function CourseHeroSection() {
                 Accredited Credentials
               </p>
             </div>
-            
+
             {/* Horizontal Swipeable list on mobile, normal flex layout on desktop */}
             <div className="flex w-full items-center gap-3 overflow-x-auto pb-1.5 pt-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-nowrap md:w-auto md:justify-end md:overflow-visible md:pb-0 md:pt-0">
               {[
-                { icon: Award, label: "ACCA Gold Partner", color: "from-amber-500/10 to-amber-500/5 text-amber-500 border-amber-500/20" },
-                { icon: Globe, label: "Global Coverage", color: "from-blue-500/10 to-blue-500/5 text-blue-500 border-blue-500/20" },
-                { icon: ShieldCheck, label: "Verified LMS System", color: "from-emerald-500/10 to-emerald-500/5 text-emerald-500 border-emerald-500/20" },
+                {
+                  icon: Award,
+                  label: "ACCA Gold Partner",
+                  color:
+                    "from-amber-500/10 to-amber-500/5 text-amber-500 border-amber-500/20",
+                },
+                {
+                  icon: Globe,
+                  label: "Global Coverage",
+                  color:
+                    "from-blue-500/10 to-blue-500/5 text-blue-500 border-blue-500/20",
+                },
+                {
+                  icon: ShieldCheck,
+                  label: "Verified LMS System",
+                  color:
+                    "from-emerald-500/10 to-emerald-500/5 text-emerald-500 border-emerald-500/20",
+                },
               ].map((badge, idx) => (
                 <div
                   key={idx}

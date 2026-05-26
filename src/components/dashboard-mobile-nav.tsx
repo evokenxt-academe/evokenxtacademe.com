@@ -5,9 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   IconLayoutDashboard,
   IconBook,
-
-  
   IconLivePhoto,
+  IconClipboardList,
   IconUser,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
@@ -29,6 +28,11 @@ const mobileNavItems = [
     icon: IconLivePhoto,
   },
   {
+    title: "Test",
+    href: "/dashboard/tests",
+    icon: IconClipboardList,
+  },
+  {
     title: "Profile",
     href: "/dashboard/profile",
     icon: IconUser,
@@ -40,7 +44,9 @@ export function DashboardMobileNav() {
 
   const isRouteActive = (href: string) => {
     if (href === "/my-courses") {
-      return pathname.startsWith("/my-courses") || pathname.startsWith("/learn/");
+      return (
+        pathname.startsWith("/my-courses") || pathname.startsWith("/learn/")
+      );
     }
     if (href === "/dashboard" && pathname === "/dashboard") {
       return true;
@@ -63,13 +69,15 @@ export function DashboardMobileNav() {
             href={item.href}
             className={cn(
               "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors",
-              isActive ? "text-[#193CB8] dark:text-[#00C950]" : "text-muted-foreground hover:text-foreground"
+              isActive
+                ? "text-[#193CB8] dark:text-[#00C950]"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
             <Icon
               className={cn(
                 "h-6 w-6 transition-transform",
-                isActive ? "scale-110 mb-0.5" : "mb-0.5"
+                isActive ? "scale-110 mb-0.5" : "mb-0.5",
               )}
               stroke={isActive ? 2.5 : 1.5}
             />

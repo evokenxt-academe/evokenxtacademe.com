@@ -1,16 +1,22 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, UserCheck, Users, MonitorPlay, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  UserCheck,
+  Users,
+  MonitorPlay,
+  TrendingUp,
+} from "lucide-react";
 
-import { GlowCardGrid } from "@/components/glow-card-grid"
-import { cn } from "@/lib/utils"
-import { BlurFade } from "@/components/ui/blur-fade"
+import { GlowCardGrid } from "@/components/glow-card-grid";
+import { cn } from "@/lib/utils";
+import { BlurFade } from "@/components/ui/blur-fade";
 
 const stats = [
   {
     id: 1,
-    value: "12+",
+    value: "10+",
     label: "Expert Faculty",
     icon: UserCheck,
     color: "text-blue-500",
@@ -20,7 +26,7 @@ const stats = [
   },
   {
     id: 2,
-    value: "6K+",
+    value: "500+",
     label: "Enrolled Students",
     icon: Users,
     color: "text-emerald-500",
@@ -30,7 +36,7 @@ const stats = [
   },
   {
     id: 3,
-    value: "120+",
+    value: "100+",
     label: "Online Courses",
     icon: MonitorPlay,
     color: "text-violet-500",
@@ -63,14 +69,14 @@ const features = [
   },
 ];
 
-function StatGlowCard({ stat }: { stat: typeof stats[0] }) {
+function StatGlowCard({ stat }: { stat: (typeof stats)[0] }) {
   const Icon = stat.icon;
   return (
     <div
       data-slot="glow-card"
       className={cn(
         "@container-[size] relative h-full min-h-[14rem] w-full overflow-hidden rounded-(--card-radius) ring-1 ring-border transition-[translate,scale] select-none active:scale-[0.98]",
-        "bg-card group"
+        "bg-card group",
       )}
     >
       <div className="flex size-full overflow-hidden rounded-(--card-radius) [clip-path:inset(0_round_var(--card-radius))]">
@@ -79,7 +85,7 @@ function StatGlowCard({ stat }: { stat: typeof stats[0] }) {
             "pointer-events-none absolute inset-0 flex items-center justify-center",
             "translate-x-[calc(var(--pointer-x,-10)*50cqi)] translate-y-[calc(var(--pointer-y,-10)*50cqh)] translate-z-0 scale-(--card-icon-scale)",
             "blur-(--card-icon-blur) brightness-(--card-icon-brightness) saturate-(--card-icon-saturate)",
-            "opacity-(--card-icon-opacity) will-change-[transform,filter]"
+            "opacity-(--card-icon-opacity) will-change-[transform,filter]",
           )}
         >
           {/* Background glow icon */}
@@ -87,17 +93,23 @@ function StatGlowCard({ stat }: { stat: typeof stats[0] }) {
         </div>
 
         <div className="z-1 flex flex-1 flex-col items-start justify-between p-6">
-          <div className={cn("mb-6 flex size-12 items-center justify-center border transition-transform duration-300 group-hover:-translate-y-1", stat.iconBg, stat.iconBorder)}>
-             <Icon className={cn("size-5", stat.color)} strokeWidth={2.5} />
+          <div
+            className={cn(
+              "mb-6 flex size-12 items-center justify-center border transition-transform duration-300 group-hover:-translate-y-1",
+              stat.iconBg,
+              stat.iconBorder,
+            )}
+          >
+            <Icon className={cn("size-5", stat.color)} strokeWidth={2.5} />
           </div>
 
           <div>
-             <p className="text-3xl md:text-4xl font-extrabold text-foreground leading-none mb-2">
-               {stat.value}
-             </p>
-             <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground">
-               {stat.label}
-             </p>
+            <p className="text-3xl md:text-4xl font-extrabold text-foreground leading-none mb-2">
+              {stat.value}
+            </p>
+            <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              {stat.label}
+            </p>
           </div>
         </div>
       </div>
@@ -107,7 +119,7 @@ function StatGlowCard({ stat }: { stat: typeof stats[0] }) {
           "pointer-events-none absolute inset-0 translate-z-0 rounded-(--card-radius)",
           "border-(length:--card-border-width) border-solid border-transparent",
           "backdrop-blur-(--card-border-blur) backdrop-brightness-(--card-border-brightness) backdrop-contrast-(--card-border-contrast) backdrop-saturate-(--card-border-saturate)",
-          "[clip-path:inset(0_round_var(--card-radius))]"
+          "[clip-path:inset(0_round_var(--card-radius))]",
         )}
         style={
           {
@@ -121,7 +133,7 @@ function StatGlowCard({ stat }: { stat: typeof stats[0] }) {
         }
       />
     </div>
-  )
+  );
 }
 
 export function HowProcessSection() {
@@ -129,14 +141,15 @@ export function HowProcessSection() {
     <section className="py-24 bg-background overflow-hidden">
       <div className="container mx-auto px-6 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
-
           {/* ─── Left Column: Text ─── */}
           <div>
             <BlurFade delay={0.1} inView>
               {/* Label */}
               <div className="flex items-center gap-3 mb-4">
                 <span className="w-6 h-[2px] bg-primary inline-block"></span>
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">How It Works</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                  How It Works
+                </span>
               </div>
 
               {/* Headline */}
@@ -148,7 +161,10 @@ export function HowProcessSection() {
               {/* Blockquote */}
               <blockquote className="border-l-4 border-amber-400 pl-4 mb-10">
                 <p className="text-muted-foreground text-base leading-relaxed">
-                  Our proven methodology is designed to guide you from foundational learning all the way seamlessly to your final examination success — taught in Urdu & Hindi by ACCA qualified professionals.
+                  Our proven methodology is designed to guide you from
+                  foundational learning all the way seamlessly to your final
+                  examination success — taught in Urdu & Hindi by ACCA qualified
+                  professionals.
                 </p>
               </blockquote>
             </BlurFade>
@@ -159,11 +175,18 @@ export function HowProcessSection() {
                 <BlurFade key={f.id} delay={0.2 + idx * 0.1} inView>
                   <div className="border-t-2 border-primary pt-4 h-full flex flex-col justify-between">
                     <div>
-                      <h4 className="text-base font-bold text-foreground mb-2">{f.title}</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-4">{f.desc}</p>
+                      <h4 className="text-base font-bold text-foreground mb-2">
+                        {f.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                        {f.desc}
+                      </p>
                     </div>
                     <div>
-                      <a href="#" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-background bg-foreground px-4 py-2.5 hover:bg-primary hover:text-primary-foreground transition-colors">
+                      <a
+                        href="#"
+                        className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-background bg-foreground px-4 py-2.5 hover:bg-primary hover:text-primary-foreground transition-colors"
+                      >
                         <ArrowRight className="w-3.5 h-3.5" /> Learn More
                       </a>
                     </div>
@@ -183,7 +206,6 @@ export function HowProcessSection() {
               ))}
             </GlowCardGrid>
           </div>
-
         </div>
       </div>
     </section>
