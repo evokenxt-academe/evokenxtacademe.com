@@ -58,7 +58,6 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-
       {/* ═══════════════════════════════════════════════════════════
           HERO — Self-contained dark section, works in both themes
       ═══════════════════════════════════════════════════════════ */}
@@ -96,14 +95,15 @@ export default function ContactPage() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] text-white mb-4">
               Get in Touch
             </h1>
-            <p className="text-sm md:text-base text-zinc-400 leading-relaxed max-w-md">
-              Have questions about ACCA courses, enrollment, or platform access? Our academic advisors typically respond within 24 hours.
+            <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-md">
+              Have questions about ACCA courses, enrollment, or platform access?
+              Our academic advisors typically respond within 24 hours.
             </p>
           </div>
         </div>
 
         {/* Bottom fade to match any theme */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-16 dark:bg-gradient-to-t from-background to-transparent" />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -111,10 +111,8 @@ export default function ContactPage() {
       ═══════════════════════════════════════════════════════════ */}
       <section className="mx-auto max-w-6xl px-6 py-12 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-10">
-
           {/* ── LEFT: Info Cards ── */}
           <div className="lg:col-span-2 flex flex-col gap-5">
-
             {/* Contact Details */}
             <Card>
               <CardHeader className="pb-4">
@@ -125,21 +123,48 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {[
-                  { icon: Mail, label: "Email", value: "support@evokeeduglobal.com", href: "mailto:support@evokeeduglobal.com" },
-                  { icon: Phone, label: "Phone", value: "+91 98765 43210", href: "tel:+919876543210" },
-                  { icon: MapPin, label: "Location", value: "Mumbai, Maharashtra, India" },
-                  { icon: Clock, label: "Hours", value: "Mon – Fri, 9 am – 6 pm IST" },
+                  {
+                    icon: Mail,
+                    label: "Email",
+                    value: "support@evokeeduglobal.com",
+                    href: "mailto:support@evokeeduglobal.com",
+                  },
+                  {
+                    icon: Phone,
+                    label: "Phone",
+                    value: "+91 98765 43210",
+                    href: "tel:+919876543210",
+                  },
+                  {
+                    icon: MapPin,
+                    label: "Location",
+                    value: "Mumbai, Maharashtra, India",
+                  },
+                  {
+                    icon: Clock,
+                    label: "Hours",
+                    value: "Mon – Fri, 9 am – 6 pm IST",
+                  },
                 ].map(({ icon: Icon, label, value, href }) => (
                   <div key={label} className="flex items-center gap-3">
                     <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                       <Icon className="size-4 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        {label}
+                      </p>
                       {href ? (
-                        <a href={href} className="text-[13px] font-medium hover:text-primary transition-colors truncate block">{value}</a>
+                        <a
+                          href={href}
+                          className="text-[13px] font-medium hover:text-primary transition-colors truncate block"
+                        >
+                          {value}
+                        </a>
                       ) : (
-                        <p className="text-[13px] font-medium truncate">{value}</p>
+                        <p className="text-[13px] font-medium truncate">
+                          {value}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -211,16 +236,21 @@ export default function ContactPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Send a Message</CardTitle>
                 <CardDescription className="text-xs">
-                  Fill out the details below and our academic team will respond within 24 hours.
+                  Fill out the details below and our academic team will respond
+                  within 24 hours.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-
                   {/* Name row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="contact-first-name" className="text-xs font-semibold">First Name</Label>
+                      <Label
+                        htmlFor="contact-first-name"
+                        className="text-xs font-semibold"
+                      >
+                        First Name
+                      </Label>
                       <Input
                         id="contact-first-name"
                         required
@@ -229,7 +259,12 @@ export default function ContactPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="contact-last-name" className="text-xs font-semibold">Last Name</Label>
+                      <Label
+                        htmlFor="contact-last-name"
+                        className="text-xs font-semibold"
+                      >
+                        Last Name
+                      </Label>
                       <Input
                         id="contact-last-name"
                         required
@@ -242,7 +277,12 @@ export default function ContactPage() {
                   {/* Email + Phone row */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="contact-email" className="text-xs font-semibold">Email</Label>
+                      <Label
+                        htmlFor="contact-email"
+                        className="text-xs font-semibold"
+                      >
+                        Email
+                      </Label>
                       <Input
                         id="contact-email"
                         type="email"
@@ -252,7 +292,12 @@ export default function ContactPage() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="contact-phone" className="text-xs font-semibold">Phone</Label>
+                      <Label
+                        htmlFor="contact-phone"
+                        className="text-xs font-semibold"
+                      >
+                        Phone
+                      </Label>
                       <Input
                         id="contact-phone"
                         type="tel"
@@ -271,10 +316,18 @@ export default function ContactPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="course">Course Support</SelectItem>
-                        <SelectItem value="enrollment">Enrollment Help</SelectItem>
-                        <SelectItem value="billing">Billing & Payments</SelectItem>
-                        <SelectItem value="technical">Technical Issue</SelectItem>
-                        <SelectItem value="liveclass">Live Class Support</SelectItem>
+                        <SelectItem value="enrollment">
+                          Enrollment Help
+                        </SelectItem>
+                        <SelectItem value="billing">
+                          Billing & Payments
+                        </SelectItem>
+                        <SelectItem value="technical">
+                          Technical Issue
+                        </SelectItem>
+                        <SelectItem value="liveclass">
+                          Live Class Support
+                        </SelectItem>
                         <SelectItem value="general">General Inquiry</SelectItem>
                       </SelectContent>
                     </Select>
@@ -282,7 +335,12 @@ export default function ContactPage() {
 
                   {/* Message */}
                   <div className="space-y-1.5">
-                    <Label htmlFor="contact-message" className="text-xs font-semibold">Message</Label>
+                    <Label
+                      htmlFor="contact-message"
+                      className="text-xs font-semibold"
+                    >
+                      Message
+                    </Label>
                     <Textarea
                       id="contact-message"
                       required
@@ -303,7 +361,8 @@ export default function ContactPage() {
                   </Button>
 
                   <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-                    By submitting, you agree to be contacted regarding this inquiry.
+                    By submitting, you agree to be contacted regarding this
+                    inquiry.
                   </p>
                 </form>
               </CardContent>
@@ -319,11 +378,24 @@ export default function ContactPage() {
         <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
             <div>
-              <h2 className="text-base font-bold tracking-tight mb-0.5">Our Location</h2>
-              <p className="text-xs text-muted-foreground">Mumbai, Maharashtra, India</p>
+              <h2 className="text-base font-bold tracking-tight mb-0.5">
+                Our Location
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Mumbai, Maharashtra, India
+              </p>
             </div>
-            <Button variant="outline" size="sm" className="w-fit rounded-full text-xs" asChild>
-              <a href="https://maps.google.com/?q=Mumbai,Maharashtra,India" target="_blank" rel="noopener noreferrer">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit rounded-full text-xs"
+              asChild
+            >
+              <a
+                href="https://maps.google.com/?q=Mumbai,Maharashtra,India"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Open in Maps <ArrowRight className="size-3 ml-1.5" />
               </a>
             </Button>

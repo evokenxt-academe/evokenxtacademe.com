@@ -56,21 +56,21 @@ function useCounter(
 const stats = [
   {
     icon: Download,
-    numericValue: 2.5,
-    suffix: "M+",
+    numericValue: 100,
+    suffix: "+",
     label: "Downloads",
     accent: "from-violet-500/10 to-purple-600/10",
   },
   {
     icon: Users,
-    numericValue: 850,
-    suffix: "K+",
+    numericValue: 500,
+    suffix: "+",
     label: "Active Learners",
     accent: "from-blue-500/10 to-cyan-500/10",
   },
   {
     icon: Star,
-    numericValue: 4.9,
+    numericValue: 4.8,
     suffix: "/5",
     label: "Average Rating",
     isDecimal: true,
@@ -78,7 +78,7 @@ const stats = [
   },
   {
     icon: BookOpen,
-    numericValue: 1200,
+    numericValue: 100,
     suffix: "+",
     label: "Courses Offered",
     accent: "from-emerald-500/10 to-teal-500/10",

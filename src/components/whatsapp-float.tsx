@@ -8,11 +8,12 @@ export function WhatsAppFloat() {
   const [visible, setVisible] = useState(false);
   const pathname = usePathname();
 
-  // Hide on dashboard, admin, and learn routes
+  // Hide on dashboard, admin, learn, and auth routes
   const shouldHide =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/admin") ||
-    pathname.startsWith("/learn");
+    pathname.startsWith("/learn") ||
+    pathname.startsWith("/auth");
 
   useEffect(() => {
     if (shouldHide) return;

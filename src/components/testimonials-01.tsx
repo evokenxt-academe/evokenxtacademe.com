@@ -22,90 +22,112 @@ export function Testimonials01() {
 
 const TESTIMONIALS_1: TestimonialType[] = [
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-    authorName: "Sarah J.",
-    authorTagline: "ACCA Affiliate",
-    url: "#",
-    quote: "Evokenxt transformed how I study. The recorded sessions are crystal clear, and the tutors explain complex topics beautifully.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocKSsBPhj7j3kxIoBRjclV-GvliwnKlxgjP316BzLwww2xy0fg=w81-h81-p-rp-mo-br100",
+    authorName: "Sushma Mishra",
+    authorTagline: "Parent of ACCA Student",
+    url: "https://maps.app.goo.gl/a23Sb49cSjPTM3kc9",
+    quote:
+      "As a mother, I'm very happy with EVOKE. The teachers are helpful, and my child is learning well and staying motivated. They provide good support, regular tests, and keep students on track. I would definitely recommend them to other parents.",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026703d",
-    authorName: "Michael T.",
-    authorTagline: "SBR Top Scorer",
-    url: "#",
-    quote: "The mock exams perfectly mirrored the actual ACCA papers. I felt incredibly confident walking into the exam hall.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocI4eKKWDoAJePnjbUU7DivDfsHNSzx_duKF3KJpW0kuUJWEDEY=w81-h81-p-rp-mo-br100",
+    authorName: "Uzma Shaikh",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/i7Cu52XGpvq7eVJ6A",
+    quote:
+      "Best classes for professional courses. It provides in-depth knowledge and clear explanations which made complex topics accessible. The course was well-structured, with practical insights and effective teaching methods. I gained a thorough understanding of the material and feel well-prepared for the exams. Highly recommended for anyone pursuing ACCA.",
   },
   {
     authorAvatar: "https://i.pravatar.cc/150?u=a04258114e29026702d",
-    authorName: "Aisha M.",
-    authorTagline: "P-Level Student",
-    url: "#",
-    quote: "Finding high-quality lectures in Urdu was a game-changer for me. Concepts I struggled with for months suddenly made sense.",
+    authorName: "Rizwan Azad",
+    authorTagline: "Parent of ACCA Student",
+    url: "https://maps.app.goo.gl/hjYaoHs37jDJQTj48",
+    quote:
+      "Evoke Academe is one of the finest coaching centres for commerce in Mumbai. They’ve great infrastructure and highly skilled and qualified teachers. Through professionals when it comes to teaching and helping with tips and tricks. They focus on scientific and cognitive learning so that you understand the concepts and not resort to rote learning. Go for it!",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a048581f4e29026701d",
-    authorName: "David O.",
-    authorTagline: "Taxation Specialist",
-    url: "#",
-    quote: "The 24/7 tutor support is unmatched. Whenever I got stuck on a past paper question, help was just a message away.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a-/ALV-UjVLjhdxrNU4zwNS0FS5GqQQJnZPAuiNVr6h26s4L4nCNWar9cdy=w81-h81-p-rp-mo-br100",
+    authorName: "Hasan Shaikh",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/QoyJykEXhPJZc3cF9",
+    quote:
+      "This class has a really unique and effective teaching style. The teacher is great at helping students adjust to the workload, and they're always encouraging us to keep going and reach our goals. I would personally recommend to join this classes .",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a092581d4ef9026700d",
-    authorName: "Priya K.",
-    authorTagline: "Audit Associate",
-    url: "#",
-    quote: "Clean, intuitive platform. No distractions, just pure learning. The best investment I've made in my career so far.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocIjkH-060GpHv9SAqBmZ_GKZFZUIirNZKY5plrm9OH8DK41_A=w81-h81-p-rp-mo-br100",
+    authorName: "farzeen shaikh",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/SVJaRFio9qVg8HgL8",
+    quote:
+      "The most underrated class for any commerce course, I am studying ACCA in this class and i am loving the way of their teaching. And the way I have improved while studying in this. I would genuinely recommend anyone to join this class if you can keep quality over show.",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-    authorName: "James R.",
-    authorTagline: "Skill Level Student",
-    url: "#",
-    quote: "Their focus on exam technique rather than just theory makes all the difference. Highly recommended for any serious ACCA student.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocJ8meBQFLNYZW6aLXwKQeLOYeWH-scMVnk3ni8J05PNDFTCWQ=w81-h81-p-rp-mo-br100",
+    authorName: "Frazer Pereira",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/yZNoDF18ynhJx1F18",
+    quote:
+      "Choosing Evoke Academe for my ACCA studies was a wise decision. The faculty's dedication, combined with interactive teaching methods, has significantly boosted my confidence in tackling the exams.",
   },
 ];
 
 const TESTIMONIALS_2: TestimonialType[] = [
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a04258a2462d826712d",
-    authorName: "Zainab F.",
-    authorTagline: "Finance Manager",
-    url: "#",
-    quote: "Balancing work and studies is tough, but the flexible recorded sessions let me study at my own pace. Passed AFM on my first attempt!",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocL8EHYyedN3Ej54QBIAfEOi3CCE0Mm4EHYjatvlPsg6YVidKw=w81-h81-p-rp-mo-br100",
+    authorName: "Prashant Hogade",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/o4mw1yuKPCBok2JH8",
+    quote:
+      "Evoke Academe is the perfect place to pursue ACCA classes. The trainers are highly experienced and ensure that concepts are well understood before moving on. They create a supportive environment that fosters growth.",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026704e",
-    authorName: "Ali H.",
-    authorTagline: "ACCA Finalist",
-    url: "#",
-    quote: "The detailed analytics after each mock exam helped me pinpoint exactly where I was losing marks. Truly an intelligent platform.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocK3hTzulSZYYyN0X-yu9ZICxKPhk2SAzPpCDMJomNYJNf3o1g=w81-h81-p-rp-mo-br100",
+    authorName: "Kashaf Shaikh",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/wg7LPY1XBMqawu2A7",
+    quote:
+      "The structure and pace of the teacher made complex topics easy to understand, the teaching style encourages active participation and friendliness. Study materials provided here are extremely helpful, relatable and easy to grasp.",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026704f",
-    authorName: "Emma W.",
-    authorTagline: "Knowledge Level",
-    url: "#",
-    quote: "Started from absolute basics. The foundation courses laid the perfect groundwork for my accounting journey.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocJYnp2kJ9spnIYlnM4UGjbH4teupesuoi-iK-0JsvAzaa038Uc=w81-h81-p-rp-mo-br100",
+    authorName: "Mohammed wasim Bhati",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/yE6rriLMKYXFeigY7",
+    quote:
+      "Evoke Academe has a well-structured curriculum for ACCA classes. The systematic approach, combined with regular assessments, ensures that we stay on track and steadily progress towards our goals.",
   },
   {
     authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026704g",
     authorName: "Omar S.",
     authorTagline: "Business Analyst",
     url: "#",
-    quote: "World-class instructors. You can tell they actually care about your success, not just finishing the syllabus.",
+    quote:
+      "World-class instructors. You can tell they actually care about your success, not just finishing the syllabus.",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026704h",
-    authorName: "Fatima B.",
-    authorTagline: "Audit Senior",
-    url: "#",
-    quote: "I've tried other platforms, but Evoke's structured learning path and focused materials are in a league of their own.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a/ACg8ocIitIjzANuEg69PERpffp2HVIXI6gHB7wXok8n88x_n0o56ew=w81-h81-p-rp-mo-br100",
+    authorName: "Mohammed Qadri",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/WWxtzxaRdVgmJstY9",
+    quote:
+      "Best ACCA classes in Mira road .also concepts are very clear and teachers are very helpful to us . Also class tests  are taken on time which helps the student to be prepared for the final exams",
   },
   {
-    authorAvatar: "https://i.pravatar.cc/150?u=a042581f4e29026704i",
-    authorName: "Rahul V.",
-    authorTagline: "CFO",
-    url: "#",
-    quote: "I now send my entire junior team to Evoke for their professional development. The results speak for themselves.",
+    authorAvatar:
+      "https://lh3.googleusercontent.com/a-/ALV-UjVHw8DLzaEjNkZPNsppvKJHBUVdQPhgFYXIFdlvnyURFQusCR0A=w81-h81-p-rp-mo-br100",
+    authorName: "Mukul Singh",
+    authorTagline: "ACCA Student",
+    url: "https://maps.app.goo.gl/VBtLMPis5aBJZtRG6",
+    quote:
+      "What makes you willingly attend lectures? That's what they portray at Evoke Academe. Meaning, lectures with sheer wisdom with real world examples that makes concept retention in long run. Found it engrossing and full of perception. Highly recommended!!",
   },
 ];
