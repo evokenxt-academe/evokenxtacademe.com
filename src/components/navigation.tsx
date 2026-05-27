@@ -246,7 +246,7 @@ export function Navigation() {
           <Separator className="my-6" />
 
           {/* CTA Buttons */}
-          <div className="mt-60 flex flex-col gap-3">
+          <div className="mt-40 flex flex-col gap-3">
             <Button
               variant="outline"
               className="h-12 w-full text-base"

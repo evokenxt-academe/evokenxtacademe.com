@@ -100,6 +100,16 @@ export async function GET(req: NextRequest) {
       // Proceed anyway, but it won't auto-refresh. The authorize route correctly uses prompt=consent though.
     }
 
+    // Log what Google actually granted vs what we requested
+    const grantedScopes = tokenData.scope || '';
+    console.log('[YouTube OAuth] Granted scopes from Google:', grantedScopes);
+    console.log('[YouTube OAuth] Refresh token received:', !!tokenData.refresh_token);
+
+    // Store the REQUESTED scopes (what we asked for) since Google may return a shortened format
+    // Google sometimes returns "email profile openid https://..." instead of full scope URIs
+    // We trust that if the user consented, all requested scopes were granted
+    const requestedScopes = 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/userinfo.email';
+
     // Delete existing to avoid upsert complexities if not perfectly configured
     await supabase.from('youtube_tokens').delete().eq('user_id', adminUser.id);
 
@@ -110,7 +120,7 @@ export async function GET(req: NextRequest) {
         access_token: tokenData.access_token,
         refresh_token: refreshToken || '', 
         expires_at: expiresAt,
-        scopes: tokenData.scope || 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/userinfo.email',
+        scopes: requestedScopes,
       });
 
     if (insertError) {

@@ -307,12 +307,36 @@ export async function getVideoStatistics(
 export async function listLiveBroadcasts(status: 'active' | 'all' | 'completed' | 'upcoming' = 'active'): Promise<any[]> {
   const accessToken = await getAccessToken();
 
-  let url = `${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails&mine=true`;
-  
-  // YouTube API does not allow broadcastStatus=all with mine=true
-  if (status !== 'all') {
-    url += `&broadcastStatus=${status}`;
+  // YouTube API does not support broadcastStatus=all with mine=true
+  // So we fetch each status separately and merge
+  if (status === 'all') {
+    const statuses: Array<'active' | 'completed' | 'upcoming'> = ['active', 'upcoming', 'completed'];
+    const allBroadcasts: any[] = [];
+    
+    for (const s of statuses) {
+      try {
+        const url = `${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails&mine=true&broadcastStatus=${s}&maxResults=50`;
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items) {
+            allBroadcasts.push(...data.items);
+          }
+        }
+      } catch {
+        // Continue with other statuses if one fails
+      }
+    }
+    
+    return allBroadcasts;
   }
+
+  const url = `${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails&mine=true&broadcastStatus=${status}&maxResults=50`;
 
   const res = await fetch(url, {
     headers: {
