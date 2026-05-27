@@ -35,13 +35,19 @@ export async function GET(req: NextRequest) {
     const expiresAt = new Date(token.expires_at);
     const isExpired = expiresAt < new Date();
 
-    // Check if the token has the required youtube scope
+    // Check if the token has the required youtube scopes for broadcast access
     const scopes = typeof token.scopes === 'string'
       ? token.scopes
       : Array.isArray(token.scopes) ? token.scopes.join(' ') : '';
-    const hasFullScope = scopes.includes('youtube.com/auth/youtube ') ||
-      scopes.includes('youtube.com/auth/youtube') && !scopes.endsWith('.readonly');
-    const hasRequiredScopes = scopes.includes('youtube.force-ssl') || hasFullScope;
+    
+    // We need the full youtube scope (not just readonly) for broadcast management
+    const scopeList = scopes.split(/\s+/);
+    const hasFullScope = scopeList.some(s => 
+      s === 'https://www.googleapis.com/auth/youtube' || 
+      s.endsWith('/auth/youtube')
+    );
+    const hasForceSsl = scopeList.some(s => s.includes('youtube.force-ssl'));
+    const hasRequiredScopes = hasFullScope && hasForceSsl;
 
     // Try to get channel info if connected
     let channelInfo = null;

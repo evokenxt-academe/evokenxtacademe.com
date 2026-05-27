@@ -14,12 +14,30 @@ export async function getAccessToken(email: string = 'amarbiradar147@gmail.com')
   // Get current token
   const { data: token, error } = await supabase
     .from('youtube_tokens')
-    .select('access_token, expires_at, refresh_token, user_id')
+    .select('access_token, expires_at, refresh_token, user_id, scopes')
     .eq('user_id', (await supabase.auth.admin.listUsers()).data?.users?.find(u => u.email === email)?.id)
     .single();
 
   if (error || !token) {
     throw new Error('YouTube token not found. Please connect your YouTube account.');
+  }
+
+  if (!token.refresh_token) {
+    throw new Error('No refresh token stored. Please reconnect your YouTube account.');
+  }
+
+  // Verify required scopes are present
+  // If scopes field is empty/missing, assume it's an old token that needs reauth
+  const scopes = token.scopes || '';
+  if (scopes) {
+    const scopeList = scopes.split(/\s+/);
+    const hasFullScope = scopeList.some((s: string) => 
+      s === 'https://www.googleapis.com/auth/youtube' || 
+      s.endsWith('/auth/youtube')
+    );
+    if (!hasFullScope) {
+      throw new Error('Request had insufficient authentication scopes. Please reconnect your YouTube account with full broadcast permissions.');
+    }
   }
 
   const expiresAt = new Date(token.expires_at);
