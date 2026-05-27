@@ -16,9 +16,9 @@ import { CourseCard, CourseCardSkeleton } from "@/components/course-card";
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const LEVEL_TABS = [
-  { key: "knowledge", label: "Applied Knowledge" },
-  { key: "skills", label: "Applied Skills" },
-  { key: "professional", label: "Strategic Professional" },
+  { key: "knowledge", label: "Knowledge" },
+  { key: "skills", label: "Skills" },
+  { key: "professional", label: "Professional" },
 ];
 
 // ─── Main Component ─────────────────────────────────────────────────────────
@@ -66,15 +66,14 @@ export function CourseSection() {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full max-w-lg"
+            className="w-full max-w-2xl"
           >
-            <TabsList className="grid h-14 w-full grid-cols-3 gap-1.5 rounded-full border border-border/60 bg-muted/50 p-0.5 shadow-sm shadow-black/5 backdrop-blur-sm">
+            <TabsList>
               {LEVEL_TABS.map((tab) => (
                 <TabsTrigger
                   key={tab.key}
                   value={tab.key}
-                  className="rounded-full px-4 text-sm font-medium tracking-[-0.01em] text-muted-foreground transition-all duration-200 hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-[0_1px_2px_rgba(15,23,42,0.08)] md:px-6 md:text-[15px]"
-                >
+                  >
                   {tab.label}
                 </TabsTrigger>
               ))}

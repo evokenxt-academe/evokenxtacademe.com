@@ -18,10 +18,10 @@ const navLinks = [
 
 function ThemeToggle({
   scrolled,
-  isLanding,
+  hasDarkHero,
 }: {
   scrolled: boolean;
-  isLanding: boolean;
+  hasDarkHero: boolean;
 }) {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -53,7 +53,7 @@ function ThemeToggle({
         "size-9 shrink-0 transition-colors duration-200",
         scrolled
           ? "text-muted-foreground hover:bg-accent hover:text-foreground"
-          : isLanding
+          : hasDarkHero
             ? "text-white/70 hover:bg-white/10 hover:text-white"
             : "text-foreground/70 hover:bg-foreground/5 hover:text-foreground dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white",
       )}
@@ -70,6 +70,8 @@ function ThemeToggle({
 export function Navigation() {
   const pathname = usePathname();
   const isLanding = pathname === "/";
+  // Pages with dark hero sections where nav text should be white before scroll
+  const hasDarkHero = isLanding || pathname === "/contact";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -135,7 +137,7 @@ export function Navigation() {
                     "text-sm font-medium transition-colors duration-200",
                     isScrolled
                       ? "text-muted-foreground hover:text-foreground"
-                      : isLanding
+                      : hasDarkHero
                         ? "text-white/80 hover:text-white"
                         : "text-foreground/80 hover:text-foreground dark:text-white/80 dark:hover:text-white",
                   )}
@@ -147,7 +149,7 @@ export function Navigation() {
 
             {/* ── Desktop CTA + Theme Toggle ── */}
             <div className="hidden items-center gap-2 md:flex">
-              <ThemeToggle scrolled={isScrolled} isLanding={isLanding} />
+              <ThemeToggle scrolled={isScrolled} hasDarkHero={hasDarkHero} />
 
               <Button
                 variant="ghost"
@@ -156,7 +158,7 @@ export function Navigation() {
                   "transition-all duration-200",
                   isScrolled
                     ? "text-muted-foreground hover:text-foreground"
-                    : isLanding
+                    : hasDarkHero
                       ? "text-white/80 hover:bg-white/10 hover:text-white"
                       : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white",
                 )}
@@ -178,7 +180,7 @@ export function Navigation() {
             <div className="flex items-center gap-1 md:hidden">
               <ThemeToggle
                 scrolled={isScrolled || isMobileMenuOpen}
-                isLanding={isLanding}
+                hasDarkHero={hasDarkHero}
               />
 
               <button
@@ -189,7 +191,7 @@ export function Navigation() {
                   "rounded-md p-2 transition-colors duration-200",
                   isScrolled || isMobileMenuOpen
                     ? "text-foreground hover:bg-accent"
-                    : isLanding
+                    : hasDarkHero
                       ? "text-white hover:bg-white/10"
                       : "text-foreground hover:bg-foreground/5 dark:text-white dark:hover:bg-white/10",
                 )}
