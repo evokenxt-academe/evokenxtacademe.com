@@ -21,7 +21,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { IconPlus, IconTrash, IconFile, IconX, IconUpload, IconCloudUpload, IconCheck, IconEye } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconTrash,
+  IconFile,
+  IconX,
+  IconUpload,
+  IconCloudUpload,
+  IconCheck,
+  IconEye,
+} from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -30,7 +39,10 @@ import {
   deleteLectureResource,
   type LectureResource,
 } from "@/lib/supabase/queries/courses-admin";
-import { uploadResourceFile, type UploadProgress } from "@/features/admin/course/services/course-api";
+import {
+  uploadResourceFile,
+  type UploadProgress,
+} from "@/features/admin/course/services/course-api";
 
 interface ResourcesTabProps {
   lectureId: string;
@@ -47,14 +59,35 @@ const fileTypeIcons: Record<string, string> = {
   zip: "📦",
 };
 
-function ResourceRow({ resource, onDelete }: { resource: LectureResource; onDelete: (id: string) => void }) {
+function ResourceRow({
+  resource,
+  onDelete,
+}: {
+  resource: LectureResource;
+  onDelete: (id: string) => void;
+}) {
   const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const isPdf = resource.file_type === "pdf";
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(resource.id);
+      setShowDeleteConfirm(false);
+      setPreviewOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <>
       <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-        <span className="text-lg">{fileTypeIcons[resource.file_type] || "📎"}</span>
+        <span className="text-lg">
+          {fileTypeIcons[resource.file_type] || "📎"}
+        </span>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">{resource.title}</p>
           <div className="flex items-center gap-2 mt-0.5">
@@ -82,7 +115,7 @@ function ResourceRow({ resource, onDelete }: { resource: LectureResource; onDele
             variant="ghost"
             size="icon"
             className="size-8 text-destructive hover:bg-destructive/10"
-            onClick={() => onDelete(resource.id)}
+            onClick={() => setShowDeleteConfirm(true)}
           >
             <IconTrash className="size-4" />
           </Button>
@@ -109,17 +142,55 @@ function ResourceRow({ resource, onDelete }: { resource: LectureResource; onDele
               <div className="flex-1 bg-black/5 relative">
                 <iframe
                   title={resource.title}
-                  src={resource.file_url + (isPdf ? "#toolbar=0&navpanes=0" : "")}
+                  src={
+                    resource.file_url + (isPdf ? "#toolbar=0&navpanes=0" : "")
+                  }
                   className="absolute inset-0 h-full w-full border-0"
                 />
               </div>
-              <div className="flex items-center justify-end gap-2 border-t px-5 py-3 bg-muted/30">
+              <div className="flex items-center justify-between gap-2 border-t px-5 py-3 bg-muted/30">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <IconTrash className="size-3.5 mr-1.5" />
+                  Delete
+                </Button>
                 <Button variant="ghost" onClick={() => setPreviewOpen(false)}>
                   Close
                 </Button>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Resource?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{resource.title}"? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
@@ -140,7 +211,8 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
-  const [uploadProgress, setUploadProgress] = React.useState<UploadProgress | null>(null);
+  const [uploadProgress, setUploadProgress] =
+    React.useState<UploadProgress | null>(null);
   const [uploadError, setUploadError] = React.useState("");
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,7 +231,7 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
       const result = await uploadResourceFile(
         file,
         newResource.title || file.name.replace(/\.[^.]+$/, ""),
-        (p) => setUploadProgress(p)
+        (p) => setUploadProgress(p),
       );
 
       if (result.success) {
@@ -168,7 +240,11 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
           file_url: result.fileUrl,
           title: prev.title || file.name.replace(/\.[^.]+$/, ""),
           file_size_kb: Math.round(file.size / 1024).toString(),
-          file_type: file.type.startsWith("image/") ? "image" : (file.type === "application/pdf" ? "pdf" : prev.file_type)
+          file_type: file.type.startsWith("image/")
+            ? "image"
+            : file.type === "application/pdf"
+              ? "pdf"
+              : prev.file_type,
         }));
       } else {
         setUploadError(result.error || "Upload failed");
@@ -209,12 +285,19 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
         title: newResource.title,
         file_url: newResource.file_url,
         file_type: newResource.file_type,
-        file_size_kb: newResource.file_size_kb ? Number(newResource.file_size_kb) : null,
+        file_size_kb: newResource.file_size_kb
+          ? Number(newResource.file_size_kb)
+          : null,
         position: resources.length,
       });
       toast.success("Resource added");
       setShowForm(false);
-      setNewResource({ title: "", file_url: "", file_type: "pdf", file_size_kb: "" });
+      setNewResource({
+        title: "",
+        file_url: "",
+        file_type: "pdf",
+        file_size_kb: "",
+      });
       loadResources();
     } catch {
       toast.error("Failed to add resource");
@@ -244,7 +327,11 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
         </div>
       ) : (
         resources.map((resource) => (
-          <ResourceRow key={resource.id} resource={resource} onDelete={handleDelete} />
+          <ResourceRow
+            key={resource.id}
+            resource={resource}
+            onDelete={handleDelete}
+          />
         ))
       )}
 
@@ -255,7 +342,9 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
               <Label className="text-xs">Title</Label>
               <Input
                 value={newResource.title}
-                onChange={(e) => setNewResource((r) => ({ ...r, title: e.target.value }))}
+                onChange={(e) =>
+                  setNewResource((r) => ({ ...r, title: e.target.value }))
+                }
                 placeholder="Resource title"
               />
             </div>
@@ -263,7 +352,9 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
               <Label className="text-xs">File Type</Label>
               <Select
                 value={newResource.file_type}
-                onValueChange={(val) => setNewResource((r) => ({ ...r, file_type: val }))}
+                onValueChange={(val) =>
+                  setNewResource((r) => ({ ...r, file_type: val }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -291,19 +382,27 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
               className="hidden"
               onChange={handleFileChange}
             />
-            
+
             {newResource.file_url ? (
               <div className="flex items-center justify-between bg-background p-2 rounded border">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <IconCheck className="size-4 text-green-500 shrink-0" />
-                  <span className="text-xs truncate">{newResource.file_url}</span>
+                  <span className="text-xs truncate">
+                    {newResource.file_url}
+                  </span>
                 </div>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   className="h-6 w-6 shrink-0"
-                  onClick={() => setNewResource(prev => ({ ...prev, file_url: "", file_size_kb: "" }))}
+                  onClick={() =>
+                    setNewResource((prev) => ({
+                      ...prev,
+                      file_url: "",
+                      file_size_kb: "",
+                    }))
+                  }
                 >
                   <IconX className="size-3" />
                 </Button>
@@ -312,9 +411,14 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs">
                   <span>Uploading...</span>
-                  <span className="text-primary">{uploadProgress?.percent || 0}%</span>
+                  <span className="text-primary">
+                    {uploadProgress?.percent || 0}%
+                  </span>
                 </div>
-                <Progress value={uploadProgress?.percent || 0} className="h-2" />
+                <Progress
+                  value={uploadProgress?.percent || 0}
+                  className="h-2"
+                />
                 {uploadProgress && uploadProgress.speed > 0 && (
                   <span className="text-[10px] text-muted-foreground text-right">
                     {uploadProgress.speedLabel}
@@ -322,9 +426,9 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
                 )}
               </div>
             ) : (
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="w-full text-xs h-8 border-dashed"
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -332,10 +436,18 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
                 Choose File (Max 50MB)
               </Button>
             )}
-            {uploadError && <span className="text-[11px] text-destructive">{uploadError}</span>}
+            {uploadError && (
+              <span className="text-[11px] text-destructive">
+                {uploadError}
+              </span>
+            )}
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowForm(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowForm(false)}
+            >
               Cancel
             </Button>
             <Button size="sm" onClick={handleAdd} disabled={saving}>
@@ -346,7 +458,12 @@ export function ResourcesTab({ lectureId }: ResourcesTabProps) {
       )}
 
       {!showForm && (
-        <Button variant="outline" size="sm" onClick={() => setShowForm(true)} className="border-dashed">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowForm(true)}
+          className="border-dashed"
+        >
           <IconPlus data-icon="inline-start" />
           Add Resource
         </Button>

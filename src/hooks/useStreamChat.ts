@@ -47,6 +47,7 @@ export function useStreamChat(streamId: string) {
                     .limit(200);
 
                 if (error) throw error;
+                
                 setMessages((data || []).reverse());
                 setLoading(false);
             } catch (err) {
@@ -69,6 +70,7 @@ export function useStreamChat(streamId: string) {
                     filter: `live_stream_id=eq.${streamId}`,
                 },
                 (payload) => {
+                    // Messages already have author_name and author_avatar populated
                     setMessages((prev) => [...prev, payload.new as ChatMessage].slice(-200));
                     queryClient.setQueryData(['chat', streamId], (old: any[] | undefined) =>
                         [...(old ?? []), payload.new].slice(-200)
@@ -104,6 +106,13 @@ export function useStreamChat(streamId: string) {
 
             if (!user) throw new Error('Not authenticated');
 
+            // Get user profile
+            const { data: userProfile } = await supabase
+                .from('users')
+                .select('name, avatar')
+                .eq('id', user.id)
+                .single();
+
             const { data, error } = await supabase
                 .from('chat_messages')
                 .insert([
@@ -112,6 +121,8 @@ export function useStreamChat(streamId: string) {
                         user_id: user.id,
                         message,
                         type,
+                        author_name: userProfile?.name || user.email?.split('@')[0] || 'User',
+                        author_avatar: userProfile?.avatar || null,
                         is_approved: true,
                         is_pinned: false,
                         is_deleted: false,
@@ -122,7 +133,7 @@ export function useStreamChat(streamId: string) {
 
             if (error) throw error;
 
-            // Optimistic update
+            // Optimistic update - data already has author_name and author_avatar
             setMessages((prev) => [...prev, data as ChatMessage].slice(-200));
 
             return data;

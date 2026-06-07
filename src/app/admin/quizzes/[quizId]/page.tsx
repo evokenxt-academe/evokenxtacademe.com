@@ -98,6 +98,11 @@ export default function EditQuizPage({
 
   const handleSave = () => {
     if (!quiz) return;
+    const passingMarksVal =
+      form.passing_marks !== "" && form.passing_marks !== null
+        ? Number(form.passing_marks)
+        : Math.ceil((quiz.total_marks ?? 0) * 0.5);
+
     updateMutation.mutate({
       id: quiz.id,
       data: {
@@ -105,7 +110,7 @@ export default function EditQuizPage({
         description: form.description || null,
         instructions: form.instructions || null,
         type: form.type,
-        passing_marks: form.passing_marks || null,
+        passing_marks: passingMarksVal,
         time_limit_sec: form.time_limit_sec
           ? (form.time_limit_sec as number) * 60
           : null,

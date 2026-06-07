@@ -57,13 +57,31 @@ BEGIN
   END IF;
 END $$;
 
--- Only service role can insert notifications (NestJS backend uses service role key)
+-- 4. Per-user read state for broadcast notifications (user_id IS NULL)
+CREATE TABLE IF NOT EXISTS public.notification_reads (
+  user_id         UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  notification_id UUID NOT NULL REFERENCES public.notifications(id) ON DELETE CASCADE,
+  read_at         TIMESTAMPTZ DEFAULT now(),
+  PRIMARY KEY (user_id, notification_id)
+);
+CREATE INDEX IF NOT EXISTS idx_notification_reads_user ON public.notification_reads(user_id);
+
+ALTER TABLE public.notification_reads ENABLE ROW LEVEL SECURITY;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'notifications' AND policyname = 'service insert'
+    SELECT 1 FROM pg_policies WHERE tablename = 'notification_reads' AND policyname = 'own reads'
   ) THEN
-    CREATE POLICY "service insert" ON public.notifications
-      FOR INSERT WITH CHECK (true);
+    CREATE POLICY "own reads" ON public.notification_reads
+      FOR ALL USING (auth.uid() = user_id);
   END IF;
+END $$;
+
+-- Realtime: enable live updates on notifications table (safe if already added)
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
 END $$;

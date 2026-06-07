@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { after } from "next/server"
 
 import { requireAdmin } from "@/features/admin/lib/admin-route"
+import {
+    notifyNewQuiz,
+    resolveQuizCourseContext,
+} from "@/lib/notifications/server"
 
 // ── GET: Get or auto-create quiz for a section ────────────────
 
@@ -75,6 +80,15 @@ export async function GET(request: NextRequest) {
         )
     }
 
+    after(async () => {
+        const ctx = await resolveQuizCourseContext(newQuiz.id)
+        await notifyNewQuiz({
+            quizId: newQuiz.id,
+            title: newQuiz.title,
+            courseName: ctx?.course?.name,
+        })
+    })
+
     return NextResponse.json({
         quiz: {
             id: newQuiz.id,
@@ -130,6 +144,15 @@ export async function POST(request: NextRequest) {
             { status: 500 }
         )
     }
+
+    after(async () => {
+        const ctx = await resolveQuizCourseContext(quiz.id)
+        await notifyNewQuiz({
+            quizId: quiz.id,
+            title: quiz.title,
+            courseName: ctx?.course?.name,
+        })
+    })
 
     return NextResponse.json({
         quiz: {

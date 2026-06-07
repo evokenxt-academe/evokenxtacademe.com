@@ -168,9 +168,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const marksValue = (row.question_bank as { marks?: number } | null)?.marks ?? 1;
     return sum + marksValue;
   }, 0);
+  const passingMarks = Math.ceil(totalMarks * 0.5);
   const { error: updateQuizError } = await supabase
     .from("quizzes")
-    .update({ total_marks: totalMarks })
+    .update({ 
+      total_marks: totalMarks,
+      passing_marks: passingMarks
+    })
     .eq("id", quizId);
   if (updateQuizError) {
     return NextResponse.json({ error: updateQuizError.message }, { status: 500 });

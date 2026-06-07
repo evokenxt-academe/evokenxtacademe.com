@@ -5,12 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { IconArrowLeft, IconBell, IconClockHour4, IconUsers } from "@tabler/icons-react";
+import { IconArrowLeft, IconBell, IconClockHour4, IconUsers, IconMessage } from "@tabler/icons-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageCircle, Info } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -23,6 +25,8 @@ import { StreamStatusBadge } from "@/components/live-stream/StreamStatusBadge";
 import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
 import { extractYouTubeId } from "@/features/student/components/learn/use-youtube-player";
 import { formatDuration } from "@/lib/utils/video";
+import { ChatPanel } from "@/components/live-streams/chat/ChatPanel";
+import { ActiveViewers } from "@/components/live-streams/chat/ActiveViewers";
 
 export default function WatchStreamPage() {
   const params = useParams<{ id: string }>();
@@ -74,7 +78,7 @@ export default function WatchStreamPage() {
   const liveVideoId = extractYouTubeId(stream.yt_video_id);
 
   return (
-    <div className="mx-auto min-h-[100dvh] w-full max-w-[1480px] pb-10 md:px-6 lg:px-8">
+    <div className="mx-auto min-h-[100dvh] w-full max-w-[1600px] pb-10 md:px-6 lg:px-8">
       <div className="mb-5 hidden md:block mt-6">
         <Link href="/dashboard/student/live">
           <Button
@@ -88,9 +92,9 @@ export default function WatchStreamPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Main Content Area */}
-        <div className="min-w-0 flex flex-col gap-5 w-full max-w-5xl mx-auto">
+        <div className="min-w-0 flex flex-col gap-5 w-full lg:flex-1">
           {/* Player Section */}
           <div className="relative bg-black md:rounded-2xl md:border shadow-sm overflow-hidden aspect-video">
             {/* Mobile Back Button (overlay on video before play or just above video) */}
@@ -213,6 +217,83 @@ export default function WatchStreamPage() {
             </div>
           </div>
         </div>
+
+        {/* Right Sidebar: Chat and Info - Only show when live or ended */}
+        {(isLive || isEnded) && (
+          <div className="w-full lg:w-[400px] px-4 md:px-0">
+            <div className="sticky top-6 space-y-4">
+              {/* Active Viewers */}
+              <ActiveViewers streamId={id} />
+              
+              {/* Chat Tabs */}
+              <Tabs defaultValue="chat" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="chat" className="gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">Chat</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="info" className="gap-2">
+                    <Info className="w-4 h-4" />
+                    <span className="hidden sm:inline">Info</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chat" className="h-[calc(100vh-480px)] min-h-[400px]">
+                  <ChatPanel streamId={id} isAdmin={false} />
+                </TabsContent>
+
+                <TabsContent value="info" className="h-[calc(100vh-480px)] min-h-[400px]">
+                  <div className="rounded-lg border bg-card p-6 space-y-4 h-full overflow-y-auto">
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">About this class</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {stream.description || "No description available"}
+                      </p>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div>
+                      <h4 className="font-semibold text-sm mb-3">Class Details</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Course:</span>
+                          <span className="font-medium">{course?.title}</span>
+                        </div>
+                        {subject && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Subject:</span>
+                            <span className="font-medium">{subject.name}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Instructor:</span>
+                          <span className="font-medium">{instructor?.name}</span>
+                        </div>
+                        {stream.scheduled_at && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Scheduled:</span>
+                            <span className="font-medium">
+                              {format(new Date(stream.scheduled_at), "MMM d, h:mm a")}
+                            </span>
+                          </div>
+                        )}
+                        {isLive && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Viewers:</span>
+                            <span className="font-medium">
+                              {viewers || stream.concurrent_viewers || 0}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

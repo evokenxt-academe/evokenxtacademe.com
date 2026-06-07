@@ -8,28 +8,24 @@ export async function POST(request: NextRequest) {
     if ("error" in auth) return auth.error
 
     const { supabase } = auth
-    const body = (await request.json()) as { questions?: CreateQuestionPayload[]; quizId?: string }
+    const body = (await request.json()) as {
+        questions?: CreateQuestionPayload[]
+        quizId?: string
+        subjectId?: string
+        topicId?: string
+    }
     const questions = Array.isArray(body.questions) ? body.questions : []
     const quizId = body.quizId
+    const subjectId = body.subjectId
+    const topicId = body.topicId
 
     if (questions.length === 0) {
         return NextResponse.json({ error: "questions are required" }, { status: 400 })
     }
 
-    if (!quizId) {
-        return NextResponse.json({ error: "quizId is required" }, { status: 400 })
+    if (!subjectId || !topicId) {
+        return NextResponse.json({ error: "subjectId and topicId are required" }, { status: 400 })
     }
-
-    // Get current max position
-    const { data: maxRow } = await supabase
-        .from("questions")
-        .select("position")
-        .eq("quiz_id", quizId)
-        .order("position", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-    let nextPosition = (maxRow?.position ?? -1) + 1
 
     const createdQuestions: Array<Record<string, unknown>> = []
 
@@ -41,21 +37,27 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const { data: questionRow, error: questionError } = await supabase
-            .from("questions")
+        const { data: bankQuestion, error: bankError } = await supabase
+            .from("bank_questions")
             .insert({
-                quiz_id: quizId,
-                question: payload.question.trim(),
-                source: payload.explanation ?? null,
+                subject_id: subjectId,
+                topic_id: topicId,
+                sub_topic_id: (payload as any).subTopicId ?? null,
+                type: payload.type ?? "mcq",
+                question_text: payload.question.trim(),
+                explanation: payload.explanation ?? null,
+                difficulty: payload.difficulty ?? "medium",
                 marks: payload.marks ?? 1,
-                position: nextPosition++,
+                tags: Array.isArray(payload.tags) ? payload.tags : [],
+                is_active: true,
+                created_by: auth.userId,
             })
             .select()
             .single()
 
-        if (questionError || !questionRow) {
+        if (bankError || !bankQuestion) {
             return NextResponse.json(
-                { error: questionError?.message || `Failed to create question ${index + 1}` },
+                { error: bankError?.message || `Failed to create question ${index + 1}` },
                 { status: 500 }
             )
         }
@@ -63,12 +65,13 @@ export async function POST(request: NextRequest) {
         let optionRows: Array<Record<string, unknown>> = []
         if (payload.options?.length) {
             const { data: insertedOptions, error: optionError } = await supabase
-                .from("options")
+                .from("bank_question_options")
                 .insert(
-                    payload.options.map((option) => ({
-                        question_id: questionRow.id,
-                        text: option.text,
+                    payload.options.map((option, idx) => ({
+                        question_id: bankQuestion.id,
+                        option_text: option.text,
                         is_correct: option.isCorrect ?? false,
+                        position: option.position ?? idx,
                     }))
                 )
                 .select()
@@ -83,37 +86,82 @@ export async function POST(request: NextRequest) {
             optionRows = insertedOptions ?? []
         }
 
+        // If a quizId is provided, also add to quiz
+        if (quizId) {
+            const { data: maxRow } = await supabase
+                .from("questions")
+                .select("position")
+                .eq("quiz_id", quizId)
+                .order("position", { ascending: false })
+                .limit(1)
+                .maybeSingle()
+
+            const nextPosition = (maxRow?.position ?? -1) + 1
+
+            const { data: quizQuestion } = await supabase
+                .from("questions")
+                .insert({
+                    quiz_id: quizId,
+                    question_text: bankQuestion.question_text,
+                    type: bankQuestion.type,
+                    difficulty: bankQuestion.difficulty,
+                    marks: bankQuestion.marks,
+                    explanation: bankQuestion.explanation,
+                    position: nextPosition,
+                })
+                .select()
+                .single()
+
+            if (quizQuestion) {
+                await supabase.from("quiz_bank_links").insert({
+                    quiz_id: quizId,
+                    quiz_question_id: quizQuestion.id,
+                    bank_question_id: bankQuestion.id,
+                    is_synced: true,
+                }).select()
+            }
+        }
+
         createdQuestions.push({
-            id: questionRow.id,
-            question: questionRow.question,
-            imageUrl: null,
-            type: "mcq",
-            explanation: questionRow.source,
-            explanationImageUrl: null,
-            difficulty: "medium",
-            tags: [],
-            marks: questionRow.marks,
-            createdBy: null,
-            createdAt: questionRow.id,
-            updatedAt: questionRow.id,
-            options: optionRows.map((opt, idx) => ({
+            id: bankQuestion.id,
+            question: bankQuestion.question_text,
+            imageUrl: bankQuestion.question_image_url || null,
+            type: bankQuestion.type,
+            explanation: bankQuestion.explanation,
+            explanationImageUrl: bankQuestion.explanation_image_url || null,
+            difficulty: bankQuestion.difficulty,
+            tags: bankQuestion.tags ?? [],
+            marks: bankQuestion.marks,
+            createdBy: bankQuestion.created_by,
+            createdAt: bankQuestion.created_at,
+            updatedAt: bankQuestion.updated_at,
+            options: optionRows.map((opt) => ({
                 id: opt.id,
-                questionId: questionRow.id,
-                text: opt.text,
+                questionId: bankQuestion.id,
+                text: opt.option_text,
                 isCorrect: opt.is_correct,
-                position: idx,
+                position: opt.position,
             })),
         })
     }
 
-    // Recalculate total marks
-    const { data: allQ } = await supabase
-        .from("questions")
-        .select("marks")
-        .eq("quiz_id", quizId)
+    if (quizId) {
+        // Recalculate total marks for the quiz
+        const { data: allQ } = await supabase
+            .from("questions")
+            .select("marks")
+            .eq("quiz_id", quizId)
 
-    const totalMarks = (allQ ?? []).reduce((sum, q) => sum + (q.marks ?? 1), 0)
-    await supabase.from("quizzes").update({ total_marks: totalMarks }).eq("id", quizId)
+        const totalMarks = (allQ ?? []).reduce((sum, q) => sum + (q.marks ?? 1), 0)
+        const passingMarks = Math.ceil(totalMarks * 0.5)
+        await supabase
+            .from("quizzes")
+            .update({ 
+                total_marks: totalMarks,
+                passing_marks: passingMarks
+            })
+            .eq("id", quizId)
+    }
 
     return NextResponse.json({ questions: createdQuestions, created: createdQuestions.length })
 }

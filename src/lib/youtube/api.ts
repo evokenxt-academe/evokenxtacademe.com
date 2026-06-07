@@ -10,15 +10,21 @@ interface LiveBroadcast {
   id: string;
   snippet: {
     title: string;
+    description?: string;
     scheduledStartTime: string;
-    liveChatId: string;
+    liveChatId?: string;
+    actualStartTime?: string;
+    actualEndTime?: string;
   };
   status: {
+    lifeCycleStatus: string;
     privacyStatus: string;
+    recordingStatus?: string;
   };
   contentDetails: {
     enableDvr: boolean;
     enableEmbed: boolean;
+    boundStreamId?: string;
   };
 }
 
@@ -312,10 +318,12 @@ export async function listLiveBroadcasts(status: 'active' | 'all' | 'completed' 
   if (status === 'all') {
     const statuses: Array<'active' | 'completed' | 'upcoming'> = ['active', 'upcoming', 'completed'];
     const allBroadcasts: any[] = [];
+    const seen = new Set<string>();
     
     for (const s of statuses) {
       try {
         const url = `${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails&mine=true&broadcastStatus=${s}&maxResults=50`;
+        console.log(`[YouTube API] Fetching broadcasts with status: ${s}`);
         const res = await fetch(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -324,15 +332,53 @@ export async function listLiveBroadcasts(status: 'active' | 'all' | 'completed' 
 
         if (res.ok) {
           const data = await res.json();
+          console.log(`[YouTube API] Found ${data.items?.length || 0} broadcasts with status ${s}`);
           if (data.items) {
-            allBroadcasts.push(...data.items);
+            for (const item of data.items) {
+              if (!seen.has(item.id)) {
+                seen.add(item.id);
+                console.log(`[YouTube API] Adding broadcast: ${item.snippet?.title} (${item.status?.lifeCycleStatus})`);
+                allBroadcasts.push(item);
+              }
+            }
           }
+        } else {
+          const errBody = await res.json().catch(() => ({}));
+          console.error(`Failed to fetch ${s} broadcasts:`, errBody?.error?.message || res.statusText);
         }
-      } catch {
-        // Continue with other statuses if one fails
+      } catch (err) {
+        console.error(`Error fetching ${s} broadcasts:`, err);
       }
     }
     
+    // ADDITIONAL FIX: Also fetch without broadcastStatus filter to catch manually created broadcasts
+    try {
+      console.log(`[YouTube API] Fetching all broadcasts without status filter (for manually created streams)`);
+      const url = `${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails&mine=true&maxResults=50`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[YouTube API] Found ${data.items?.length || 0} broadcasts without status filter`);
+        if (data.items) {
+          for (const item of data.items) {
+            if (!seen.has(item.id)) {
+              seen.add(item.id);
+              console.log(`[YouTube API] Adding broadcast (no filter): ${item.snippet?.title} (${item.status?.lifeCycleStatus})`);
+              allBroadcasts.push(item);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`Error fetching broadcasts without filter:`, err);
+    }
+    
+    console.log(`[YouTube API] Total unique broadcasts found: ${allBroadcasts.length}`);
     return allBroadcasts;
   }
 

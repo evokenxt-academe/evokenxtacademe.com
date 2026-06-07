@@ -57,8 +57,12 @@ export function YtcnQuality({
     qualities.unshift("auto");
   }
 
-  // Filter out any qualities we don't have a label for
-  const validQualities = qualities.filter((q) => QUALITY_LABELS[q]);
+  // Filter to only show 1080p and auto
+  const validQualities = qualities.filter((q) => {
+    const label = QUALITY_LABELS[q];
+    return label === "1080p" || label === "auto";
+  });
+  
   if (validQualities.length <= 1) return null; // No need for a selector if only 1 option
 
   const displayLabel = QUALITY_LABELS[currentQuality] || "Auto";

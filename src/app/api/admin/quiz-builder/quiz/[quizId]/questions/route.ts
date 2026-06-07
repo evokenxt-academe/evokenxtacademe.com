@@ -142,10 +142,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         const marks = (row.question_bank as { marks?: number } | null)?.marks ?? 1
         return sum + marks
     }, 0)
+    const passingMarks = Math.ceil(totalMarks * 0.5)
 
     await supabase
         .from("quizzes")
-        .update({ total_marks: totalMarks })
+        .update({ 
+            total_marks: totalMarks,
+            passing_marks: passingMarks
+        })
         .eq("id", quizId)
 
     return NextResponse.json({ added: toInsert.length })

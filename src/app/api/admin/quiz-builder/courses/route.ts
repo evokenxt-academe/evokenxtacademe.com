@@ -10,7 +10,7 @@ export async function GET() {
 
     const { data: courses, error } = await supabase
         .from("courses")
-        .select("id, name, sections(id, title, position)")
+        .select("id, name, subject_id, chapters(id, title, position)")
         .order("name", { ascending: true })
 
     if (error) {
@@ -20,7 +20,8 @@ export async function GET() {
     const courseSections = (courses ?? []).map((course) => ({
         courseId: course.id,
         courseName: course.name,
-        sections: ((course.sections as Array<{ id: string; title: string; position: number }>) ?? [])
+        subjectId: course.subject_id,
+        sections: ((course.chapters as Array<{ id: string; title: string; position: number }>) ?? [])
             .sort((a, b) => a.position - b.position),
     }))
 

@@ -28,6 +28,7 @@ import { StreamStatusHeader } from "@/components/live-streams/StreamStatusHeader
 import { YouTubeEmbed } from "@/components/live-streams/YouTubeEmbed";
 import { StreamStatsCard } from "@/components/live-streams/StreamStatsCard";
 import { ChatPanel } from "@/components/live-streams/chat/ChatPanel";
+import { ActiveViewers } from "@/components/live-streams/chat/ActiveViewers";
 import { PollsPanel } from "@/components/live-streams/polls/PollsPanel";
 
 interface LiveStream {
@@ -235,9 +236,9 @@ export default function StreamControlPage() {
       />
 
       {/* Main Content: Split Layout */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Left Panel: Stream Preview & Controls (2/3) */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* YouTube Embed */}
           <YouTubeEmbed
             videoId={stream.yt_video_id}
@@ -351,21 +352,33 @@ export default function StreamControlPage() {
         </div>
 
         {/* Right Panel: Chat & Engagement (1/3) */}
-        <div className="col-span-1">
-          <Tabs defaultValue="chat" className="w-full h-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="polls">Polls</TabsTrigger>
-            </TabsList>
+        <div className="lg:col-span-1">
+          <div className="sticky top-6 space-y-4">
+            {/* Active Viewers */}
+            <ActiveViewers streamId={streamId} />
+            
+            {/* Chat and Polls Tabs */}
+            <Tabs defaultValue="chat" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="chat" className="gap-2">
+                  <span className="hidden sm:inline">Chat</span>
+                  <span className="sm:hidden">💬</span>
+                </TabsTrigger>
+                <TabsTrigger value="polls" className="gap-2">
+                  <span className="hidden sm:inline">Polls</span>
+                  <span className="sm:hidden">📊</span>
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="chat" className="h-[calc(100vh-300px)]">
-              <ChatPanel streamId={streamId} isAdmin={true} />
-            </TabsContent>
+              <TabsContent value="chat" className="h-[calc(100vh-480px)] min-h-[400px]">
+                <ChatPanel streamId={streamId} isAdmin={true} />
+              </TabsContent>
 
-            <TabsContent value="polls" className="h-[calc(100vh-300px)]">
-              <PollsPanel streamId={streamId} isAdmin={true} />
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="polls" className="h-[calc(100vh-480px)] min-h-[400px]">
+                <PollsPanel streamId={streamId} isAdmin={true} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
     </div>

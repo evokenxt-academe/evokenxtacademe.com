@@ -16,9 +16,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { question, marks, options } = body
 
-    // Update main question bank row
+    // Update bank question row
     const updateData: Record<string, unknown> = {}
-    if (question !== undefined) updateData.question = question
+    if (question !== undefined) updateData.question_text = question
     if (marks !== undefined) updateData.marks = marks
     if (body.explanation !== undefined) updateData.explanation = body.explanation
     if (body.type !== undefined) updateData.type = body.type
@@ -27,28 +27,56 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (Object.keys(updateData).length > 0) {
         const { error } = await supabase
-            .from("question_bank")
+            .from("bank_questions")
             .update(updateData)
             .eq("id", id)
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 })
         }
+
+        // Recalculate total_marks & passing_marks for quizzes containing this question if marks updated
+        if (marks !== undefined) {
+            const { data: linkedQuizzes } = await supabase
+                .from("quiz_questions")
+                .select("quiz_id")
+                .eq("question_id", id)
+
+            if (linkedQuizzes && linkedQuizzes.length > 0) {
+                const quizIds = Array.from(new Set(linkedQuizzes.map((l) => l.quiz_id)))
+                for (const qId of quizIds) {
+                    const { data: allQ } = await supabase
+                        .from("quiz_questions")
+                        .select("question_bank(marks)")
+                        .eq("quiz_id", qId)
+
+                    const totalMarks = (allQ ?? []).reduce((sum, row) => {
+                        const m = (row.question_bank as { marks?: number } | null)?.marks ?? 1
+                        return sum + m
+                    }, 0)
+                    const passingMarks = Math.ceil(totalMarks * 0.5)
+                    await supabase
+                        .from("quizzes")
+                        .update({ total_marks: totalMarks, passing_marks: passingMarks })
+                        .eq("id", qId)
+                }
+            }
+        }
     }
 
     // Replace options if provided
     if (options !== undefined) {
         // Delete existing options
-        await supabase.from("question_bank_options").delete().eq("question_id", id)
+        await supabase.from("bank_question_options").delete().eq("question_id", id)
 
         // Insert new options
         if (options.length > 0) {
             const { error: oError } = await supabase
-                .from("question_bank_options")
+                .from("bank_question_options")
                 .insert(
                     options.map((opt: { text: string; isCorrect: boolean; position?: number }, index: number) => ({
                         question_id: id,
-                        text: opt.text,
+                        option_text: opt.text,
                         is_correct: opt.isCorrect ?? false,
                         position: opt.position ?? index,
                     }))
@@ -62,8 +90,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Return updated question
     const { data: updated, error: fetchError } = await supabase
-        .from("question_bank")
-        .select("*, question_bank_options(*)")
+        .from("bank_questions")
+        .select("*, bank_question_options(*)")
         .eq("id", id)
         .single()
 
@@ -74,16 +102,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         )
     }
 
-    const opts = (updated.question_bank_options as Array<Record<string, unknown>>) ?? []
+    const opts = (updated.bank_question_options as Array<Record<string, unknown>>) ?? []
 
     return NextResponse.json({
         question: {
             id: updated.id,
-            question: updated.question,
-            imageUrl: null,
+            question: updated.question_text,
+            imageUrl: updated.question_image_url || null,
             type: updated.type,
             explanation: updated.explanation,
-            explanationImageUrl: null,
+            explanationImageUrl: updated.explanation_image_url || null,
             difficulty: updated.difficulty,
             tags: updated.tags ?? [],
             marks: updated.marks,
@@ -93,9 +121,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             options: opts.map((opt, idx) => ({
                 id: opt.id,
                 questionId: updated.id,
-                text: opt.text,
+                text: opt.option_text,
                 isCorrect: opt.is_correct,
-                position: idx,
+                position: opt.position ?? idx,
             })),
         },
     })
@@ -111,7 +139,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const { supabase } = auth
 
     const { error } = await supabase
-        .from("question_bank")
+        .from("bank_questions")
         .delete()
         .eq("id", id)
 
