@@ -140,9 +140,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       const totalMarks = insertedLegacy.reduce((sum, q) => sum + (q.marks ?? 1), 0);
+      const passingMarks = Math.ceil(totalMarks * 0.5);
       await supabase
         .from("quizzes")
-        .update({ total_marks: totalMarks })
+        .update({ total_marks: totalMarks, passing_marks: passingMarks })
         .eq("id", quizId);
 
       if (jobId) {
@@ -209,6 +210,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         ignoreDuplicates: true,
       } as any);
     if (quizQuestionError) return await fail(quizQuestionError.message);
+
+    // Recalculate total_marks & passing_marks
+    const { data: fetchedQuizQuestions, error: quizQuestionFetchError } = await supabase
+      .from("quiz_questions")
+      .select("question_bank(marks)")
+      .eq("quiz_id", quizId);
+    if (quizQuestionFetchError) return await fail(quizQuestionFetchError.message);
+
+    const totalMarks = (fetchedQuizQuestions ?? []).reduce((sum, row) => {
+      const marksValue = (row.question_bank as { marks?: number } | null)?.marks ?? 1;
+      return sum + marksValue;
+    }, 0);
+    const passingMarks = Math.ceil(totalMarks * 0.5);
+    const { error: updateQuizError } = await supabase
+      .from("quizzes")
+      .update({ total_marks: totalMarks, passing_marks: passingMarks })
+      .eq("id", quizId);
+    if (updateQuizError) return await fail(updateQuizError.message);
 
     if (jobId) {
       await supabase

@@ -315,53 +315,6 @@ export default function CourseHeroSection() {
 
       {/* ── Beautiful Laser-Cut Accent Line ── */}
       <div className="relative h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-
-      {/* ── Brand Trust / Ultra-Premium Glow-Bordered Bar (Full-Width, Low Height) ── */}
-      <div className="relative w-full border-b border-border/40 bg-background/50 py-4 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
-            {/* Left Label */}
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="flex size-2 rounded-full bg-primary animate-pulse" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                Accredited Credentials
-              </p>
-            </div>
-
-            {/* Horizontal Swipeable list on mobile, normal flex layout on desktop */}
-            <div className="flex w-full items-center gap-3 overflow-x-auto pb-1.5 pt-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-nowrap md:w-auto md:justify-end md:overflow-visible md:pb-0 md:pt-0">
-              {[
-                {
-                  icon: Award,
-                  label: "ACCA Gold Partner",
-                  color:
-                    "from-amber-500/10 to-amber-500/5 text-amber-500 border-amber-500/20",
-                },
-                {
-                  icon: Globe,
-                  label: "Global Coverage",
-                  color:
-                    "from-blue-500/10 to-blue-500/5 text-blue-500 border-blue-500/20",
-                },
-                {
-                  icon: ShieldCheck,
-                  label: "Verified LMS System",
-                  color:
-                    "from-emerald-500/10 to-emerald-500/5 text-emerald-500 border-emerald-500/20",
-                },
-              ].map((badge, idx) => (
-                <div
-                  key={idx}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full border bg-gradient-to-br px-2.5 py-1 text-[10px] font-bold shadow-sm transition-all hover:scale-[1.02] sm:px-3 sm:py-1.5 sm:text-xs ${badge.color}`}
-                >
-                  <badge.icon className="size-3 sm:size-3.5" />
-                  <span>{badge.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
   );
 }

@@ -4,8 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { transitionToLive } from '@/lib/youtube/api';
+import {
+  notifyLiveStream,
+  resolveLiveStreamContext,
+} from '@/lib/notifications/server';
 
 export async function POST(req: NextRequest) {
   const supabase = createClient(
@@ -58,6 +63,16 @@ export async function POST(req: NextRequest) {
     if (updateError) {
       throw new Error(updateError.message);
     }
+
+    after(async () => {
+      const stream = await resolveLiveStreamContext(streamId);
+      if (!stream) return;
+      await notifyLiveStream({
+        streamId: stream.id,
+        title: stream.title,
+        ytVideoId: stream.yt_video_id,
+      });
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

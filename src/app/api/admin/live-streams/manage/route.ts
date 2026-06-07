@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
+import { after } from "next/server"
 
 import { extractYoutubeVideoId } from "@/features/live-stream/lib"
 import { requireAdmin } from "@/features/admin/lib/admin-route"
+import {
+    notifyLiveStream,
+    resolveLiveStreamContext,
+} from "@/lib/notifications/server"
 
 export const runtime = "nodejs"
 
@@ -56,6 +61,16 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: error.message }, { status: 500 })
             }
 
+            after(async () => {
+                const stream = await resolveLiveStreamContext(data.id)
+                if (!stream) return
+                await notifyLiveStream({
+                    streamId: stream.id,
+                    title: stream.title,
+                    ytVideoId: stream.yt_video_id,
+                })
+            })
+
             return NextResponse.json({ success: true, streamId: data.id })
         }
 
@@ -86,6 +101,19 @@ export async function POST(request: NextRequest) {
             if (error) {
                 return NextResponse.json({ error: error.message }, { status: 500 })
             }
+
+            after(async () => {
+                const stream = await resolveLiveStreamContext(streamId)
+                if (!stream) return
+                await notifyLiveStream({
+                    streamId: stream.id,
+                    title: stream.title,
+                    ytVideoId:
+                        (typeof ytVideoId === "string" && ytVideoId.trim()
+                            ? ytVideoId.trim()
+                            : stream.yt_video_id) ?? null,
+                })
+            })
 
             return NextResponse.json({ success: true })
         }

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { after } from "next/server";
 
 import { requireAdmin } from "@/features/admin/lib/admin-route";
 import { createLookupMap, normalizeUser } from "@/features/admin/lib/admin-normalizers";
+import { notifyNewCourse } from "@/lib/notifications/server";
 
 type Row = Record<string, unknown>;
 
@@ -381,6 +383,7 @@ export async function PATCH(
     }
 
     const courseId = String(courseResult.data.id);
+    const previousStatus = pickString(courseResult.data as Row, ["status"], "draft");
 
     const body = (await request.json().catch(() => null)) as { status?: string } | null;
     if (!body?.status || !["draft", "published", "archived"].includes(body.status)) {
@@ -394,6 +397,18 @@ export async function PATCH(
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (body.status === "published" && previousStatus !== "published") {
+        after(async () => {
+            const record = courseResult.data as Row;
+            await notifyNewCourse({
+                courseId,
+                name: pickString(record, ["name", "title"], "New Course"),
+                slug: pickString(record, ["slug"], courseId),
+                thumbnailUrl: pickString(record, ["thumbnail_url", "thumbnailUrl"], "") || null,
+            });
+        });
     }
 
     return NextResponse.json({ success: true, courseId });

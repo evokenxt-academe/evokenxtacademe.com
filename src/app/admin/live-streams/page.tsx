@@ -167,10 +167,10 @@ export default function LiveStreamsDashboard() {
         return;
       }
 
-      if (data.success && data.count > 0) {
+      if (data.count > 0) {
         toast.success(`Synced ${data.count} stream(s) from YouTube`);
-      } else if (data.success) {
-        toast.info("No active streams found on YouTube");
+      } else {
+        toast.info(data.message || "No new updates from YouTube");
       }
     } catch (error) {
       console.error("Failed to sync from YouTube:", error);
@@ -285,6 +285,11 @@ export default function LiveStreamsDashboard() {
       )
       .subscribe();
 
+    // Auto-sync every 30 seconds to pick up OBS-started streams
+    const syncInterval = setInterval(() => {
+      handleSync().then(() => fetchStreams());
+    }, 30000);
+
     // Handle success messages from URL
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "connected") {
@@ -299,6 +304,7 @@ export default function LiveStreamsDashboard() {
 
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(syncInterval);
     };
   }, [supabase, router]);
 

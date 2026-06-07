@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { after } from "next/server"
 
 import { requireAdmin } from "@/features/admin/lib/admin-route"
 import {
@@ -6,6 +7,7 @@ import {
     normalizeCourse,
     normalizeUser,
 } from "@/features/admin/lib/admin-normalizers"
+import { notifyNewCourse } from "@/lib/notifications/server"
 
 function isIntegerIdTypeError(error: { message?: string } | null | undefined) {
     return typeof error?.message === "string" && error.message.includes("invalid input syntax for type integer")
@@ -139,6 +141,19 @@ export async function POST(request: NextRequest) {
                     }
                 }
             }
+        }
+
+        const courseStatus = body.status || "draft"
+
+        if (courseStatus === "published") {
+            after(async () => {
+                await notifyNewCourse({
+                    courseId,
+                    name: body.name,
+                    slug: body.slug,
+                    thumbnailUrl: body.thumbnailUrl || null,
+                })
+            })
         }
 
         return NextResponse.json(

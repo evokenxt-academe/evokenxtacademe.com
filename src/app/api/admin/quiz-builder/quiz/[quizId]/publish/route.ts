@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { after } from "next/server"
 
 import { requireAdmin } from "@/features/admin/lib/admin-route"
+import {
+    notifyNewQuiz,
+    resolveQuizCourseContext,
+} from "@/lib/notifications/server"
 
 type RouteParams = { params: Promise<{ quizId: string }> }
 
@@ -21,6 +26,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (body.isPublished === true) {
+        after(async () => {
+            const ctx = await resolveQuizCourseContext(quizId)
+            if (!ctx?.quiz) return
+            await notifyNewQuiz({
+                quizId,
+                title: ctx.quiz.title,
+                courseName: ctx.course?.name,
+            })
+        })
     }
 
     return NextResponse.json({ success: true })

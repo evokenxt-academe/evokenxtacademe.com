@@ -3,6 +3,14 @@ import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  async rewrites() {
+    return [
+      {
+        source: "/firebase-messaging-sw.js",
+        destination: "/api/notifications/firebase-sw",
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

@@ -373,12 +373,17 @@ export async function updateCourseStatus(
   id: string,
   status: "draft" | "published" | "archived"
 ) {
-  const { error } = await supabase
-    .from("courses")
-    .update({ status })
-    .eq("id", id);
+  const response = await fetch(`/api/admin/courses/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+    credentials: "include",
+  });
 
-  if (error) throw error;
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error || "Failed to update course status");
+  }
 }
 
 export async function bulkUpdateStatus(
@@ -498,12 +503,17 @@ export async function updateLecture(
   id: string,
   values: Partial<Lecture>
 ) {
-  const { error } = await supabase
-    .from("lectures")
-    .update(values)
-    .eq("id", id);
+  const response = await fetch(`/api/admin/lectures/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(values),
+    credentials: "include",
+  });
 
-  if (error) throw error;
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error || "Failed to update lecture");
+  }
 }
 
 export async function deleteLecture(id: string) {
