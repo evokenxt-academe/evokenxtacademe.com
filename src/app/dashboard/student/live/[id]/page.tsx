@@ -34,7 +34,7 @@ export default function WatchStreamPage() {
   const supabase = useMemo(() => createClient(), []);
   const [userId, setUserId] = useState<string | null>(null);
   const [registered, setRegistered] = useState(false);
-  const { data: stream, isLoading } = useStreamDetail(id);
+  const { data: stream, isLoading, isError, refetch } = useStreamDetail(id);
   const { viewers, isLive: realtimeIsLive } = useStreamRealtime(id);
   const [dismissEndedOverlay, setDismissEndedOverlay] = useState(false);
 
@@ -70,10 +70,23 @@ export default function WatchStreamPage() {
 
   // Only show skeleton on true first load (no cached data)
   if (isLoading && !stream) return <WatchPageSkeleton />;
+  if (isError && !stream) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-8 text-center">
+        <p className="text-muted-foreground">Could not load this stream.</p>
+        <Button variant="outline" onClick={() => refetch()}>
+          Try again
+        </Button>
+        <Link href="/dashboard/student/live">
+          <Button variant="ghost">Back to Live Classes</Button>
+        </Link>
+      </div>
+    );
+  }
   if (!stream) return <div className="p-8 text-center text-muted-foreground">Stream not found.</div>;
 
   const course = stream.courses;
-  const instructor = stream.users ?? stream.courses?.instructor ?? null;
+  const instructor = stream.users ?? null;
   const subject = course?.subjects;
   const liveVideoId = extractYouTubeId(stream.yt_video_id);
 
@@ -239,7 +252,11 @@ export default function WatchStreamPage() {
                 </TabsList>
 
                 <TabsContent value="chat" className="h-[calc(100vh-480px)] min-h-[400px]">
-                  <ChatPanel streamId={id} isAdmin={false} />
+                  <ChatPanel
+                    streamId={id}
+                    isAdmin={false}
+                    activeViewersCount={viewers || stream.concurrent_viewers || 0}
+                  />
                 </TabsContent>
 
                 <TabsContent value="info" className="h-[calc(100vh-480px)] min-h-[400px]">

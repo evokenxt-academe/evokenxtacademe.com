@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
@@ -14,8 +14,21 @@ export function useStreamRealtime(streamId: string) {
     if (!streamId) return;
 
     let mounted = true;
-    let channel: any = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
     const channelName = `stream:${streamId}`;
+
+    supabase
+      .from("live_streams")
+      .select("status, concurrent_viewers")
+      .eq("id", streamId)
+      .single()
+      .then(({ data }) => {
+        if (!mounted || !data) return;
+        setIsLive(data.status === "live");
+        if (data.concurrent_viewers != null) {
+          setViewers(data.concurrent_viewers);
+        }
+      });
 
     const setup = async () => {
       // Remove any existing channels with the same name to prevent the "after subscribe()" error
