@@ -30,9 +30,10 @@ export function useStreamDetail(streamId: string) {
     queryKey: ["stream", streamId],
     queryFn: () => getStreamById(streamId),
     enabled: !!streamId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
+    retry: 2,
   });
 }

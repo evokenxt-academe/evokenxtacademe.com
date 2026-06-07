@@ -36,7 +36,6 @@ export async function getStreamById(streamId: string) {
       *,
       courses(
         id, title, slug,
-        instructor:users!instructor_id(id, name, avatar),
         subjects(name, code,
           program_levels(label,
             programs(body)

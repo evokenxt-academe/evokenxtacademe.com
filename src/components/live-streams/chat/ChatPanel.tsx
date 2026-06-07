@@ -60,18 +60,22 @@ import {
 } from "@tabler/icons-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { useStreamChat } from "@/hooks/useStreamChat";
-import { useActiveViewers } from "@/hooks/useActiveViewers";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ChatPanelProps {
   streamId: string;
   isAdmin?: boolean;
+  activeViewersCount?: number;
 }
 
 type FilterType = "all" | "announcement" | "question" | "flagged";
 
-export function ChatPanel({ streamId, isAdmin = false }: ChatPanelProps) {
+export function ChatPanel({
+  streamId,
+  isAdmin = false,
+  activeViewersCount = 0,
+}: ChatPanelProps) {
   const {
     messages,
     pinnedMessages,
@@ -80,8 +84,6 @@ export function ChatPanel({ streamId, isAdmin = false }: ChatPanelProps) {
     pinMessage,
     deleteMessage,
   } = useStreamChat(streamId);
-  
-  const { count: activeViewersCount } = useActiveViewers(streamId);
 
   const [messageInput, setMessageInput] = useState("");
   const [messageType, setMessageType] = useState<
