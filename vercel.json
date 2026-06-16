@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/youtube-playlist-sync",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 1 * * *"
     }
   ]
 }
