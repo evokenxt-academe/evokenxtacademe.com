@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import {
+  IconArrowLeft,
   IconBrandYoutube,
   IconExternalLink,
   IconRefresh,
@@ -56,6 +57,12 @@ type EncoderSettings = {
 
 export default function YouTubeConnectPage() {
   const router = useRouter();
+  const [from, setFrom] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("from");
+    }
+    return null;
+  });
   const [status, setStatus] = useState<YtStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -106,13 +113,22 @@ export default function YouTubeConnectPage() {
     const params = new URLSearchParams(window.location.search);
     const success = params.get("success");
     const error = params.get("error");
+    const fromVal = params.get("from");
+
+    if (fromVal) {
+      setFrom(fromVal);
+    }
+
+    const cleanUrl = fromVal
+      ? `/admin/youtube/connect?from=${encodeURIComponent(fromVal)}`
+      : "/admin/youtube/connect";
 
     if (success === "youtube_connected") {
       toast.success("YouTube account connected!");
-      router.replace("/admin/youtube/connect");
+      router.replace(cleanUrl);
     } else if (error) {
       toast.error(`YouTube connection failed: ${error.replace(/_/g, " ")}`);
-      router.replace("/admin/youtube/connect");
+      router.replace(cleanUrl);
     }
   }, [router]);
 
@@ -180,6 +196,13 @@ export default function YouTubeConnectPage() {
 
   return (
     <div className="mx-auto max-w-2xl flex flex-col gap-6 p-4 sm:p-6">
+      <Button variant="ghost" asChild className="self-start -ml-2 text-muted-foreground hover:text-foreground">
+        <Link href={from || "/admin/courses"}>
+          <IconArrowLeft className="mr-2 size-4" />
+          {from ? "Back to Live Control Room" : "Back to Courses"}
+        </Link>
+      </Button>
+
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold">Streaming Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -259,7 +282,7 @@ export default function YouTubeConnectPage() {
           <div className="flex flex-wrap gap-2">
             {!isHealthy ? (
               <Button asChild>
-                <Link href="/api/youtube/oauth/authorize">
+                <Link href={from ? `/api/youtube/oauth/authorize?state=${encodeURIComponent(from)}` : "/api/youtube/oauth/authorize"}>
                   <IconExternalLink className="mr-2 size-4" />
                   Connect YouTube
                 </Link>
@@ -358,8 +381,11 @@ export default function YouTubeConnectPage() {
         </CardContent>
       </Card>
 
-      <Button variant="ghost" asChild className="self-start">
-        <Link href="/admin/courses">← Back to Courses</Link>
+      <Button variant="outline" asChild className="self-start gap-2">
+        <Link href={from || "/admin/courses"}>
+          <IconArrowLeft className="size-4" />
+          {from ? "Back to Live Control Room" : "Back to Courses"}
+        </Link>
       </Button>
     </div>
   );

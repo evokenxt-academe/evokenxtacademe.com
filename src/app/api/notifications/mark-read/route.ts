@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { createAdminClient } from '@/utils/supabase/adminClient';
+import { getFirebaseAdminFirestore } from '@/lib/firebase-admin';
 
 export async function PATCH(req: NextRequest) {
   const { notificationIds } = (await req.json()) as { notificationIds?: string[] };
@@ -15,62 +15,72 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const adminSupabase = createAdminClient();
+  const firestore = getFirebaseAdminFirestore();
+  if (!firestore) {
+    return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
+  }
 
-  if (notificationIds?.length) {
-    const { data: targets } = await adminSupabase
-      .from('notifications')
-      .select('id, user_id')
-      .in('id', notificationIds);
-
-    const userOwnedIds = (targets ?? [])
-      .filter((n) => n.user_id === user.id)
-      .map((n) => n.id);
-
-    const broadcastIds = (targets ?? [])
-      .filter((n) => n.user_id === null)
-      .map((n) => n.id);
-
-    if (userOwnedIds.length > 0) {
-      await adminSupabase
-        .from('notifications')
-        .update({ is_read: true })
-        .in('id', userOwnedIds)
-        .eq('user_id', user.id);
-    }
-
-    if (broadcastIds.length > 0) {
-      await adminSupabase.from('notification_reads').upsert(
-        broadcastIds.map((notificationId) => ({
-          user_id: user.id,
-          notification_id: notificationId,
-          read_at: new Date().toISOString(),
-        })),
-        { onConflict: 'user_id,notification_id' },
+  try {
+    if (notificationIds?.length) {
+      const batch = firestore.batch();
+      
+      const snapshots = await Promise.all(
+        notificationIds.map(id => firestore.collection('notifications').doc(id).get())
       );
-    }
-  } else {
-    await adminSupabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('user_id', user.id);
 
-    const { data: broadcasts } = await adminSupabase
-      .from('notifications')
-      .select('id')
-      .is('user_id', null);
+      for (const snap of snapshots) {
+        if (!snap.exists) continue;
+        const data = snap.data();
+        if (data?.user_id === user.id) {
+          batch.update(snap.ref, { is_read: true });
+        } else if (data?.user_id === null) {
+          const readDocId = `${user.id}_${snap.id}`;
+          batch.set(firestore.collection('notification_reads').doc(readDocId), {
+            user_id: user.id,
+            notification_id: snap.id,
+            read_at: new Date().toISOString(),
+          });
+        }
+      }
+      
+      await batch.commit();
+    } else {
+      // Mark all read
+      const batch = firestore.batch();
 
-    if (broadcasts?.length) {
-      await adminSupabase.from('notification_reads').upsert(
-        broadcasts.map((n) => ({
+      // 1. User owned targeted notifications
+      const targetedSnaps = await firestore
+        .collection('notifications')
+        .where('user_id', '==', user.id)
+        .where('is_read', '==', false)
+        .get();
+
+      targetedSnaps.forEach(doc => {
+        batch.update(doc.ref, { is_read: true });
+      });
+
+      // 2. Broadcast notifications
+      const broadcastSnaps = await firestore
+        .collection('notifications')
+        .where('user_id', '==', null)
+        .get();
+
+      broadcastSnaps.forEach(doc => {
+        const readDocId = `${user.id}_${doc.id}`;
+        batch.set(firestore.collection('notification_reads').doc(readDocId), {
           user_id: user.id,
-          notification_id: n.id,
+          notification_id: doc.id,
           read_at: new Date().toISOString(),
-        })),
-        { onConflict: 'user_id,notification_id' },
-      );
+        });
+      });
+
+      await batch.commit();
     }
+  } catch (err) {
+    console.error('[mark-read] Firestore error:', err);
+    return NextResponse.json({ error: 'Failed to mark notifications read' }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
 }
+

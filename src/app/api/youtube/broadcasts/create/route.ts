@@ -94,9 +94,27 @@ export async function POST(req: NextRequest) {
       streamKey,
       liveChatId,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create broadcast error:', error);
-    const message = error instanceof Error ? error.message : 'Failed to create broadcast';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = error.message || 'Failed to create broadcast';
+    const reason = error.reason || (message.includes('not enabled for live streaming') ? 'liveStreamingNotEnabled' : null);
+
+    if (reason === 'liveStreamingNotEnabled' || (error.statusCode === 403 && message.includes('live streaming'))) {
+      return NextResponse.json(
+        {
+          error: 'The connected YouTube channel does not have live streaming enabled. Please enable it in YouTube Studio (requires phone verification and may take up to 24 hours to activate).',
+          reason: 'liveStreamingNotEnabled',
+        },
+        { status: 403 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: message,
+        reason: reason || null,
+      },
+      { status: error.statusCode || 500 }
+    );
   }
 }

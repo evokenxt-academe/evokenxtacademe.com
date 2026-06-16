@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +22,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -60,14 +53,7 @@ type ScheduleStreamDialogProps = {
   onCreated?: (streamId: string) => void;
 };
 
-const QUALITY_OPTIONS: StreamQuality[] = [
-  "360p",
-  "480p",
-  "720p",
-  "1080p",
-  "1440p",
-  "2160p",
-];
+
 
 export function ScheduleStreamDialog({
   open,
@@ -76,6 +62,7 @@ export function ScheduleStreamDialog({
   onCreated,
 }: ScheduleStreamDialogProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const supabase = createClient();
 
@@ -87,8 +74,7 @@ export function ScheduleStreamDialog({
     expired?: boolean;
     channel?: { channelName: string } | null;
   }>({ connected: false });
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
+
 
   const [form, setForm] = useState({
     title: "",
@@ -160,13 +146,7 @@ export function ScheduleStreamDialog({
 
   const selectedCourse = courses.find((c) => c.id === form.courseId);
 
-  const addTag = () => {
-    const t = tagInput.trim();
-    if (t && !tags.includes(t) && tags.length < 10) {
-      setTags([...tags, t]);
-      setTagInput("");
-    }
-  };
+
 
   const handleSubmit = async () => {
     if (!form.title.trim() || !form.courseId || !form.scheduledDate || !form.scheduledTime) {
@@ -192,7 +172,7 @@ export function ScheduleStreamDialog({
           description: form.description.trim() || null,
           visibility: form.visibility,
           scheduled_at: scheduledAt,
-          tags,
+          tags: [],
           enable_dvr: form.enableDvr,
           enable_chat: form.enableChat,
           chat_moderation: form.chatModeration,
@@ -244,7 +224,7 @@ export function ScheduleStreamDialog({
           </span>
           {(!ytStatus.connected || ytStatus.expired) && (
             <Button size="sm" variant="outline" asChild>
-              <Link href="/admin/youtube/connect">Connect YouTube Account</Link>
+              <Link href={`/admin/youtube/connect?from=${encodeURIComponent(pathname)}`}>Connect YouTube Account</Link>
             </Button>
           )}
         </AlertDescription>
@@ -365,46 +345,7 @@ export function ScheduleStreamDialog({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label>Tags</Label>
-        <div className="flex gap-2">
-          <Input
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-            placeholder="Add tag and press Enter"
-          />
-          <Button type="button" variant="outline" onClick={addTag}>
-            Add
-          </Button>
-        </div>
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {tags.map((t) => (
-              <Badge key={t} variant="secondary" className="gap-1">
-                {t}
-                <button
-                  type="button"
-                  className="ml-1 hover:text-destructive"
-                  onClick={() => setTags(tags.filter((x) => x !== t))}
-                >
-                  ×
-                </button>
-              </Badge>
-            ))}
-          </div>
-        )}
-      </div>
-
       <div className="flex flex-col gap-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="dvr">Enable DVR</Label>
-          <Switch
-            id="dvr"
-            checked={form.enableDvr}
-            onCheckedChange={(v) => setForm((f) => ({ ...f, enableDvr: v }))}
-          />
-        </div>
         <div className="flex items-center justify-between">
           <Label htmlFor="chat">Enable Chat</Label>
           <Switch
@@ -413,59 +354,6 @@ export function ScheduleStreamDialog({
             onCheckedChange={(v) => setForm((f) => ({ ...f, enableChat: v }))}
           />
         </div>
-        {form.enableChat && (
-          <div className="flex items-center justify-between">
-            <Label htmlFor="mod">Chat Moderation</Label>
-            <Switch
-              id="mod"
-              checked={form.chatModeration}
-              onCheckedChange={(v) => setForm((f) => ({ ...f, chatModeration: v }))}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label>Max Quality</Label>
-          <Select
-            value={form.maxQuality}
-            onValueChange={(v) =>
-              setForm((f) => ({ ...f, maxQuality: v as StreamQuality }))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {QUALITY_OPTIONS.map((q) => (
-                <SelectItem key={q} value={q}>
-                  {q}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="category">YouTube Category ID</Label>
-          <Input
-            id="category"
-            type="number"
-            value={form.categoryId}
-            onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="notes">Internal Notes</Label>
-        <Textarea
-          id="notes"
-          value={form.notes}
-          onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-          rows={2}
-          placeholder="Admin-only notes…"
-        />
       </div>
 
       <Button onClick={handleSubmit} disabled={loading} className="w-full">

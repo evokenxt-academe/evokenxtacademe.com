@@ -5,14 +5,25 @@ export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get('state') || '';
+
+  // Helper to build redirect URL with from param preserved
+  const getRedirectUrl = (params: Record<string, string>) => {
+    const url = new URL('/admin/youtube/connect', req.url);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    if (state) {
+      url.searchParams.set('from', state);
+    }
+    return url.toString();
+  };
 
   if (error) {
     console.error('OAuth error:', error);
-    return NextResponse.redirect(new URL('/admin/youtube/connect?error=oauth_rejected', req.url));
+    return NextResponse.redirect(getRedirectUrl({ error: 'oauth_rejected' }));
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/admin/youtube/connect?error=no_code', req.url));
+    return NextResponse.redirect(getRedirectUrl({ error: 'no_code' }));
   }
 
   // Build the exact same redirect URI as the authorize route
@@ -21,7 +32,6 @@ export async function GET(req: NextRequest) {
   
   // Quick fix for localhost to avoid redirect_uri mismatch during token exchange if https was assumed
   const isLocalhost = host?.includes('localhost') || host?.includes('127.0.0.1');
-  const resolvedProtocol = isLocalhost ? 'http' : protocol;
   
   // Note: we're using the same logic as authorize route to match EXACTLY what Google saw
   // However, authorize route has a bug where it falls back to 'https' for localhost if x-forwarded-proto is missing.
@@ -62,11 +72,11 @@ export async function GET(req: NextRequest) {
         tokenData = retryData;
       } else {
         console.error('Token response error (retry):', retryData);
-        return NextResponse.redirect(new URL('/admin/youtube/connect?error=token_exchange_failed', req.url));
+        return NextResponse.redirect(getRedirectUrl({ error: 'token_exchange_failed' }));
       }
     } else if (!tokenResponse.ok) {
       console.error('Token response error:', tokenData);
-      return NextResponse.redirect(new URL('/admin/youtube/connect?error=token_exchange_failed', req.url));
+      return NextResponse.redirect(getRedirectUrl({ error: 'token_exchange_failed' }));
     }
 
     const supabase = createClient(
@@ -80,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     if (!adminUser) {
       console.error('Admin user not found');
-      return NextResponse.redirect(new URL('/admin/youtube/connect?error=admin_not_found', req.url));
+      return NextResponse.redirect(getRedirectUrl({ error: 'admin_not_found' }));
     }
 
     // Check if a token already exists
@@ -125,12 +135,12 @@ export async function GET(req: NextRequest) {
 
     if (insertError) {
       console.error('Failed to save token to database:', insertError);
-      return NextResponse.redirect(new URL('/admin/youtube/connect?error=db_save_failed', req.url));
+      return NextResponse.redirect(getRedirectUrl({ error: 'db_save_failed' }));
     }
 
-    return NextResponse.redirect(new URL('/admin/youtube/connect?success=youtube_connected', req.url));
+    return NextResponse.redirect(getRedirectUrl({ success: 'youtube_connected' }));
   } catch (error) {
     console.error('Callback handler error:', error);
-    return NextResponse.redirect(new URL('/admin/youtube/connect?error=internal_error', req.url));
+    return NextResponse.redirect(getRedirectUrl({ error: 'internal_error' }));
   }
 }

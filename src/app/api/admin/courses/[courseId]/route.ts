@@ -3,7 +3,8 @@ import { after } from "next/server";
 
 import { requireAdmin } from "@/features/admin/lib/admin-route";
 import { createLookupMap, normalizeUser } from "@/features/admin/lib/admin-normalizers";
-import { notifyNewCourse } from "@/lib/notifications/server";
+import { notifyNewCourse, notifyNewLecture } from "@/lib/notifications/server";
+import { extractYoutubeVideoId } from "@/features/live-stream/lib";
 
 type Row = Record<string, unknown>;
 
@@ -469,6 +470,8 @@ export async function PUT(
     const body = await request.json();
     const { userId } = auth;
     const courseId = String(courseResult.data.id);
+    const previousStatus = pickString(courseResult.data as Row, ["status"], "draft");
+
 
     const { error: courseError } = await supabase
         .from("courses")
@@ -506,9 +509,14 @@ export async function PUT(
     const { data: existingSections } = await supabase.from('chapters').select('id').eq('course_id', courseId);
     const existingSectionIds = (existingSections || []).map((s: any) => s.id);
     
+    const existingLecturesSet = new Set<string>();
+
     if (existingSectionIds.length > 0) {
         const { data: existingLectures } = await supabase.from('lectures').select('id').in('chapter_id', existingSectionIds);
         const existingLectureIds = (existingLectures || []).map((l: any) => l.id);
+        for (const lid of existingLectureIds) {
+            existingLecturesSet.add(lid);
+        }
         
         if (existingLectureIds.length > 0) {
             const { data: existingResources } = await supabase.from('lecture_resources').select('id').in('lecture_id', existingLectureIds);
@@ -565,6 +573,9 @@ export async function PUT(
 
         for (const lecture of section.lectures ?? []) {
             const lectureId = lecture.id || crypto.randomUUID();
+            const isNewLecture = !existingLecturesSet.has(lectureId);
+            const isCoursePublished = body.status === "published" || previousStatus === "published";
+
             const { data: upsertedLecture, error: lectureError } = await supabase
                 .from("lectures")
                 .upsert({
@@ -595,6 +606,20 @@ export async function PUT(
                     { error: lectureError?.message || "Failed to update lectures" },
                     { status: 500 },
                 );
+            }
+
+            if (isCoursePublished && isNewLecture) {
+                after(async () => {
+                    const slug = body.slug || pickString(courseResult.data as Row, ["slug"], courseId);
+                    const courseName = body.name || pickString(courseResult.data as Row, ["name", "title"], "Course");
+                    await notifyNewLecture({
+                        lectureId: upsertedLecture.id,
+                        title: lecture.title,
+                        courseSlug: slug,
+                        courseName: courseName,
+                        ytVideoId: extractYoutubeVideoId(lecture.videoUrl || ""),
+                    });
+                });
             }
 
             for (const resource of lecture.resources ?? []) {

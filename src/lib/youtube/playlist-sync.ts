@@ -53,6 +53,34 @@ async function fetchWithAuth(url: string): Promise<Response> {
   });
 }
 
+async function fetchPlaylistDetails(
+  playlistId: string
+): Promise<{ title: string; description: string } | null> {
+  try {
+    const params = new URLSearchParams({
+      part: "snippet",
+      id: playlistId,
+    });
+    const res = await fetchWithAuth(
+      `${YOUTUBE_API}/playlists?${params.toString()}`
+    );
+    if (!res.ok) {
+      console.error(`YouTube API /playlists returned status ${res.status}`);
+      return null;
+    }
+    const data = await res.json();
+    const item = data.items?.[0];
+    if (!item?.snippet) return null;
+    return {
+      title: item.snippet.title || "",
+      description: item.snippet.description || "",
+    };
+  } catch (err) {
+    console.error("Failed to fetch playlist details:", err);
+    return null;
+  }
+}
+
 async function fetchAllPlaylistItems(
   playlistId: string
 ): Promise<PlaylistItem[]> {
@@ -163,7 +191,7 @@ export async function syncChapterFromPlaylist(
 
   const { data: chapter, error: chapterError } = await supabase
     .from("chapters")
-    .select("id, course_id, youtube_playlist_id, yt_sync_enabled")
+    .select("id, title, description, course_id, youtube_playlist_id, yt_sync_enabled, yt_sync_title_desc")
     .eq("id", chapterId)
     .single();
 
@@ -198,6 +226,33 @@ export async function syncChapterFromPlaylist(
   try {
     const playlistItems = await fetchAllPlaylistItems(chapter.youtube_playlist_id);
     result.videosFound = playlistItems.length;
+
+    // Sync playlist title & description to chapter if enabled
+    if (chapter.yt_sync_title_desc !== false) {
+      try {
+        const playlistMeta = await fetchPlaylistDetails(chapter.youtube_playlist_id);
+        if (playlistMeta) {
+          const updatePayload: Record<string, any> = {};
+          if (playlistMeta.title && playlistMeta.title !== chapter.title) {
+            updatePayload.title = playlistMeta.title;
+          }
+          if (playlistMeta.description && playlistMeta.description !== chapter.description) {
+            updatePayload.description = playlistMeta.description;
+          }
+          if (Object.keys(updatePayload).length > 0) {
+            await supabase
+              .from("chapters")
+              .update(updatePayload)
+              .eq("id", chapterId);
+            
+            chapter.title = updatePayload.title ?? chapter.title;
+            chapter.description = updatePayload.description ?? chapter.description;
+          }
+        }
+      } catch (metaErr) {
+        console.error("Failed to auto-sync playlist title/description:", metaErr);
+      }
+    }
 
     const videoIds = playlistItems.map((i) => i.videoId);
     const detailsMap = await fetchVideoDetails(videoIds);

@@ -4391,6 +4391,7 @@ ADD TABLE public.stream_registrations;
 ALTER TABLE public.chapters
 ADD COLUMN IF NOT EXISTS youtube_playlist_id TEXT,
 ADD COLUMN IF NOT EXISTS yt_sync_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS yt_sync_title_desc BOOLEAN NOT NULL DEFAULT TRUE,
 ADD COLUMN IF NOT EXISTS yt_last_synced_at TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS yt_sync_error TEXT;
 

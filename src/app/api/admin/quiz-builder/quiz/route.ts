@@ -80,14 +80,16 @@ export async function GET(request: NextRequest) {
         )
     }
 
-    after(async () => {
-        const ctx = await resolveQuizCourseContext(newQuiz.id)
-        await notifyNewQuiz({
-            quizId: newQuiz.id,
-            title: newQuiz.title,
-            courseName: ctx?.course?.name,
+    if (newQuiz.is_published) {
+        after(async () => {
+            const ctx = await resolveQuizCourseContext(newQuiz.id)
+            await notifyNewQuiz({
+                quizId: newQuiz.id,
+                title: newQuiz.title,
+                courseName: ctx?.course?.name,
+            })
         })
-    })
+    }
 
     return NextResponse.json({
         quiz: {
@@ -145,14 +147,16 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    after(async () => {
-        const ctx = await resolveQuizCourseContext(quiz.id)
-        await notifyNewQuiz({
-            quizId: quiz.id,
-            title: quiz.title,
-            courseName: ctx?.course?.name,
+    if (quiz.is_published) {
+        after(async () => {
+            const ctx = await resolveQuizCourseContext(quiz.id)
+            await notifyNewQuiz({
+                quizId: quiz.id,
+                title: quiz.title,
+                courseName: ctx?.course?.name,
+            })
         })
-    })
+    }
 
     return NextResponse.json({
         quiz: {

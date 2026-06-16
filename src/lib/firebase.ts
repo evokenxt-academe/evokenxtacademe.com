@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getMessaging, isSupported } from 'firebase/messaging';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:            process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -24,6 +25,9 @@ export const firebaseApp = isFirebaseConfigured()
     ? getApp()
     : initializeApp(firebaseConfig)
   : null;
+
+export const db = firebaseApp ? getFirestore(firebaseApp) : null;
+
 
 /**
  * Get Firebase Messaging instance. Returns null if called during SSR or

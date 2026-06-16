@@ -96,7 +96,12 @@ export async function createLiveBroadcast(
 
   if (!broadcastRes.ok) {
     const error = await broadcastRes.json();
-    throw new Error(`Failed to create broadcast: ${error.error?.message}`);
+    const reason = error.error?.errors?.[0]?.reason || '';
+    const msg = error.error?.message || 'Failed to create broadcast';
+    const err = new Error(`Failed to create broadcast: ${msg}`);
+    (err as any).reason = reason;
+    (err as any).statusCode = broadcastRes.status;
+    throw err;
   }
 
   const broadcast: LiveBroadcast = await broadcastRes.json();
@@ -122,7 +127,12 @@ export async function createLiveBroadcast(
 
   if (!streamRes.ok) {
     const error = await streamRes.json();
-    throw new Error(`Failed to create stream: ${error.error?.message}`);
+    const reason = error.error?.errors?.[0]?.reason || '';
+    const msg = error.error?.message || 'Failed to create stream';
+    const err = new Error(`Failed to create stream: ${msg}`);
+    (err as any).reason = reason;
+    (err as any).statusCode = streamRes.status;
+    throw err;
   }
 
   const stream: LiveStream = await streamRes.json();
@@ -140,7 +150,12 @@ export async function createLiveBroadcast(
 
   if (!bindRes.ok) {
     const error = await bindRes.json();
-    throw new Error(`Failed to bind broadcast to stream: ${error.error?.message}`);
+    const reason = error.error?.errors?.[0]?.reason || '';
+    const msg = error.error?.message || 'Failed to bind broadcast to stream';
+    const err = new Error(`Failed to bind broadcast to stream: ${msg}`);
+    (err as any).reason = reason;
+    (err as any).statusCode = bindRes.status;
+    throw err;
   }
 
   const detailsRes = await fetch(

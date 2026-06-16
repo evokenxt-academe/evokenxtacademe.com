@@ -1,8 +1,10 @@
 import { cert, getApps, initializeApp, type App } from 'firebase-admin/app';
 import { getMessaging, type Messaging } from 'firebase-admin/messaging';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 
 let adminApp: App | null = null;
 let messagingInstance: Messaging | null = null;
+let firestoreInstance: Firestore | null = null;
 
 function parseServiceAccount(): Record<string, string> | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -57,3 +59,14 @@ export function getFirebaseAdminMessaging(): Messaging | null {
   messagingInstance = getMessaging(app);
   return messagingInstance;
 }
+
+export function getFirebaseAdminFirestore(): Firestore | null {
+  if (firestoreInstance) return firestoreInstance;
+
+  const app = getFirebaseAdminApp();
+  if (!app) return null;
+
+  firestoreInstance = getFirestore(app);
+  return firestoreInstance;
+}
+

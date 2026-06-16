@@ -70,13 +70,19 @@ export function useQuizAttempts(quizId: string) {
 }
 
 export function usePublishQuiz() {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, published }: { id: string; published: boolean }) => {
-      const { error } = await supabase.from("quizzes").update({ is_published: published }).eq("id", id);
-      if (error) throw new Error(error.message);
+      const res = await fetch(`/api/admin/quizzes/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_published: published }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Failed to update quiz status");
+      }
     },
     onMutate: async ({ id, published }) => {
       await queryClient.cancelQueries({ queryKey: ["quizzes"] });
@@ -124,13 +130,19 @@ export function useDeleteQuiz() {
 }
 
 export function useUpdateQuiz() {
-  const supabase = createClient();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { error } = await supabase.from("quizzes").update({ ...data }).eq("id", id);
-      if (error) throw new Error(error.message);
+      const res = await fetch(`/api/admin/quizzes/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Failed to update quiz settings");
+      }
     },
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ["quizzes"] });

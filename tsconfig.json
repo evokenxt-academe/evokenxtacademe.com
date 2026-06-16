@@ -31,5 +31,10 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "scratch-db.ts",
+    "test_query.ts",
+    "test_query2.ts"
+  ]
 }
