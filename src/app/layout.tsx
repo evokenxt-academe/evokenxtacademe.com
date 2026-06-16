@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Evokenxt — ACCA Courses & Professional Qualifications",
+  title: "EvokeNxt Academe",
   description:
     "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate. Study online, learn at your pace, succeed globally.",
   manifest: "/manifest.json",
