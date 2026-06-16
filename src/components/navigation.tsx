@@ -114,16 +114,43 @@ export function Navigation() {
             {/* ── Logo ── */}
             <Link
               href="/"
-              className="flex shrink-0 items-center gap-2.5"
-              aria-label="Evokenxt home"
+              className="flex shrink-0 items-center gap-3"
+              aria-label="EvokeNxt Academe Home"
             >
               <div className="relative size-10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/evoke-logo.svg"
-                  alt="Evoke EduGlobal Logo"
+                  alt="EvokeNxt Academe Logo"
                   className="rounded-lg object-contain"
                 />
+              </div>
+
+              <div className="hidden sm:flex flex-col leading-none">
+                <span
+                  className={cn(
+                    "font-semibold text-lg",
+                    isScrolled
+                      ? "text-foreground"
+                      : hasDarkHero
+                        ? "text-white"
+                        : "text-foreground dark:text-white",
+                  )}
+                >
+                  EvokeNxt Academe
+                </span>
+
+                <span
+                  className={cn(
+                    "text-xs",
+                    isScrolled
+                      ? "text-muted-foreground"
+                      : hasDarkHero
+                        ? "text-white/60"
+                        : "text-muted-foreground",
+                  )}
+                >
+                  Envision • Enlighten • Evolve
+                </span>
               </div>
             </Link>
 
