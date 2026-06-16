@@ -19,6 +19,7 @@ import {
   IconArrowBackUp,
   IconBell,
   IconBook,
+  IconBrandYoutube,
   IconCertificate,
   IconClipboardList,
   IconCreditCard,
@@ -27,7 +28,6 @@ import {
   IconSchool,
   IconTrophy,
   IconUsers,
-  IconVideo,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 
@@ -76,9 +76,9 @@ const ADMIN_SIDEBAR_SECTIONS = [
         icon: IconClipboardList,
       },
       {
-        title: "Live Streams",
-        href: "/admin/live-streams",
-        icon: IconVideo,
+        title: "YouTube Connect",
+        href: "/admin/youtube/connect",
+        icon: IconBrandYoutube,
       },
     ],
   },

@@ -35,11 +35,13 @@ export default async function LearnPage({ params, searchParams }: Props) {
 
   const { data: course, error: courseError } = await supabase
     .from("courses")
-    .select("id")
+    .select("id, title, slug")
     .eq("slug", slug)
     .maybeSingle();
 
   const courseId = (course as unknown as { id?: string } | null)?.id ?? null;
+  const courseTitle =
+    (course as unknown as { title?: string } | null)?.title ?? "Course";
   if (courseError || !courseId) redirect("/dashboard");
 
   const { data: enrollment } = await supabase
@@ -62,6 +64,8 @@ export default async function LearnPage({ params, searchParams }: Props) {
   return (
     <LearnPageClient
       courseId={courseId}
+      courseSlug={slug}
+      courseTitle={courseTitle}
       userId={user.id}
       navbarUser={navbarUser}
       initialLectureId={lectureId}

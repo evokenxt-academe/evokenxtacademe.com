@@ -74,7 +74,7 @@ export function PollsPanel({ streamId, isAdmin = false }: PollsPanelProps) {
     }
   };
 
-  const handleVote = async (pollId: string, optionId: string) => {
+  const handleVote = async (pollId: string, optionId: number) => {
     setVotingPollId(pollId);
     try {
       await votePoll(pollId, optionId);
@@ -238,7 +238,7 @@ export function PollsPanel({ streamId, isAdmin = false }: PollsPanelProps) {
                     onClick={() => handleVote(activePoll.id, opt.id)}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">{opt.option_text}</span>
+                      <span className="text-sm font-medium">{opt.text ?? opt.option_text}</span>
                       <span className="text-xs font-semibold">
                         {percentage}% ({opt.votes || 0})
                       </span>
@@ -272,7 +272,7 @@ export function PollsPanel({ streamId, isAdmin = false }: PollsPanelProps) {
                   <div className="text-xs space-y-1">
                     {poll.options?.slice(0, 2).map((opt: any) => (
                       <div key={opt.id} className="flex justify-between">
-                        <span>{opt.option_text}</span>
+                        <span>{opt.text ?? opt.option_text}</span>
                         <span className="font-semibold">
                           {getVotePercentage(opt.votes || 0, getTotalVotes(poll))}%
                         </span>

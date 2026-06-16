@@ -322,7 +322,10 @@ export interface QuizSummary {
   attempt_count: number;
   avg_score: number | null;
   pass_rate_pct: number | null;
+  course_id: string | null;
   course_title: string | null;
+  chapter_id: string | null;
+  chapter_title: string | null;
   program_body: string | null;
   level_label: string | null;
 }

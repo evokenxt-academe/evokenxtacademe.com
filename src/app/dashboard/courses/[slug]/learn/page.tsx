@@ -47,5 +47,19 @@ export default async function LearnPage({ params }: LearnPageProps) {
     avatar: user.user_metadata?.avatar_url ?? null,
   };
 
-  return <LearnPageClient courseId={courseId} userId={user.id} navbarUser={navbarUser} />;
+  const { data: courseMeta } = await (supabase
+    .from("courses")
+    .select("title")
+    .eq("id", courseId)
+    .maybeSingle() as any);
+
+  return (
+    <LearnPageClient
+      courseId={courseId}
+      courseSlug={slug}
+      courseTitle={courseMeta?.title ?? "Course"}
+      userId={user.id}
+      navbarUser={navbarUser}
+    />
+  );
 }

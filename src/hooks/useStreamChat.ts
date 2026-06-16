@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import type { ChatMsgType } from '@/types/live-stream';
 
 const supabase = createClient();
 
 interface ChatMessage {
     id: string;
     live_stream_id: string;
-    user_id: string;
+    user_id: string | null;
     message: string;
-    type: 'message' | 'announcement' | 'system' | 'question';
+    type: ChatMsgType;
     is_pinned: boolean;
     is_approved: boolean;
     is_deleted: boolean;
@@ -20,11 +21,7 @@ interface ChatMessage {
     created_at: string;
 }
 
-/**
- * Hook for real-time chat messages
- * Keeps messages list up-to-date and limited to last 200
- */
-export function useStreamChat(streamId: string) {
+export function useStreamChat(streamId: string, chatModeration = false) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -42,13 +39,13 @@ export function useStreamChat(streamId: string) {
                     .select('*')
                     .eq('live_stream_id', streamId)
                     .eq('is_deleted', false)
-                    .order('created_at', { ascending: false })
-                    .limit(200);
+                    .order('created_at', { ascending: true })
+                    .limit(500);
 
                 if (error) throw error;
                 if (!mounted) return;
 
-                setMessages((data || []).reverse());
+                setMessages(data || []);
                 setLoading(false);
             } catch (err) {
                 console.error('Failed to fetch chat messages:', err);
@@ -57,19 +54,6 @@ export function useStreamChat(streamId: string) {
         };
 
         const setup = async () => {
-            const existingChannels = supabase
-                .getChannels()
-                .filter(
-                    (c) =>
-                        c.topic === `realtime:${channelName}` ||
-                        c.topic === channelName
-                );
-            for (const c of existingChannels) {
-                await supabase.removeChannel(c);
-            }
-
-            if (!mounted) return;
-
             channel = supabase
                 .channel(channelName)
                 .on(
@@ -81,9 +65,11 @@ export function useStreamChat(streamId: string) {
                         filter: `live_stream_id=eq.${streamId}`,
                     },
                     (payload) => {
-                        setMessages((prev) =>
-                            [...prev, payload.new as ChatMessage].slice(-200)
-                        );
+                        setMessages((prev) => {
+                            const exists = prev.some((m) => m.id === (payload.new as ChatMessage).id);
+                            if (exists) return prev;
+                            return [...prev, payload.new as ChatMessage];
+                        });
                     }
                 )
                 .on(
@@ -121,7 +107,8 @@ export function useStreamChat(streamId: string) {
 
     const sendMessage = async (
         message: string,
-        type: 'message' | 'announcement' | 'system' = 'message'
+        type: ChatMsgType = 'message',
+        isAdmin = false,
     ) => {
         const {
             data: { user },
@@ -135,37 +122,55 @@ export function useStreamChat(streamId: string) {
             .eq('id', user.id)
             .single();
 
+        const optimisticId = `optimistic-${Date.now()}`;
+        const optimistic: ChatMessage = {
+            id: optimisticId,
+            live_stream_id: streamId,
+            user_id: user.id,
+            message,
+            type,
+            author_name: userProfile?.name || user.email?.split('@')[0] || 'User',
+            author_avatar: userProfile?.avatar || undefined,
+            is_approved: isAdmin || !chatModeration,
+            is_pinned: false,
+            is_deleted: false,
+            created_at: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, optimistic]);
+
         const { data, error } = await supabase
             .from('chat_messages')
-            .insert([
-                {
-                    live_stream_id: streamId,
-                    user_id: user.id,
-                    message,
-                    type,
-                    author_name:
-                        userProfile?.name ||
-                        user.email?.split('@')[0] ||
-                        'User',
-                    author_avatar: userProfile?.avatar || null,
-                    is_approved: true,
-                    is_pinned: false,
-                    is_deleted: false,
-                },
-            ])
+            .insert({
+                live_stream_id: streamId,
+                user_id: user.id,
+                message,
+                type,
+                author_name: optimistic.author_name,
+                author_avatar: userProfile?.avatar || null,
+                is_approved: isAdmin || !chatModeration,
+                is_pinned: false,
+                is_deleted: false,
+            })
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+            throw error;
+        }
 
-        setMessages((prev) => [...prev, data as ChatMessage].slice(-200));
+        setMessages((prev) =>
+            prev.map((m) => (m.id === optimisticId ? (data as ChatMessage) : m)),
+        );
         return data;
     };
 
     const pinMessage = async (messageId: string) => {
+        const msg = messages.find((m) => m.id === messageId);
         const { error } = await supabase
             .from('chat_messages')
-            .update({ is_pinned: true })
+            .update({ is_pinned: !msg?.is_pinned })
             .eq('id', messageId);
 
         if (error) throw error;
@@ -180,12 +185,36 @@ export function useStreamChat(streamId: string) {
         if (error) throw error;
     };
 
+    const approveMessage = async (messageId: string) => {
+        const { error } = await supabase
+            .from('chat_messages')
+            .update({ is_approved: true })
+            .eq('id', messageId);
+
+        if (error) throw error;
+    };
+
+    const markAsQuestion = async (messageId: string) => {
+        const { error } = await supabase
+            .from('chat_messages')
+            .update({ type: 'question' })
+            .eq('id', messageId);
+
+        if (error) throw error;
+    };
+
+    const visibleMessages = messages.filter((m) => !m.is_deleted);
+
     return {
-        messages: messages.filter((m) => !m.is_deleted),
-        pinnedMessages: messages.filter((m) => m.is_pinned && !m.is_deleted),
+        messages: visibleMessages,
+        pendingMessages: visibleMessages.filter((m) => !m.is_approved),
+        approvedMessages: visibleMessages.filter((m) => m.is_approved),
+        pinnedMessages: visibleMessages.filter((m) => m.is_pinned && m.is_approved),
         loading,
         sendMessage,
         pinMessage,
         deleteMessage,
+        approveMessage,
+        markAsQuestion,
     };
 }

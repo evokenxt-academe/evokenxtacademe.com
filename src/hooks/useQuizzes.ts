@@ -7,7 +7,14 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import { subscribeToTable } from "@/lib/supabase/realtime";
 
-export function useQuizzes(filters?: { search?: string; program?: string; type?: string; status?: string }) {
+export function useQuizzes(filters?: {
+  search?: string;
+  program?: string;
+  type?: string;
+  status?: string;
+  courseId?: string;
+  chapterId?: string;
+}) {
   const supabase = createClient();
   const queryClient = useQueryClient();
 

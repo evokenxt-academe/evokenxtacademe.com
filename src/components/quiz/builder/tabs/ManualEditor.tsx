@@ -114,7 +114,7 @@ export function ManualEditor({ quizId, question, onSaved }: ManualEditorProps) {
       {/* Type Selector */}
       <div className="space-y-2">
         <Label className="text-sm font-medium">Question Type</Label>
-        <div className="grid grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           {TYPE_OPTIONS.map((t) => (
             <button key={t.value} onClick={() => update({ type: t.value })}
               className={`flex flex-col items-center gap-1 rounded-lg border p-2.5 text-xs transition-all ${form.type === t.value ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:bg-muted/50"}`}>
@@ -125,7 +125,7 @@ export function ManualEditor({ quizId, question, onSaved }: ManualEditorProps) {
       </div>
 
       {/* Common Fields */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="space-y-1.5"><Label className="text-xs">Marks *</Label><Input type="number" value={form.marks} onChange={(e) => update({ marks: Number(e.target.value) || 1 })} /></div>
         <div className="space-y-1.5"><Label className="text-xs">Negative Marks</Label><Input type="number" value={form.negative_marks} onChange={(e) => update({ negative_marks: Number(e.target.value) || 0 })} /></div>
         <div className="space-y-1.5"><Label className="text-xs">Source Ref</Label><Input value={form.source_ref || ""} onChange={(e) => update({ source_ref: e.target.value })} placeholder="ACCA BT 2021 Q5" /></div>
@@ -157,15 +157,30 @@ export function ManualEditor({ quizId, question, onSaved }: ManualEditorProps) {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t">
-        {lastSaved && <p className="text-xs text-muted-foreground">Last saved at {lastSaved}</p>}
-        <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" onClick={() => onSaved?.()}>Cancel</Button>
-          <Button onClick={() => handleSave(false)} disabled={saveMutation.isPending}>
-            <Save className="mr-1.5 h-3.5 w-3.5" />{saveMutation.isPending ? "Saving..." : "Save Question"}
+      <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+        {lastSaved && (
+          <p className="text-xs text-muted-foreground">Last saved at {lastSaved}</p>
+        )}
+        <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center">
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => onSaved?.()}>
+            Cancel
           </Button>
-          <Button variant="secondary" onClick={() => handleSave(true)} disabled={saveMutation.isPending}>
-            Save & Add Next<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          <Button
+            className="w-full sm:w-auto"
+            onClick={() => handleSave(false)}
+            disabled={saveMutation.isPending}
+          >
+            <Save className="mr-1.5 h-3.5 w-3.5" />
+            {saveMutation.isPending ? "Saving..." : "Save"}
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full sm:w-auto"
+            onClick={() => handleSave(true)}
+            disabled={saveMutation.isPending}
+          >
+            Save & next
+            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

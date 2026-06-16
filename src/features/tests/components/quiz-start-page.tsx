@@ -31,6 +31,16 @@ export function QuizStartPage({ quizId }: { quizId: string }) {
 
   const handleStart = async () => {
     try {
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        void document.documentElement.requestFullscreen().catch((err) => {
+          console.warn("Automatic fullscreen request failed:", err);
+        });
+      }
+    } catch (err) {
+      console.warn("Fullscreen API not available:", err);
+    }
+
+    try {
       await createAttemptMutation.mutateAsync(quizId);
       router.push(`/dashboard/tests/${quizId}/attempt`);
     } catch (error) {

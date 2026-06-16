@@ -7,6 +7,7 @@ import {
     notifyLiveStream,
     resolveLiveStreamContext,
 } from "@/lib/notifications/server"
+import { cleanupStreamEngagement } from "@/lib/live-stream/cleanup-engagement"
 
 export const runtime = "nodejs"
 
@@ -139,6 +140,14 @@ export async function POST(request: NextRequest) {
             if (error) {
                 return NextResponse.json({ error: error.message }, { status: 500 })
             }
+
+            after(async () => {
+                try {
+                    await cleanupStreamEngagement(streamId)
+                } catch (cleanupError) {
+                    console.error("Stream engagement cleanup failed:", cleanupError)
+                }
+            })
 
             return NextResponse.json({ success: true })
         }

@@ -97,7 +97,7 @@ export function PdfImportEditor({ quizId }: { quizId: string }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <input
             ref={fileInputRef}
             type="file"
@@ -109,7 +109,7 @@ export function PdfImportEditor({ quizId }: { quizId: string }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={mutation.isPending}
-            className="rounded-xl"
+            className="w-full rounded-xl sm:w-auto"
           >
             <FileUp className="mr-2 size-4" />
             {buttonLabel}

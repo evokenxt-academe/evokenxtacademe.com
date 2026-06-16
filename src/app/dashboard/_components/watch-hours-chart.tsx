@@ -22,19 +22,24 @@ export function WatchHoursChart({ data, averageHours }: WatchHoursChartProps) {
         hours: { label: "Hours", color: "var(--chart-1)" },
       }}
     >
-      <AreaChart data={data} margin={{ left: 0, right: 8, top: 12, bottom: 0 }}>
+      <AreaChart
+        data={data}
+        margin={{ left: 0, right: 8, top: 12, bottom: 0 }}
+        aria-label="Watch hours over the last 7 days"
+      >
+        <defs>
+          <linearGradient id="watchHoursGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-hours)" stopOpacity={0.45} />
+            <stop offset="100%" stopColor="var(--color-hours)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="dayLabel"
-          tickLine={false}
-          axisLine={false}
-          interval={0}
-        />
+        <XAxis dataKey="dayLabel" tickLine={false} axisLine={false} interval={0} />
         <YAxis
           tickLine={false}
           axisLine={false}
-          width={30}
-          tickFormatter={(v) => String(v)}
+          width={36}
+          tickFormatter={(v) => Number(v).toFixed(1)}
         />
         {typeof averageHours === "number" ? (
           <ReferenceLine y={averageHours} stroke="var(--border)" strokeDasharray="4 4" />
@@ -58,13 +63,13 @@ export function WatchHoursChart({ data, averageHours }: WatchHoursChartProps) {
         <Area
           type="monotone"
           dataKey="hours"
-          fill="var(--color-hours)"
-          fillOpacity={0.24}
+          fill="url(#watchHoursGradient)"
           stroke="var(--color-hours)"
           strokeWidth={2}
+          animationBegin={0}
+          animationDuration={800}
         />
       </AreaChart>
     </ChartContainer>
   );
 }
-

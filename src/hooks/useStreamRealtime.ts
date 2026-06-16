@@ -41,9 +41,9 @@ export function useStreamRealtime(streamId: string) {
 
       channel = supabase.channel(channelName);
       
-      channel
+      channel!
         .on('presence', { event: 'sync' }, () => {
-          const state = channel.presenceState();
+          const state = channel!.presenceState();
           const count = Object.keys(state).length;
           setViewers(count);
         })
@@ -87,7 +87,7 @@ export function useStreamRealtime(streamId: string) {
           },
         )
         .subscribe(async (status: string) => {
-          if (status === 'SUBSCRIBED' && mounted) {
+          if (status === 'SUBSCRIBED' && mounted && channel) {
             await channel.track({
               online_at: new Date().toISOString(),
             });

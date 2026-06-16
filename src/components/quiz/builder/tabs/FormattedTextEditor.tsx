@@ -89,7 +89,7 @@ MODEL_ANSWER: Materiality means information is material if omitting it could inf
 
           {parsed.length > 0 && (
             <>
-              <div className="rounded-lg border">
+              <div className="overflow-x-auto rounded-lg border">
                 <Table>
                   <TableHeader>
                     <TableRow>

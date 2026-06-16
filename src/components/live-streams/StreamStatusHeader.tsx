@@ -3,7 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 
 interface StreamStatusHeaderProps {
-  status: "scheduled" | "live" | "ended" | "cancelled";
+  status: "scheduled" | "live" | "ended" | "cancelled" | "replay";
   scheduledAt?: string;
   startedAt?: string;
   endedAt?: string;
@@ -92,10 +92,13 @@ export function StreamStatusHeader({
           </div>
         );
       case "ended":
+      case "replay":
         return (
           <div className="border-b pb-4 mb-4">
             <div className="flex items-center gap-3">
-              <Badge variant="secondary">ENDED</Badge>
+              <Badge variant="secondary">
+                {status === "replay" ? "REPLAY" : "ENDED"}
+              </Badge>
               <span className="text-sm">
                 Duration: {durationSec ? formatDuration(durationSec) : "0m"}
               </span>

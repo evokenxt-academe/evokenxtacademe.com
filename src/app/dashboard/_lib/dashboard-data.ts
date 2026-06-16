@@ -58,6 +58,7 @@ export type WatchHoursPoint = {
 
 export type RecentQuizAttempt = {
   attempt_id: string;
+  quiz_id: string;
   score: number;
   total_marks: number;
   percentage: number;
@@ -239,7 +240,7 @@ export async function fetchStudentDashboardV21(
       .from("quiz_attempts")
       .select(
         `id, score, total_marks, percentage, passed, status, started_at, submitted_at, attempt_number,
-         quiz:quizzes!inner(title, type, passing_marks, course:courses!inner(title, id))`,
+         quiz:quizzes!inner(id, title, type, passing_marks, course:courses!inner(title, id))`,
       )
       .eq("user_id", userId)
       .eq("status", "submitted")
@@ -498,6 +499,7 @@ export async function fetchStudentDashboardV21(
     submitted_at: string;
     attempt_number: number;
     quiz: {
+      id: string;
       title: string;
       type: string;
       passing_marks: number;
@@ -507,6 +509,7 @@ export async function fetchStudentDashboardV21(
 
   const recentAttempts: RecentQuizAttempt[] = attempts.map((a) => ({
     attempt_id: a.id,
+    quiz_id: a.quiz.id,
     score: a.score ?? 0,
     total_marks: a.total_marks ?? 0,
     percentage: a.percentage ?? 0,

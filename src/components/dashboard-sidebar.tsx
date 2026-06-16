@@ -1,16 +1,20 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
-  IconLayoutDashboard,
-  IconBook,
-  IconLogout,
-  IconBook2,
-  IconLivePhoto,
-  IconCertificate,
-  IconCreditCard,
-  IconUser,
-  IconChecklist,
-} from "@tabler/icons-react";
+  LayoutDashboard,
+  BookOpen,
+  Video,
+  ClipboardList,
+  TrendingUp,
+  Award,
+  Compass,
+  Settings2,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,30 +24,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { StudentProfile } from "@/features/student/lib/lms-data";
 
-const mainNav = [
-  { title: "Dashboard", href: "/dashboard", icon: IconLayoutDashboard },
-  { title: "My Courses", href: "/my-courses", icon: IconBook },
-  { title: "Live Classes", href: "/dashboard/student/live", icon: IconLivePhoto },
-  { title: "Tests", href: "/dashboard/tests", icon: IconChecklist },
-  { title: "Certificates", href: "/dashboard/certificates", icon: IconCertificate },
-  { title: "Payments", href: "/dashboard/payments", icon: IconCreditCard },
-];
-
-const secondaryNav = [
-  { title: "Browse Courses", href: "/courses", icon: IconBook2 },
-];
-
-const accountNav = [
-  { title: "Profile", href: "/dashboard/profile", icon: IconUser },
+const navItems = [
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "My Courses", href: "/dashboard/my-courses", icon: BookOpen },
+  { title: "Test", href: "/dashboard/tests", icon: ClipboardList },
+  { title: "Certificates", href: "/dashboard/certificates", icon: Award },
+  { title: "Explore", href: "/courses", icon: Compass },
+  { title: "Settings", href: "/dashboard/settings", icon: Settings2 },
 ];
 
 interface DashboardSidebarProps {
@@ -52,10 +54,18 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ user }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const { state, toggleSidebar } = useSidebar();
+  const collapsed = state === "collapsed";
 
   const isRouteActive = (href: string) => {
-    if (href === "/my-courses") {
-      return pathname.startsWith("/my-courses") || pathname.startsWith("/learn/");
+    if (href === "/dashboard#overall-progress") {
+      return pathname === "/dashboard";
+    }
+    if (href === "/dashboard/my-courses") {
+      return (
+        pathname.startsWith("/dashboard/my-courses") ||
+        pathname.startsWith("/learn/")
+      );
     }
     if (href === "/courses") {
       return pathname.startsWith("/courses");
@@ -63,7 +73,11 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     if (href === "/dashboard" && pathname === "/dashboard") {
       return true;
     }
-    if (href !== "/dashboard" && pathname.startsWith(href)) {
+    if (
+      href !== "/dashboard" &&
+      !href.includes("#") &&
+      pathname.startsWith(href)
+    ) {
       return true;
     }
     return pathname === href;
@@ -75,31 +89,34 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     window.location.href = "/";
   };
 
-  const getUserInitials = (): string => {
-    if (user?.name) {
-      return user.name
+  const initials = user?.name
+    ? user.name
         .split(" ")
         .map((n) => n[0])
         .join("")
         .toUpperCase()
-        .slice(0, 2);
-    }
-    return user?.email?.slice(0, 2).toUpperCase() || "E";
-  };
+        .slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() || "EN";
 
   return (
-    <Sidebar variant="inset" className="hidden sm:flex">
-      <SidebarHeader>
+    <Sidebar
+      collapsible="icon"
+      variant="inset"
+      className="hidden md:flex [--sidebar-width:15rem]"
+    >
+      <SidebarHeader className="border-b border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-[#193CB8] dark:bg-white text-white dark:text-[#193CB8] font-bold">
+            <SidebarMenuButton size="lg" asChild tooltip="EvokeNXT Home">
+              <Link href="/dashboard">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">
                   E
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold"><span className="text-[#193CB8] dark:text-foreground">Evoke</span><span className="text-[#00C950]">nxt</span></span>
-                  <span className="truncate text-xs">Student Portal</span>
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-bold">EvokeNXT</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Student LMS
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -109,79 +126,91 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Learning</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isRouteActive(item.href)}>
+              {navItems.map((item) => {
+                const active = isRouteActive(item.href);
+                const Icon = item.icon;
+                const link = (
+                  <SidebarMenuButton
+                    asChild
+                    isActive={active}
+                    tooltip={item.title}
+                    className={cn(
+                      "rounded-xl transition-all duration-200",
+                      active &&
+                        "bg-primary/10 font-semibold text-primary dark:bg-primary/20 dark:text-primary",
+                    )}
+                  >
                     <Link href={item.href}>
-                      <item.icon />
+                      <Icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Discover</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isRouteActive(item.href)}>
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {accountNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isRouteActive(item.href)}>
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                );
+                return (
+                  <SidebarMenuItem key={item.title}>{link}</SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg">
+            <SidebarMenuButton
+              size="lg"
+              className="pointer-events-none rounded-xl"
+            >
               <Avatar className="size-8">
-                <AvatarImage src={user?.avatar ?? undefined} />
-                <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                <AvatarImage
+                  src={user?.avatar ?? undefined}
+                  alt={user?.name ?? "Student"}
+                />
+                <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user?.name || "Student"}</span>
-                <span className="truncate text-xs">{user?.email || ""}</span>
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-semibold">
+                  {user?.name || "Student"}
+                </span>
+                <Badge variant="secondary" className="mt-0.5 w-fit text-[10px]">
+                  {user?.role ?? "Student"}
+                </Badge>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
-              <IconLogout />
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip="Log out"
+              className="rounded-xl text-destructive hover:text-destructive"
+            >
+              <LogOut />
               <span>Log out</span>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 rounded-xl"
+                  onClick={toggleSidebar}
+                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                  {collapsed ? (
+                    <ChevronRight className="size-4" />
+                  ) : (
+                    <ChevronLeft className="size-4" />
+                  )}
+                  {collapsed ? "Expand" : "Collapse"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Toggle sidebar</TooltipContent>
+            </Tooltip>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

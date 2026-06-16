@@ -8,11 +8,11 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     console.error('OAuth error:', error);
-    return NextResponse.redirect(new URL('/admin/live-streams?error=oauth_rejected', req.url));
+    return NextResponse.redirect(new URL('/admin/youtube/connect?error=oauth_rejected', req.url));
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/admin/live-streams?error=no_code', req.url));
+    return NextResponse.redirect(new URL('/admin/youtube/connect?error=no_code', req.url));
   }
 
   // Build the exact same redirect URI as the authorize route
@@ -62,11 +62,11 @@ export async function GET(req: NextRequest) {
         tokenData = retryData;
       } else {
         console.error('Token response error (retry):', retryData);
-        return NextResponse.redirect(new URL('/admin/live-streams?error=token_exchange_failed', req.url));
+        return NextResponse.redirect(new URL('/admin/youtube/connect?error=token_exchange_failed', req.url));
       }
     } else if (!tokenResponse.ok) {
       console.error('Token response error:', tokenData);
-      return NextResponse.redirect(new URL('/admin/live-streams?error=token_exchange_failed', req.url));
+      return NextResponse.redirect(new URL('/admin/youtube/connect?error=token_exchange_failed', req.url));
     }
 
     const supabase = createClient(
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
 
     if (!adminUser) {
       console.error('Admin user not found');
-      return NextResponse.redirect(new URL('/admin/live-streams?error=admin_not_found', req.url));
+      return NextResponse.redirect(new URL('/admin/youtube/connect?error=admin_not_found', req.url));
     }
 
     // Check if a token already exists
@@ -125,12 +125,12 @@ export async function GET(req: NextRequest) {
 
     if (insertError) {
       console.error('Failed to save token to database:', insertError);
-      return NextResponse.redirect(new URL('/admin/live-streams?error=db_save_failed', req.url));
+      return NextResponse.redirect(new URL('/admin/youtube/connect?error=db_save_failed', req.url));
     }
 
-    return NextResponse.redirect(new URL('/admin/live-streams?success=youtube_connected', req.url));
+    return NextResponse.redirect(new URL('/admin/youtube/connect?success=youtube_connected', req.url));
   } catch (error) {
     console.error('Callback handler error:', error);
-    return NextResponse.redirect(new URL('/admin/live-streams?error=internal_error', req.url));
+    return NextResponse.redirect(new URL('/admin/youtube/connect?error=internal_error', req.url));
   }
 }

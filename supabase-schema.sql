@@ -982,6 +982,37 @@ CREATE TABLE public.youtube_tokens (
 
 COMMENT ON TABLE public.youtube_tokens IS 'YouTube/Google OAuth refresh tokens. Admin-only access.';
 
+-- Per-admin OBS encoder settings for live streaming control room
+CREATE TABLE IF NOT EXISTS public.stream_encoder_settings (
+    user_id UUID PRIMARY KEY REFERENCES public.users (id) ON DELETE CASCADE,
+    obs_host TEXT NOT NULL DEFAULT 'localhost',
+    obs_port INT NOT NULL DEFAULT 4455,
+    obs_password TEXT,
+    notes TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE public.stream_encoder_settings IS 'Per-admin OBS/encoder connection preferences for live streaming.';
+
+ALTER TABLE public.stream_encoder_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_own_encoder_settings_select"
+  ON public.stream_encoder_settings FOR SELECT TO authenticated
+  USING (public.is_admin () AND user_id = auth.uid ());
+
+CREATE POLICY "admin_own_encoder_settings_insert"
+  ON public.stream_encoder_settings FOR INSERT TO authenticated
+  WITH CHECK (public.is_admin () AND user_id = auth.uid ());
+
+CREATE POLICY "admin_own_encoder_settings_update"
+  ON public.stream_encoder_settings FOR UPDATE TO authenticated
+  USING (public.is_admin () AND user_id = auth.uid ())
+  WITH CHECK (public.is_admin () AND user_id = auth.uid ());
+
+CREATE POLICY "admin_own_encoder_settings_delete"
+  ON public.stream_encoder_settings FOR DELETE TO authenticated
+  USING (public.is_admin () AND user_id = auth.uid ());
+
 -- ============================================================
 -- §15  INDEXES
 -- ============================================================
@@ -4350,6 +4381,72 @@ ADD TABLE public.stream_analytics;
 
 ALTER PUBLICATION supabase_realtime
 ADD TABLE public.stream_registrations;
+
+-- ============================================================
+-- §YOUTUBE PLAYLIST SYNC  (Chapters ↔ YouTube Playlists)
+--     Each chapter links to one YouTube playlist.
+--     Lectures are auto-synced from playlist items (idempotent).
+-- ============================================================
+
+ALTER TABLE public.chapters
+ADD COLUMN IF NOT EXISTS youtube_playlist_id TEXT,
+ADD COLUMN IF NOT EXISTS yt_sync_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS yt_last_synced_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS yt_sync_error TEXT;
+
+COMMENT ON COLUMN public.chapters.youtube_playlist_id IS 'YouTube playlist ID (PLxxx). Lectures sync from this playlist.';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chapters_youtube_playlist_id
+ON public.chapters (youtube_playlist_id)
+WHERE youtube_playlist_id IS NOT NULL;
+
+ALTER TABLE public.lectures
+ADD COLUMN IF NOT EXISTS thumbnail_url TEXT,
+ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS yt_playlist_item_id TEXT,
+ADD COLUMN IF NOT EXISTS yt_synced_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN public.lectures.thumbnail_url IS 'YouTube video thumbnail URL (synced).';
+COMMENT ON COLUMN public.lectures.published_at IS 'YouTube video published date (synced).';
+COMMENT ON COLUMN public.lectures.yt_playlist_item_id IS 'YouTube playlistItems resource ID for dedup.';
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_lectures_chapter_yt_video
+ON public.lectures (chapter_id, yt_video_id)
+WHERE yt_video_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_chapters_yt_sync
+ON public.chapters (yt_sync_enabled, youtube_playlist_id)
+WHERE youtube_playlist_id IS NOT NULL AND yt_sync_enabled = TRUE;
+
+CREATE TABLE IF NOT EXISTS public.youtube_sync_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chapter_id UUID REFERENCES public.chapters (id) ON DELETE SET NULL,
+    course_id UUID REFERENCES public.courses (id) ON DELETE SET NULL,
+    trigger_source TEXT NOT NULL DEFAULT 'manual'
+        CHECK (trigger_source IN ('manual', 'cron', 'webhook')),
+    status TEXT NOT NULL DEFAULT 'running'
+        CHECK (status IN ('running', 'success', 'partial', 'failed')),
+    playlist_id TEXT,
+    videos_found INT NOT NULL DEFAULT 0,
+    lectures_created INT NOT NULL DEFAULT 0,
+    lectures_updated INT NOT NULL DEFAULT 0,
+    error_message TEXT,
+    details JSONB,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ
+);
+
+COMMENT ON TABLE public.youtube_sync_logs IS 'Audit log for YouTube playlist → lecture sync runs.';
+
+CREATE INDEX IF NOT EXISTS idx_youtube_sync_logs_chapter
+ON public.youtube_sync_logs (chapter_id, started_at DESC);
+
+ALTER TABLE public.youtube_sync_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_all_youtube_sync_logs" ON public.youtube_sync_logs
+FOR ALL TO authenticated
+USING (public.is_admin())
+WITH CHECK (public.is_admin());
 
 -- ============================================================
 --  END OF SCHEMA

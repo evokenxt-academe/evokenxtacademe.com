@@ -21,11 +21,11 @@ export function BulkActionsBar({
   if (count === 0) return null;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3">
+    <div className="flex flex-col gap-3 rounded-lg border bg-card px-4 py-3 sm:flex-row sm:items-center">
       <span className="text-sm font-medium">
         {count} course{count !== 1 ? "s" : ""} selected
       </span>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
         <Button
           variant="outline"
           size="sm"

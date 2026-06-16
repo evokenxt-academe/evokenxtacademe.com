@@ -48,6 +48,7 @@ import { toast } from "sonner";
 
 import { CourseFiltersBar } from "@/components/admin/courses/course-filters";
 import { getCourseColumns } from "@/components/admin/courses/course-columns";
+import { CourseMobileCard } from "@/components/admin/courses/course-mobile-card";
 import { BulkActionsBar } from "@/components/admin/courses/bulk-actions-bar";
 import {
   fetchCourses,
@@ -58,15 +59,18 @@ import {
   bulkUpdateStatus,
   bulkDeleteCourses,
   fetchCoursePricing,
+  COURSES_PAGE_SIZE,
   type CourseListItem,
   type CourseFilters,
   type CoursePricing,
 } from "@/lib/supabase/queries/courses-admin";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency } from "@/lib/utils/format";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 export default function CoursesListPage() {
   const router = useRouter();
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const [courses, setCourses] = React.useState<CourseListItem[]>([]);
   const [totalCount, setTotalCount] = React.useState(0);
   const [loading, setLoading] = React.useState(true);
@@ -85,7 +89,8 @@ export default function CoursesListPage() {
   const [pricingData, setPricingData] = React.useState<CoursePricing[]>([]);
   const [pricingLoading, setPricingLoading] = React.useState(false);
 
-  const pageSize = 20;
+  const pageSize = COURSES_PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const loadCourses = React.useCallback(async () => {
     setLoading(true);
@@ -93,13 +98,14 @@ export default function CoursesListPage() {
       const { data, count } = await fetchCourses(filters, page, pageSize);
       setCourses(data);
       setTotalCount(count);
+      setRowSelection({});
     } catch (err) {
       console.error(err);
       toast.error("Failed to load courses");
     } finally {
       setLoading(false);
     }
-  }, [filters, page]);
+  }, [filters, page, pageSize]);
 
   React.useEffect(() => {
     loadCourses();
@@ -128,6 +134,8 @@ export default function CoursesListPage() {
   const handleEdit = (id: string) => router.push(`/admin/courses/${id}/edit`);
   const handleContent = (id: string) =>
     router.push(`/admin/courses/${id}/content`);
+  const handleLiveStreams = (id: string) =>
+    router.push(`/admin/courses/${id}/live-streams`);
 
   const handlePricing = async (course: CourseListItem) => {
     setPricingCourse(course);
@@ -246,6 +254,7 @@ export default function CoursesListPage() {
       getCourseColumns({
         onEdit: handleEdit,
         onContent: handleContent,
+        onLiveStreams: handleLiveStreams,
         onPricing: handlePricing,
         onDuplicate: handleDuplicate,
         onStatusChange: handleStatusChange,
@@ -266,13 +275,35 @@ export default function CoursesListPage() {
     pageCount: Math.ceil(totalCount / pageSize),
   });
 
-  const fromRow = page * pageSize + 1;
+  const fromRow = totalCount === 0 ? 0 : page * pageSize + 1;
   const toRow = Math.min((page + 1) * pageSize, totalCount);
 
+  React.useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(totalCount / pageSize) - 1);
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [page, pageSize, totalCount]);
+
+  const columnActions = React.useMemo(
+    () => ({
+      onEdit: handleEdit,
+      onContent: handleContent,
+      onLiveStreams: handleLiveStreams,
+      onPricing: handlePricing,
+      onDuplicate: handleDuplicate,
+      onStatusChange: handleStatusChange,
+      onDelete: (id: string) => setDeleteId(id),
+      onToggleFeatured: handleToggleFeatured,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   return (
-    <div className="flex flex-col gap-6 md:p-10 p-4">
+    <div className="flex flex-col gap-6 p-4 md:p-10">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
           <Breadcrumb>
             <BreadcrumbList>
@@ -287,7 +318,10 @@ export default function CoursesListPage() {
           </Breadcrumb>
           <h1 className="text-2xl font-semibold tracking-tight">Courses</h1>
         </div>
-        <Button onClick={() => router.push("/admin/courses/new")}>
+        <Button
+          onClick={() => router.push("/admin/courses/new")}
+          className="w-full sm:w-auto"
+        >
           <IconPlus data-icon="inline-start" />
           New Course
         </Button>
@@ -298,6 +332,7 @@ export default function CoursesListPage() {
         filters={filters}
         onFiltersChange={(f) => {
           setPage(0);
+          setRowSelection({});
           setFilters(f);
         }}
       />
@@ -311,130 +346,180 @@ export default function CoursesListPage() {
         loading={actionLoading}
       />
 
-      {/* Table */}
+      {/* Course list */}
       <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    style={{ width: header.getSize() }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell>
-                    <Skeleton className="size-4" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="size-10 rounded-md" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-48" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-36" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-12" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-12" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="size-4" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="size-6" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : courses.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-64 text-center"
-                >
-                  <div className="flex flex-col items-center gap-3">
-                    <IconBookOff className="size-12 text-muted-foreground" />
-                    <div className="flex flex-col gap-1">
-                      <p className="text-lg font-medium">No courses yet</p>
-                      <p className="text-sm text-muted-foreground">
-                        Create your first course to get started
-                      </p>
-                    </div>
-                    <Button onClick={() => router.push("/admin/courses/new")}>
-                      <IconPlus data-icon="inline-start" />
-                      Create Course
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+        {loading ? (
+          isMobile ? (
+            <div className="space-y-3 p-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-28 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          style={{ width: header.getSize() }}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: pageSize }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="size-4" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="size-10 rounded-md" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-48" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-36" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-28" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="size-4" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="size-6" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )
+        ) : courses.length === 0 ? (
+          <div className="flex h-64 flex-col items-center justify-center gap-3 px-4 text-center">
+            <IconBookOff className="size-12 text-muted-foreground" />
+            <div className="flex flex-col gap-1">
+              <p className="text-lg font-medium">No courses found</p>
+              <p className="text-sm text-muted-foreground">
+                {Object.keys(filters).length > 0
+                  ? "Try adjusting your filters"
+                  : "Create your first course to get started"}
+              </p>
+            </div>
+            {Object.keys(filters).length === 0 && (
+              <Button onClick={() => router.push("/admin/courses/new")}>
+                <IconPlus data-icon="inline-start" />
+                Create Course
+              </Button>
             )}
-          </TableBody>
-        </Table>
+          </div>
+        ) : isMobile ? (
+          <div className="space-y-3 p-4">
+            {courses.map((course, index) => (
+              <CourseMobileCard
+                key={course.id}
+                course={course}
+                selected={!!rowSelection[String(index)]}
+                onSelect={(checked) =>
+                  setRowSelection((prev) => ({
+                    ...prev,
+                    [String(index)]: checked,
+                  }))
+                }
+                {...columnActions}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-        {/* Footer + Pagination */}
         {!loading && totalCount > 0 && (
           <>
             <Separator />
-            <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-center text-sm text-muted-foreground sm:text-left">
                 Showing {fromRow}–{toRow} of {totalCount} courses
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
+                  className="flex-1 sm:flex-none"
                 >
                   Previous
                 </Button>
-                <span className="text-sm tabular-nums">
-                  Page {page + 1} of {Math.ceil(totalCount / pageSize)}
+                <span className="min-w-24 text-center text-sm tabular-nums">
+                  Page {page + 1} of {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPage((p) => p + 1)}
-                  disabled={(page + 1) * pageSize >= totalCount}
+                  disabled={page + 1 >= totalPages}
+                  className="flex-1 sm:flex-none"
                 >
                   Next
                 </Button>

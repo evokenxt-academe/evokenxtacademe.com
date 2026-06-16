@@ -67,6 +67,8 @@ interface ChatPanelProps {
   streamId: string;
   isAdmin?: boolean;
   activeViewersCount?: number;
+  chatModeration?: boolean;
+  filterType?: "all" | "question";
 }
 
 type FilterType = "all" | "announcement" | "question" | "flagged";
@@ -75,15 +77,21 @@ export function ChatPanel({
   streamId,
   isAdmin = false,
   activeViewersCount = 0,
+  chatModeration = false,
+  filterType = "all",
 }: ChatPanelProps) {
   const {
     messages,
+    pendingMessages,
+    approvedMessages,
     pinnedMessages,
     loading,
     sendMessage,
     pinMessage,
     deleteMessage,
-  } = useStreamChat(streamId);
+    approveMessage,
+    markAsQuestion,
+  } = useStreamChat(streamId, chatModeration);
 
   const [messageInput, setMessageInput] = useState("");
   const [messageType, setMessageType] = useState<
@@ -112,20 +120,30 @@ export function ChatPanel({
     setAutoScroll(isAtBottom);
   };
 
-  // Filtered messages (only for admin)
-  const filteredMessages = isAdmin ? messages.filter((msg) => {
-    if (filter !== "all" && msg.type !== filter) return false;
-    if (searchTerm && !msg.message.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !msg.author_name?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+  const baseMessages = isAdmin
+    ? [...approvedMessages, ...pendingMessages.filter((m) => !approvedMessages.some((a) => a.id === m.id))]
+    : approvedMessages;
+
+  const filteredMessages = (filterType === "question"
+    ? baseMessages.filter((m) => m.type === "question")
+    : baseMessages
+  ).filter((msg) => {
+    if (isAdmin && filter !== "all" && msg.type !== filter) return false;
+    if (
+      searchTerm &&
+      !msg.message.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      !msg.author_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+      return false;
     return true;
-  }) : messages;
+  });
 
   const handleSendMessage = async () => {
     if (!messageInput.trim()) return;
 
     setSending(true);
     try {
-      await sendMessage(messageInput, messageType);
+      await sendMessage(messageInput, messageType, isAdmin);
       setMessageInput("");
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
@@ -472,6 +490,34 @@ export function ChatPanel({
                                 <Copy className="w-4 h-4 mr-2" />
                                 Copy Message
                               </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  try {
+                                    await markAsQuestion(msg.id);
+                                    toast.success("Marked as question");
+                                  } catch {
+                                    toast.error("Failed to mark as question");
+                                  }
+                                }}
+                              >
+                                <AlertCircle className="w-4 h-4 mr-2" />
+                                Mark as Question
+                              </DropdownMenuItem>
+                              {!msg.is_approved && (
+                                <DropdownMenuItem
+                                  onClick={async () => {
+                                    try {
+                                      await approveMessage(msg.id);
+                                      toast.success("Message approved");
+                                    } catch {
+                                      toast.error("Failed to approve");
+                                    }
+                                  }}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Approve
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onClick={() => handleDeleteMessage(msg.id)}

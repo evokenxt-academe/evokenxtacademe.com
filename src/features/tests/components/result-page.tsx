@@ -114,7 +114,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-5 md:p-8">
       {/* 1. Header Area */}
-      <div className="flex flex-col items-start gap-5 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1.5 min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
             <Link href="/dashboard/tests" className="flex items-center gap-1 hover:text-primary transition-colors">
@@ -124,12 +124,12 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
             <span>•</span>
             <span className="truncate">{insights?.about.courseName ?? "Assessment"}</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl leading-snug line-clamp-2">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl leading-snug">
             {result.quizTitle}
           </h1>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="px-3 py-1.5 text-xs font-medium gap-1.5 bg-background">
             <IconCalendarEvent className="size-3.5 text-muted-foreground" />
             {formatDate(result.submittedAt)}
@@ -149,7 +149,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
       {/* 2. Premium Hero Card */}
       <Card className="rounded-xl border-border/60 bg-muted/5 shadow-sm overflow-hidden">
         <CardContent className="p-6 md:p-8">
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
 
             {/* Circular Progress Indicator */}
             <div className="flex shrink-0 flex-col items-center justify-center">
@@ -178,7 +178,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
             <div className="h-px w-full bg-border/50 md:h-24 md:w-px" />
 
             {/* Stats Grid */}
-            <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-6 w-full">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <IconTarget className="size-4" />
@@ -216,7 +216,7 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
 
             {/* Rank display if available */}
             {rank != null && (
-              <div className="hidden lg:flex shrink-0 flex-col items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
+              <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/5 px-6 py-4 w-full md:w-auto">
                 <IconMedal className="size-8 text-amber-500 mb-2" />
                 <p className="text-xs font-bold uppercase tracking-widest text-amber-600/80">Class Rank</p>
                 <p className="text-3xl font-extrabold text-amber-500">#{rank}</p>

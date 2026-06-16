@@ -40,11 +40,7 @@ export function QuizCard({ quiz, isLastAttempted = false }: QuizCardProps) {
     quiz.latestScore != null &&
     quiz.latestScore >= quiz.passingMarks;
 
-  const actionHref = isInProgress
-    ? `/dashboard/quiz/${quiz.id}`
-    : isCompleted && quiz.latestAttemptId
-      ? `/dashboard/tests/result/${quiz.latestAttemptId}`
-      : `/dashboard/quiz/${quiz.id}`;
+  const actionHref = `/dashboard/quiz/${quiz.id}`;
 
   const actionLabel = isInProgress
     ? "Continue Test"

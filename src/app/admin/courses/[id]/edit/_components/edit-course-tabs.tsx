@@ -55,11 +55,13 @@ import {
   IconLoader2,
   IconLayoutSidebar,
   IconCloudUpload,
+  IconVideo,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 import { StatusBadge } from "@/components/admin/courses/status-badge";
 import { PricingTab } from "./pricing-tab";
+import { CourseTestsTab } from "./course-tests-tab";
 import {
   courseBaseSchema,
   type CourseFormValues,
@@ -431,6 +433,12 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
             </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
+            <Link href={`/admin/courses/${courseId}/live-streams`}>
+              <IconVideo data-icon="inline-start" />
+              Live Streams
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
             <a
               href={`/courses/${course?.slug}`}
               target="_blank"
@@ -524,6 +532,7 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
                 )}
               </TabsTrigger>
               <TabsTrigger value="pricing">Pricing</TabsTrigger>
+              <TabsTrigger value="tests">Tests</TabsTrigger>
             </TabsList>
 
             {/* Program Tab */}
@@ -968,6 +977,11 @@ export function EditCourseTabs({ courseId }: EditCourseTabsProps) {
             {/* Pricing Tab */}
             <TabsContent value="pricing">
               <PricingTab courseId={courseId} />
+            </TabsContent>
+
+            {/* Tests Tab */}
+            <TabsContent value="tests">
+              <CourseTestsTab courseId={courseId} courseTitle={title} />
             </TabsContent>
           </Tabs>
         </div>

@@ -57,6 +57,7 @@ import type {
   LiveStreamAdminItem,
   LiveStreamCourseOption,
 } from "@/features/live-stream/types";
+import { streamChatPath } from "@/lib/live-stream/admin-paths";
 
 type ApiCourse = {
   id: string;
@@ -384,9 +385,7 @@ export function LiveStreamAdminPanel() {
 
                         <div className="flex flex-wrap gap-2 md:justify-end">
                           <Button variant="outline" size="sm" asChild>
-                            <Link
-                              href={`/admin/live-streams/${stream.id}/chat`}
-                            >
+                            <Link href={streamChatPath(stream.courseId, stream.id)}>
                               <IconMessageCircle data-icon="inline-start" />
                               Open Chat
                             </Link>

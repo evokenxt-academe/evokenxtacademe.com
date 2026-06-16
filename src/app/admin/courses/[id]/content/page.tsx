@@ -1,11 +1,3 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { ContentBuilder } from "./_components/content-builder";
 
 export default async function ContentBuilderPage({
@@ -16,23 +8,7 @@ export default async function ContentBuilderPage({
   const { id } = await params;
 
   return (
-    <div className="flex flex-col gap-4 md:p-10 p-4">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/admin">Admin</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/admin/courses">Courses</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Content Builder</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
+    <div className="flex flex-col p-3 sm:p-4 md:p-6 lg:p-10">
       <ContentBuilder courseId={id} />
     </div>
   );
