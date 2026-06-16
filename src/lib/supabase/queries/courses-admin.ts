@@ -87,6 +87,7 @@ export type Chapter = {
   is_published: boolean;
   youtube_playlist_id: string | null;
   yt_sync_enabled: boolean;
+  yt_sync_title_desc: boolean;
   yt_last_synced_at: string | null;
   yt_sync_error: string | null;
   lectures?: Lecture[];
@@ -466,7 +467,7 @@ export async function fetchChapters(courseId: string) {
     .select(
       `
       id, course_id, title, description, position, is_published,
-      youtube_playlist_id, yt_sync_enabled, yt_last_synced_at, yt_sync_error,
+      youtube_playlist_id, yt_sync_enabled, yt_sync_title_desc, yt_last_synced_at, yt_sync_error,
       lectures(
         id, chapter_id, title, description, video_url, video_provider,
         yt_video_id, thumbnail_url, published_at, yt_synced_at,

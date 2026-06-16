@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useTransition, useCallback } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { IconBell, IconBellRinging } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { createClient } from '@/utils/supabase/client';
 import NotificationDrawer, { type NotificationItem } from './NotificationDrawer';
+import { db } from '@/lib/firebase';
+import { collection, query, where, limit, onSnapshot } from 'firebase/firestore';
 
 export const NOTIFICATIONS_REFRESH_EVENT = 'evoke:notifications-refresh';
 
@@ -15,91 +16,91 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [, startTransition] = useTransition();
 
-  const supabase = createClient();
-
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const fetchNotifications = useCallback(async () => {
-    const { data: rows } = await supabase
-      .from('notifications')
-      .select('*')
-      .or(`user_id.eq.${userId},user_id.is.null`)
-      .order('created_at', { ascending: false })
-      .limit(50);
+  useEffect(() => {
+    if (!userId || !db) {
+      setLoading(false);
+      return;
+    }
 
-    const { data: readRows } = await supabase
-      .from('notification_reads')
-      .select('notification_id')
-      .eq('user_id', userId);
-
-    const readBroadcastIds = new Set(
-      (readRows ?? []).map((r: any) => r.notification_id),
+    // 1. Listen to user targeted notifications
+    const qTargeted = query(
+      collection(db, 'notifications'),
+      where('user_id', '==', userId),
+      limit(50)
     );
 
-    const merged: NotificationItem[] = (rows ?? []).map((row: any) => ({
-      ...row,
-      is_read:
-        row.user_id === null
-          ? readBroadcastIds.has(row.id)
-          : !!(row as NotificationItem).is_read,
-    }));
+    // 2. Listen to broadcast notifications
+    const qBroadcast = query(
+      collection(db, 'notifications'),
+      where('user_id', '==', null),
+      limit(50)
+    );
 
-    setNotifications(merged);
-    setLoading(false);
-  }, [supabase, userId]);
+    // 3. Listen to read receipts
+    const qReads = query(
+      collection(db, 'notification_reads'),
+      where('user_id', '==', userId)
+    );
 
-  useEffect(() => {
-    void fetchNotifications();
+    let targetedList: any[] = [];
+    let broadcastList: any[] = [];
+    let readSet = new Set<string>();
 
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          setNotifications((prev) => [
-            { ...(payload.new as NotificationItem), is_read: false },
-            ...prev,
-          ]);
-        },
-      )
-      .subscribe();
+    const updateMerged = () => {
+      const merged = [...targetedList, ...broadcastList]
+        .map((doc) => ({
+          ...doc,
+          is_read: doc.user_id === null ? readSet.has(doc.id) : !!doc.is_read,
+        }))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 50);
 
-    const broadcastChannel = supabase
-      .channel(`notifications:broadcast:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=is.null`,
-        },
-        (payload) => {
-          setNotifications((prev) => [
-            { ...(payload.new as NotificationItem), is_read: false },
-            ...prev,
-          ]);
-        },
-      )
-      .subscribe();
-
-    const onRefresh = () => {
-      void fetchNotifications();
+      setNotifications(merged);
+      setLoading(false);
     };
-    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh);
+
+    const unsubTargeted = onSnapshot(
+      qTargeted,
+      (snapshot) => {
+        targetedList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        updateMerged();
+      },
+      (err) => {
+        console.error('[NotificationBell] Targeted sub failed:', err);
+      }
+    );
+
+    const unsubBroadcast = onSnapshot(
+      qBroadcast,
+      (snapshot) => {
+        broadcastList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        updateMerged();
+      },
+      (err) => {
+        console.error('[NotificationBell] Broadcast sub failed:', err);
+      }
+    );
+
+    const unsubReads = onSnapshot(
+      qReads,
+      (snapshot) => {
+        readSet = new Set(snapshot.docs.map((doc) => doc.data().notification_id));
+        updateMerged();
+      },
+      (err) => {
+        console.error('[NotificationBell] Reads sub failed:', err);
+      }
+    );
 
     return () => {
-      supabase.removeChannel(channel);
-      supabase.removeChannel(broadcastChannel);
-      window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, onRefresh);
+      unsubTargeted();
+      unsubBroadcast();
+      unsubReads();
     };
-  }, [userId, supabase, fetchNotifications]);
+  }, [userId]);
+
 
   async function markAllRead() {
     startTransition(async () => {

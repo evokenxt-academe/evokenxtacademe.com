@@ -50,6 +50,7 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
       is_published: chapter.is_published,
       youtube_playlist_id: chapter.youtube_playlist_id || "",
       yt_sync_enabled: chapter.yt_sync_enabled ?? true,
+      yt_sync_title_desc: chapter.yt_sync_title_desc ?? true,
     },
   });
 
@@ -60,6 +61,7 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
       is_published: chapter.is_published,
       youtube_playlist_id: chapter.youtube_playlist_id || "",
       yt_sync_enabled: chapter.yt_sync_enabled ?? true,
+      yt_sync_title_desc: chapter.yt_sync_title_desc ?? true,
     });
   }, [
     chapter.id,
@@ -68,6 +70,7 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
     chapter.is_published,
     chapter.youtube_playlist_id,
     chapter.yt_sync_enabled,
+    chapter.yt_sync_title_desc,
     form,
   ]);
 
@@ -89,6 +92,7 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
           is_published: vals.is_published,
           youtube_playlist_id: playlistId,
           yt_sync_enabled: vals.yt_sync_enabled,
+          yt_sync_title_desc: vals.yt_sync_title_desc,
         } as Partial<Chapter>);
         setSaveStatus("saved");
         form.reset(vals);
@@ -104,6 +108,7 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
     watchedValues.is_published,
     watchedValues.youtube_playlist_id,
     watchedValues.yt_sync_enabled,
+    watchedValues.yt_sync_title_desc,
   ]);
 
   const handleSyncNow = async () => {
@@ -215,6 +220,21 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
               checked={form.watch("yt_sync_enabled")}
               onCheckedChange={(val) =>
                 form.setValue("yt_sync_enabled", val, { shouldDirty: true })
+              }
+            />
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <Label>Auto-sync title & description</Label>
+              <p className="text-xs text-muted-foreground">
+                Sync section title & description from YouTube playlist details
+              </p>
+            </div>
+            <Switch
+              checked={form.watch("yt_sync_title_desc")}
+              onCheckedChange={(val) =>
+                form.setValue("yt_sync_title_desc", val, { shouldDirty: true })
               }
             />
           </div>

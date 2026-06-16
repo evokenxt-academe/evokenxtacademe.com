@@ -46,8 +46,32 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export function LoginCard() {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isCheckingSession, setIsCheckingSession] = React.useState<boolean>(true);
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirectUrl") || searchParams.get("next") || "/dashboard";
+
+  React.useEffect(() => {
+    const checkSessionAndRedirect = async () => {
+      const supabase = createClient() as any;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (profile?.role === "admin" || profile?.role === "instructor") {
+          window.location.replace("/admin");
+        } else {
+          window.location.replace("/dashboard");
+        }
+      } else {
+        setIsCheckingSession(false);
+      }
+    };
+    checkSessionAndRedirect();
+  }, []);
 
   const handleSignInWithGoogle = async () => {
     setIsLoading(true);
@@ -56,11 +80,7 @@ export function LoginCard() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectUrl)}`,
-        scopes: "email profile https://www.googleapis.com/auth/youtube.upload",
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
-        },
+        scopes: "email profile",
       },
     });
 
@@ -69,6 +89,15 @@ export function LoginCard() {
       setIsLoading(false);
     }
   };
+
+  if (isCheckingSession) {
+    return (
+      <div className="w-full max-w-[420px] mx-4 flex flex-col items-center justify-center p-8 bg-card border rounded-2xl shadow-sm gap-4 text-center">
+        <Spinner className="size-6 text-primary" />
+        <p className="text-sm text-muted-foreground animate-pulse">Verifying session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-[420px] mx-4">

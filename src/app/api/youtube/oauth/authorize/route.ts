@@ -20,6 +20,8 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host;
   const redirectUri = `${protocol}://${host}/api/youtube/oauth/callback`;
 
+  const state = req.nextUrl.searchParams.get('state') || '';
+
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
     redirect_uri: redirectUri,
@@ -28,6 +30,10 @@ export async function GET(req: NextRequest) {
     access_type: 'offline',
     prompt: 'consent',
   });
+
+  if (state) {
+    params.set('state', state);
+  }
 
   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 

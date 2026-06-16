@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { getFirebaseAdminFirestore } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   const { token, deviceType = 'web' } = await req.json();
@@ -15,18 +16,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Upsert: if token already exists for this user, update last_seen
-  const { error } = await (supabase
-    .from('fcm_tokens') as any)
-    .upsert(
-      { user_id: user.id, token, device_type: deviceType, last_seen: new Date().toISOString() },
-      { onConflict: 'token' }
-    );
+  const firestore = getFirebaseAdminFirestore();
+  if (!firestore) {
+    return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
+  }
 
-  if (error) {
-    console.error('[register-token] Supabase error:', error);
+  try {
+    // Upsert: document key is the token itself
+    await firestore.collection('fcm_tokens').doc(token).set({
+      user_id: user.id,
+      token,
+      device_type: deviceType,
+      last_seen: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    }, { merge: true });
+  } catch (err) {
+    console.error('[register-token] Firestore error:', err);
     return NextResponse.json({ error: 'Failed to save token' }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });
 }
+

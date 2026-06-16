@@ -1,4 +1,4 @@
-import { getFirebaseAdminMessaging } from '@/lib/firebase-admin';
+import { getFirebaseAdminMessaging, getFirebaseAdminFirestore } from '@/lib/firebase-admin';
 import { createAdminClient } from '@/utils/supabase/adminClient';
 import type { SendNotificationInput, SendNotificationResult } from './types';
 
@@ -21,35 +21,33 @@ async function hasRecentDuplicate(
 ): Promise<boolean> {
   if (!sourceId) return false;
 
-  const supabase = createAdminClient();
+  const firestore = getFirebaseAdminFirestore();
+  if (!firestore) return false;
+
   const since = new Date(Date.now() - DEDUP_WINDOW_MS).toISOString();
 
-  const { data } = await supabase
-    .from('notifications')
-    .select('id')
-    .eq('type', type)
-    .eq('source_id', sourceId)
-    .gte('created_at', since)
-    .limit(1);
+  const snapshot = await firestore
+    .collection('notifications')
+    .where('type', '==', type)
+    .where('source_id', '==', sourceId)
+    .where('created_at', '>=', since)
+    .limit(1)
+    .get();
 
-  return (data?.length ?? 0) > 0;
+  return !snapshot.empty;
 }
 
 async function fetchFcmTokens(userId?: string | null): Promise<string[]> {
-  const supabase = createAdminClient();
+  const firestore = getFirebaseAdminFirestore();
+  if (!firestore) return [];
 
-  let query = supabase.from('fcm_tokens').select('token');
+  let query: any = firestore.collection('fcm_tokens');
   if (userId) {
-    query = query.eq('user_id', userId);
+    query = query.where('user_id', '==', userId);
   }
 
-  const { data, error } = await query;
-  if (error) {
-    console.error('[notifications] Failed to fetch FCM tokens:', error.message);
-    return [];
-  }
-
-  return (data ?? []).map((row) => row.token).filter(Boolean);
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc: any) => doc.data().token).filter(Boolean);
 }
 
 async function sendFcmPush(
@@ -119,8 +117,14 @@ async function sendFcmPush(
       });
 
       if (staleTokens.length > 0) {
-        const supabase = createAdminClient();
-        await supabase.from('fcm_tokens').delete().in('token', staleTokens);
+        const firestore = getFirebaseAdminFirestore();
+        if (firestore) {
+          const batch = firestore.batch();
+          for (const token of staleTokens) {
+            batch.delete(firestore.collection('fcm_tokens').doc(token));
+          }
+          await batch.commit();
+        }
       }
     } catch (err) {
       console.error('[notifications] FCM batch send failed:', err);
@@ -140,26 +144,26 @@ export async function sendNotification(
     if (duplicate) return null;
   }
 
-  const supabase = createAdminClient();
-
-  const { data: row, error } = await supabase
-    .from('notifications')
-    .insert({
-      user_id: input.userId ?? null,
-      title: input.title,
-      body: input.body,
-      image_url: input.imageUrl ?? null,
-      route: input.route ?? null,
-      type: input.type,
-      source_id: input.sourceId ?? null,
-    })
-    .select('id')
-    .single();
-
-  if (error || !row) {
-    console.error('[notifications] Failed to insert notification:', error?.message);
-    throw new Error(error?.message ?? 'Failed to create notification');
+  const firestore = getFirebaseAdminFirestore();
+  if (!firestore) {
+    throw new Error('Firebase Admin Firestore not initialized');
   }
+
+  const notificationId = crypto.randomUUID();
+  const docData = {
+    id: notificationId,
+    user_id: input.userId ?? null,
+    title: input.title,
+    body: input.body,
+    image_url: input.imageUrl ?? null,
+    route: input.route ?? null,
+    type: input.type,
+    source_id: input.sourceId ?? null,
+    is_read: false,
+    created_at: new Date().toISOString(),
+  };
+
+  await firestore.collection('notifications').doc(notificationId).set(docData);
 
   const tokens = await fetchFcmTokens(input.userId);
   const { sent, failed } = await sendFcmPush(tokens, {
@@ -168,11 +172,11 @@ export async function sendNotification(
     route: input.route,
     imageUrl: input.imageUrl,
     type: input.type,
-    notificationId: row.id,
+    notificationId: notificationId,
   });
 
   return {
-    notificationId: row.id,
+    notificationId,
     pushSent: sent,
     pushFailed: failed,
   };
@@ -184,6 +188,7 @@ export function sendNotificationAsync(input: SendNotificationInput): void {
     console.error('[notifications] Async send failed:', err);
   });
 }
+
 
 // ── Event-specific helpers ────────────────────────────────────────────
 

@@ -15,6 +15,42 @@ export async function GET(request: Request) {
     if (!error && data.session) {
       const session = data.session
 
+      // Enforce single session limit (only one device at a time)
+      const newSessionId = crypto.randomUUID()
+      let userRole: string | null = null;
+      try {
+        const adminClient = createAdminClient()
+
+        // Update database with the new current session ID
+        const { error: updateSessionError } = await adminClient
+          .from('users')
+          .update({ current_session_id: newSessionId })
+          .eq('id', session.user.id)
+
+        if (updateSessionError) {
+          console.error('Error updating current session ID in DB:', updateSessionError)
+        }
+
+        const { data: userProfile } = await adminClient
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+
+        if (userProfile) {
+          userRole = userProfile.role;
+        }
+
+        if (userRole === 'student') {
+          const { error: signOutError } = await adminClient.auth.admin.signOut(session.user.id, 'others')
+          if (signOutError) {
+            console.error('Error signing out other sessions for student:', signOutError)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to enforce student session limit or retrieve role:', err)
+      }
+
       // Persist the YouTube refresh token in user_metadata (legacy approach)
       if (session.provider_refresh_token) {
         await supabase.auth.updateUser({
@@ -51,8 +87,32 @@ export async function GET(request: Request) {
         }
       }
 
-      const separator = next.includes('?') ? '&' : '?';
-      return NextResponse.redirect(`${origin}${next}${separator}pwa_install=1`)
+      // Determine redirect destination based on user role
+      let redirectDestination = next;
+      if (userRole === 'admin' || userRole === 'instructor') {
+        if (next === '/' || next === '/dashboard') {
+          redirectDestination = '/admin';
+        }
+      } else {
+        if (next === '/' || next === '/admin') {
+          redirectDestination = '/dashboard';
+        }
+      }
+
+      const separator = redirectDestination.includes('?') ? '&' : '?';
+      const redirectUrl = `${origin}${redirectDestination}${separator}pwa_install=1`
+      const response = NextResponse.redirect(redirectUrl)
+
+      // Set session ID cookie for single-session verification
+      response.cookies.set('lms_session_id', newSessionId, {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      })
+
+      return response
     }
 
     const message = error?.message ?? 'Could not authenticate user'

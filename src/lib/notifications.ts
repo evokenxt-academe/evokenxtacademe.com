@@ -12,6 +12,13 @@ const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY!;
 export async function requestAndGetFcmToken(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
 
+  if (!VAPID_KEY || VAPID_KEY.length < 50 || !VAPID_KEY.startsWith('B')) {
+    console.warn(
+      '[FCM] Invalid or missing VAPID key. Skipping FCM token subscription to prevent PushManager console errors.'
+    );
+    return null;
+  }
+
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
     console.warn('[FCM] Notification permission denied');

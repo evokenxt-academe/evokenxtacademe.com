@@ -76,6 +76,7 @@ export const chapterSchema = z.object({
   is_published: z.boolean().default(false),
   youtube_playlist_id: z.string().optional().or(z.literal("")),
   yt_sync_enabled: z.boolean().default(true),
+  yt_sync_title_desc: z.boolean().default(true),
 });
 
 export type ChapterFormValues = z.infer<typeof chapterSchema>;
