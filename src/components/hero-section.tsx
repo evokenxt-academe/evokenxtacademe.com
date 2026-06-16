@@ -166,6 +166,20 @@ export function HeroSection() {
 
           {/* Main headline */}
           <div className="mb-10">
+            {/* Brand Name */}
+            <div
+              className={`mb-4 transition-all duration-700 ${
+                isVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
+            >
+              <span className="inline-block text-xl md:text-2xl font-semibold tracking-wide text-white">
+                EvokeNxt Academe
+              </span>
+            </div>
+
+            {/* Hero Title */}
             <h1
               className={`text-left text-[clamp(2rem,6vw,7rem)] font-display leading-[0.92] tracking-tight text-white transition-all duration-1000 ${
                 isVisible
@@ -184,7 +198,7 @@ export function HeroSection() {
               </span>
             </h1>
           </div>
-
+          
           {/* Subtext and CTAs */}
           <div
             className={`transition-all duration-1000 delay-200 ${
