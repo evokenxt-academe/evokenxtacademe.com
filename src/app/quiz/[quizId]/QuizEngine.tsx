@@ -101,7 +101,11 @@ type SubmitPayload = {
     blank_answer: string | null;
     text_answer: string | null;
     numerical_answer: number | null;
-    options?: Array<{ id: string; option_text: string; option_is_correct: boolean | null }>;
+    options?: Array<{
+      id: string;
+      option_text: string;
+      option_is_correct: boolean | null;
+    }>;
   }>;
 };
 
@@ -111,7 +115,10 @@ function formatTimer(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function donutPercent(percent: number): { strokeDasharray: string; label: string } {
+function donutPercent(percent: number): {
+  strokeDasharray: string;
+  label: string;
+} {
   const clamped = Math.max(0, Math.min(100, percent));
   const r = 42;
   const c = 2 * Math.PI * r;
@@ -147,7 +154,8 @@ export function QuizEngine({
     // Deterministic-ish shuffle per attempt; until attempt exists just shuffle once.
     const seed = attemptId ?? quiz.id;
     let x = 0;
-    for (let i = 0; i < seed.length; i++) x = (x * 31 + seed.charCodeAt(i)) >>> 0;
+    for (let i = 0; i < seed.length; i++)
+      x = (x * 31 + seed.charCodeAt(i)) >>> 0;
     for (let i = base.length - 1; i > 0; i--) {
       x = (x * 1664525 + 1013904223) >>> 0;
       const j = x % (i + 1);
@@ -220,6 +228,18 @@ export function QuizEngine({
   const handleStart = useCallback(async () => {
     if (isStarting) return;
     setIsStarting(true);
+
+    try {
+      const docEl = document.documentElement;
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch((err) => {
+          console.warn("Fullscreen request rejected:", err);
+        });
+      }
+    } catch (err) {
+      console.warn("Fullscreen error:", err);
+    }
+
     try {
       const res = await fetch(`/api/student/quiz/${quiz.id}/attempt`, {
         method: "POST",
@@ -227,10 +247,15 @@ export function QuizEngine({
         body: JSON.stringify({ action: "start" }),
       });
       if (!res.ok) {
-        const payload = (await res.json().catch(() => ({}))) as { error?: string };
+        const payload = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
         throw new Error(payload.error ?? "Could not start quiz");
       }
-      const payload = (await res.json()) as { attemptId: string; attemptNumber: number };
+      const payload = (await res.json()) as {
+        attemptId: string;
+        attemptNumber: number;
+      };
       setAttemptId(payload.attemptId);
       startedAtRef.current = Date.now();
       setTimeLeft(quiz.time_limit_sec ?? 0);
@@ -247,6 +272,16 @@ export function QuizEngine({
       if (!attemptId || phase !== "active") return;
       setPhase("submitting");
       if (timerRef.current) clearInterval(timerRef.current);
+
+      try {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch((err) => {
+            console.warn("Error exiting fullscreen:", err);
+          });
+        }
+      } catch (err) {
+        console.warn("Fullscreen exit error:", err);
+      }
 
       const body = buildSubmitBody();
       const spent = startedAtRef.current
@@ -266,7 +301,9 @@ export function QuizEngine({
           }),
         });
         if (!res.ok) {
-          const payload = (await res.json().catch(() => ({}))) as { error?: string };
+          const payload = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
           throw new Error(payload.error ?? "Failed to submit quiz");
         }
         const payload = (await res.json()) as SubmitPayload;
@@ -295,7 +332,8 @@ export function QuizEngine({
   if (phase === "intro") {
     const maxAttempts = quiz.max_attempts ?? null;
     const attempted = attempts.length;
-    const remaining = maxAttempts != null ? Math.max(0, maxAttempts - attempted) : null;
+    const remaining =
+      maxAttempts != null ? Math.max(0, maxAttempts - attempted) : null;
 
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -315,11 +353,11 @@ export function QuizEngine({
             </div>
             <CardTitle className="text-2xl">{quiz.title}</CardTitle>
             {quiz.description ? (
-              <p className="text-sm text-muted-foreground">{quiz.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {quiz.description}
+              </p>
             ) : null}
-            <p className="text-sm text-muted-foreground">
-              {quiz.course.title}
-            </p>
+            <p className="text-sm text-muted-foreground">{quiz.course.title}</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {quiz.instructions ? (
@@ -336,7 +374,9 @@ export function QuizEngine({
                 {
                   label: "Attempts",
                   value:
-                    remaining == null ? `${attempted}` : `${attempted} (${remaining} left)`,
+                    remaining == null
+                      ? `${attempted}`
+                      : `${attempted} (${remaining} left)`,
                 },
               ].map((s) => (
                 <Card key={s.label}>
@@ -344,7 +384,9 @@ export function QuizEngine({
                     <div className="font-mono text-xl font-semibold tabular-nums">
                       {s.value}
                     </div>
-                    <div className="text-xs text-muted-foreground">{s.label}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {s.label}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -363,15 +405,26 @@ export function QuizEngine({
             ) : null}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <Button onClick={handleStart} disabled={isStarting || (maxAttempts != null && remaining === 0)} size="lg">
-                {isStarting ? <IconLoader2 data-icon="inline-start" className="animate-spin" /> : null}
-                Start Quiz
-              </Button>
               <Button asChild variant="outline" size="lg">
-                <Link href={`/learn/${quiz.course.slug}`}>
+                <Link href={`/dashboard/tests`}>
                   <IconArrowLeft data-icon="inline-start" />
-                  Back to course
+                  Back to test
                 </Link>
+              </Button>
+              <Button
+                onClick={handleStart}
+                disabled={
+                  isStarting || (maxAttempts != null && remaining === 0)
+                }
+                size="lg"
+              >
+                {isStarting ? (
+                  <IconLoader2
+                    data-icon="inline-start"
+                    className="animate-spin"
+                  />
+                ) : null}
+                Start Quiz
               </Button>
             </div>
           </CardContent>
@@ -384,11 +437,18 @@ export function QuizEngine({
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
               {attempts.slice(0, 5).map((a) => (
-                <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
+                >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">Attempt #{a.attempt_number}</p>
+                    <p className="text-sm font-medium">
+                      Attempt #{a.attempt_number}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {a.submitted_at ? new Date(a.submitted_at).toLocaleString() : "In progress"}
+                      {a.submitted_at
+                        ? new Date(a.submitted_at).toLocaleString()
+                        : "In progress"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -420,28 +480,60 @@ export function QuizEngine({
 
   // RESULT
   if (phase === "result" && result) {
-    const pct = result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0;
+    const pct =
+      result.totalMarks > 0
+        ? Math.round((result.score / result.totalMarks) * 100)
+        : 0;
     const d = donutPercent(pct);
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <Card>
           <CardContent className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-5">
-              <div className={cn("rounded-2xl border p-4", result.passed ? "border-emerald-500/30 bg-emerald-500/5" : "border-destructive/30 bg-destructive/5")}>
-                <svg width="110" height="110" viewBox="0 0 110 110" role="img" aria-label="Score donut">
-                  <circle cx="55" cy="55" r="42" fill="none" stroke="color-mix(in oklab, var(--border), transparent 30%)" strokeWidth="10" />
+              <div
+                className={cn(
+                  "rounded-2xl border p-4",
+                  result.passed
+                    ? "border-emerald-500/30 bg-emerald-500/5"
+                    : "border-destructive/30 bg-destructive/5",
+                )}
+              >
+                <svg
+                  width="110"
+                  height="110"
+                  viewBox="0 0 110 110"
+                  role="img"
+                  aria-label="Score donut"
+                >
                   <circle
                     cx="55"
                     cy="55"
                     r="42"
                     fill="none"
-                    stroke={result.passed ? "color-mix(in oklab, var(--chart-1), white 10%)" : "color-mix(in oklab, var(--destructive), white 5%)"}
+                    stroke="color-mix(in oklab, var(--border), transparent 30%)"
+                    strokeWidth="10"
+                  />
+                  <circle
+                    cx="55"
+                    cy="55"
+                    r="42"
+                    fill="none"
+                    stroke={
+                      result.passed
+                        ? "color-mix(in oklab, var(--chart-1), white 10%)"
+                        : "color-mix(in oklab, var(--destructive), white 5%)"
+                    }
                     strokeWidth="10"
                     strokeLinecap="round"
                     strokeDasharray={d.strokeDasharray}
                     transform="rotate(-90 55 55)"
                   />
-                  <text x="55" y="61" textAnchor="middle" className="fill-foreground font-mono text-lg">
+                  <text
+                    x="55"
+                    y="61"
+                    textAnchor="middle"
+                    className="fill-foreground font-mono text-lg"
+                  >
                     {d.label}
                   </text>
                 </svg>
@@ -449,7 +541,9 @@ export function QuizEngine({
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={result.passed ? "default" : "destructive"}>
-                    {result.passed ? <IconTrophy data-icon="inline-start" /> : null}
+                    {result.passed ? (
+                      <IconTrophy data-icon="inline-start" />
+                    ) : null}
                     {result.passed ? "PASSED" : "FAILED"}
                   </Badge>
                   <Badge variant="outline" className="font-mono">
@@ -457,7 +551,8 @@ export function QuizEngine({
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Passing score: {quiz.passing_marks} · Time taken: {formatTimer(result.timeSpentSec)}
+                  Passing score: {quiz.passing_marks} · Time taken:{" "}
+                  {formatTimer(result.timeSpentSec)}
                 </p>
               </div>
             </div>
@@ -465,7 +560,7 @@ export function QuizEngine({
               <Button asChild variant="outline">
                 <Link href={`/learn/${quiz.course.slug}`}>
                   <IconArrowLeft data-icon="inline-start" />
-                  Back to course
+                  Back to test
                 </Link>
               </Button>
               <Button asChild>
@@ -485,15 +580,31 @@ export function QuizEngine({
                 <div key={r.question_id} className="rounded-xl border p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Question {idx + 1}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Question {idx + 1}
+                      </p>
                       <p className="mt-1 font-medium">{r.question_text}</p>
                     </div>
-                    <Badge variant={r.is_correct ? "default" : r.is_correct === false ? "destructive" : "secondary"}>
-                      {r.is_correct === true ? "Correct" : r.is_correct === false ? "Wrong" : "Pending"}
+                    <Badge
+                      variant={
+                        r.is_correct
+                          ? "default"
+                          : r.is_correct === false
+                            ? "destructive"
+                            : "secondary"
+                      }
+                    >
+                      {r.is_correct === true
+                        ? "Correct"
+                        : r.is_correct === false
+                          ? "Wrong"
+                          : "Pending"}
                     </Badge>
                   </div>
                   {r.explanation ? (
-                    <p className="mt-3 text-sm text-muted-foreground">{r.explanation}</p>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {r.explanation}
+                    </p>
                   ) : null}
                 </div>
               ))}
@@ -523,16 +634,19 @@ export function QuizEngine({
         <div className="flex items-center gap-2">
           {quiz.time_limit_sec && quiz.time_limit_sec > 0 ? (
             <Badge
-              variant={timeLeft <= 60 ? "destructive" : timeLeft <= 300 ? "secondary" : "outline"}
+              variant={
+                timeLeft <= 60
+                  ? "destructive"
+                  : timeLeft <= 300
+                    ? "secondary"
+                    : "outline"
+              }
               className="font-mono"
             >
               <IconClock data-icon="inline-start" />
               {formatTimer(timeLeft)}
             </Badge>
           ) : null}
-          <Button onClick={() => handleSubmit("submitted")} disabled={!attemptId}>
-            Submit
-          </Button>
         </div>
       </div>
 
@@ -551,18 +665,25 @@ export function QuizEngine({
               Answered: {answeredCount}/{totalQuestions}
             </span>
           </div>
-          <CardTitle className="text-lg leading-snug">{q.question_text}</CardTitle>
-          {q.type === "assertion_reasoning" && (q.assertion_text || q.reason_text) ? (
+          <CardTitle className="text-lg leading-snug">
+            {q.question_text}
+          </CardTitle>
+          {q.type === "assertion_reasoning" &&
+          (q.assertion_text || q.reason_text) ? (
             <div className="mt-2 grid gap-2 text-sm text-muted-foreground">
               {q.assertion_text ? (
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <span className="font-medium text-foreground">Assertion (A): </span>
+                  <span className="font-medium text-foreground">
+                    Assertion (A):{" "}
+                  </span>
                   {q.assertion_text}
                 </div>
               ) : null}
               {q.reason_text ? (
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <span className="font-medium text-foreground">Reason (R): </span>
+                  <span className="font-medium text-foreground">
+                    Reason (R):{" "}
+                  </span>
                   {q.reason_text}
                 </div>
               ) : null}
@@ -575,8 +696,11 @@ export function QuizEngine({
               case "mcq":
               case "true_false":
               case "assertion_reasoning": {
-                const options = (q.options ?? []).slice().sort((x, y) => x.position - y.position);
-                const selected = a && "selected_option_id" in a ? a.selected_option_id : null;
+                const options = (q.options ?? [])
+                  .slice()
+                  .sort((x, y) => x.position - y.position);
+                const selected =
+                  a && "selected_option_id" in a ? a.selected_option_id : null;
                 return (
                   <div className="flex flex-col gap-2">
                     {options.map((opt, idx) => {
@@ -588,13 +712,16 @@ export function QuizEngine({
                           type="button"
                           onClick={() =>
                             setAnswer(q.id, {
-                              kind: q.type === "true_false" ? "true_false" : q.type,
+                              kind:
+                                q.type === "true_false" ? "true_false" : q.type,
                               selected_option_id: opt.id,
                             } as AnswerDraft)
                           }
                           className={cn(
                             "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
-                            isSelected ? "border-primary bg-primary/5" : "hover:bg-accent",
+                            isSelected
+                              ? "border-primary bg-primary/5"
+                              : "hover:bg-accent",
                           )}
                         >
                           <div
@@ -606,7 +733,11 @@ export function QuizEngine({
                             )}
                             aria-hidden
                           >
-                            {isSelected ? <IconCheck className="size-3" /> : letter}
+                            {isSelected ? (
+                              <IconCheck className="size-3" />
+                            ) : (
+                              letter
+                            )}
                           </div>
                           <div className="text-sm">{opt.option_text}</div>
                         </button>
@@ -616,11 +747,16 @@ export function QuizEngine({
                 );
               }
               case "multiple_select": {
-                const options = (q.options ?? []).slice().sort((x, y) => x.position - y.position);
-                const selected = a?.kind === "multiple_select" ? a.selected_option_ids : [];
+                const options = (q.options ?? [])
+                  .slice()
+                  .sort((x, y) => x.position - y.position);
+                const selected =
+                  a?.kind === "multiple_select" ? a.selected_option_ids : [];
                 return (
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs text-muted-foreground">Select all that apply.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Select all that apply.
+                    </p>
                     {options.map((opt) => {
                       const isChecked = selected.includes(opt.id);
                       return (
@@ -631,14 +767,22 @@ export function QuizEngine({
                             const next = isChecked
                               ? selected.filter((id) => id !== opt.id)
                               : [...selected, opt.id];
-                            setAnswer(q.id, { kind: "multiple_select", selected_option_ids: next });
+                            setAnswer(q.id, {
+                              kind: "multiple_select",
+                              selected_option_ids: next,
+                            });
                           }}
                           className={cn(
                             "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
-                            isChecked ? "border-primary bg-primary/5" : "hover:bg-accent",
+                            isChecked
+                              ? "border-primary bg-primary/5"
+                              : "hover:bg-accent",
                           )}
                         >
-                          <Checkbox checked={isChecked} aria-label="Select option" />
+                          <Checkbox
+                            checked={isChecked}
+                            aria-label="Select option"
+                          />
                           <div className="text-sm">{opt.option_text}</div>
                         </button>
                       );
@@ -653,7 +797,12 @@ export function QuizEngine({
                     <Input
                       value={value}
                       placeholder={q.blank_placeholder ?? "Type your answer"}
-                      onChange={(e) => setAnswer(q.id, { kind: "fill_blank", blank_answer: e.target.value })}
+                      onChange={(e) =>
+                        setAnswer(q.id, {
+                          kind: "fill_blank",
+                          blank_answer: e.target.value,
+                        })
+                      }
                     />
                     <p className="text-xs text-muted-foreground">
                       Answer exactly as expected (case-insensitive).
@@ -662,7 +811,8 @@ export function QuizEngine({
                 );
               }
               case "numerical": {
-                const value = a?.kind === "numerical" ? a.numerical_answer : null;
+                const value =
+                  a?.kind === "numerical" ? a.numerical_answer : null;
                 return (
                   <div className="flex flex-col gap-2">
                     <Input
@@ -671,7 +821,10 @@ export function QuizEngine({
                       value={value ?? ""}
                       onChange={(e) => {
                         const v = e.target.value;
-                        setAnswer(q.id, { kind: "numerical", numerical_answer: v === "" ? null : Number(v) });
+                        setAnswer(q.id, {
+                          kind: "numerical",
+                          numerical_answer: v === "" ? null : Number(v),
+                        });
                       }}
                       placeholder="Enter a number"
                     />
@@ -685,18 +838,27 @@ export function QuizEngine({
               }
               case "subjective": {
                 const value = a?.kind === "subjective" ? a.text_answer : "";
-                const words = value.trim() ? value.trim().split(/\s+/).length : 0;
+                const words = value.trim()
+                  ? value.trim().split(/\s+/).length
+                  : 0;
                 return (
                   <div className="flex flex-col gap-2">
                     <Textarea
                       value={value}
-                      onChange={(e) => setAnswer(q.id, { kind: "subjective", text_answer: e.target.value })}
+                      onChange={(e) =>
+                        setAnswer(q.id, {
+                          kind: "subjective",
+                          text_answer: e.target.value,
+                        })
+                      }
                       rows={8}
                       placeholder="Write your answer…"
                     />
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>Answer will be reviewed manually.</span>
-                      <span className="font-mono tabular-nums">{words} words</span>
+                      <span className="font-mono tabular-nums">
+                        {words} words
+                      </span>
                     </div>
                   </div>
                 );
@@ -706,16 +868,17 @@ export function QuizEngine({
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <Button
               variant="outline"
               disabled={currentIndex === 0}
               onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+              className="w-full sm:w-auto"
             >
               <IconArrowLeft data-icon="inline-start" />
               Prev
             </Button>
-            <div className="flex flex-wrap justify-center gap-1">
+            <div className="flex flex-wrap justify-center gap-1 order-3 sm:order-none">
               {orderedQuestions.map((qq, idx) => {
                 const has = answers[qq.id] != null;
                 const isCurrent = idx === currentIndex;
@@ -739,22 +902,37 @@ export function QuizEngine({
                 );
               })}
             </div>
-            <Button
-              variant="outline"
-              disabled={currentIndex === totalQuestions - 1}
-              onClick={() => setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1))}
-            >
-              Next
-              <IconArrowRight data-icon="inline-end" />
-            </Button>
+            {currentIndex === totalQuestions - 1 ? (
+              <Button
+                onClick={() => handleSubmit("submitted")}
+                disabled={!attemptId}
+                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+              >
+                Submit
+                <IconCheck className="ml-2 size-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1))
+                }
+                className="w-full sm:w-auto"
+              >
+                Next
+                <IconArrowRight className="ml-2 size-4" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
 
       <p className="text-xs text-muted-foreground">
-        Time spent: <span className="font-mono tabular-nums">{formatTimer(timeSpentSec)}</span>
+        Time spent:{" "}
+        <span className="font-mono tabular-nums">
+          {formatTimer(timeSpentSec)}
+        </span>
       </p>
     </div>
   );
 }
-

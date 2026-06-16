@@ -362,6 +362,7 @@ export default function EnrollmentsPage() {
 
   // Multi-select Form State
   const [userSearch, setUserSearch] = React.useState("");
+  const [courseSearch, setCourseSearch] = React.useState("");
   const [selectedUserIds, setSelectedUserIds] = React.useState<Set<string>>(
     new Set(),
   );
@@ -396,6 +397,7 @@ export default function EnrollmentsPage() {
 
   const resetForm = () => {
     setUserSearch("");
+    setCourseSearch("");
     setSelectedUserIds(new Set());
     setSelectedCourseIds(new Set());
     setExpiryType("never");
@@ -552,7 +554,7 @@ export default function EnrollmentsPage() {
                     )}
                   </div>
 
-                  <div className="flex min-h-[320px] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+                  <div className="flex min-h-[260px] md:min-h-[320px] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/20">
                     <Command className="flex h-full flex-col bg-transparent" shouldFilter={false}>
                       <CommandInput
                         placeholder="Search users by name or email..."
@@ -702,50 +704,120 @@ export default function EnrollmentsPage() {
                     )}
                   </div>
 
-                  <div className="flex min-h-[320px] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/20">
-                    <ScrollArea className="h-[320px] lg:h-full lg:min-h-[320px]">
-                      <div className="space-y-1 p-2">
+                  <div className="flex min-h-[260px] md:min-h-[320px] flex-1 flex-col overflow-hidden rounded-xl border border-border/70 bg-muted/20">
+                    <Command className="flex h-full flex-col bg-transparent" shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search courses by title or slug..."
+                        className="h-11 border-0 border-b border-border/60 bg-background/80 px-4"
+                        value={courseSearch}
+                        onValueChange={setCourseSearch}
+                      />
+                      <CommandList className="max-h-none flex-1 overflow-y-auto">
                         {loadingCourses ? (
-                          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+                          <div className="px-6 py-12 text-center text-sm text-muted-foreground">
                             Loading courses...
                           </div>
-                        ) : courses.length === 0 ? (
-                          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
-                            No courses found.
-                          </div>
                         ) : (
-                          courses.map((course) => {
-                            const isSelected = selectedCourseIds.has(course.id);
-                            return (
-                              <label
-                                key={course.id}
-                                className={`flex cursor-pointer items-start gap-3 rounded-lg border border-transparent px-3 py-3 transition-colors hover:border-border/50 hover:bg-accent/60 ${isSelected ? "border-primary/20 bg-accent/50" : ""}`}
-                              >
-                                <Checkbox
-                                  checked={isSelected}
-                                  className="mt-0.5"
-                                  onCheckedChange={(checked) => {
-                                    const next = new Set(selectedCourseIds);
-                                    if (checked) next.add(course.id);
-                                    else next.delete(course.id);
-                                    setSelectedCourseIds(next);
-                                  }}
-                                />
-                                <div className="min-w-0 flex-1 space-y-0.5">
-                                  <span className="block text-sm font-medium leading-snug">
-                                    {course.title}
-                                  </span>
-                                  <span className="block truncate font-mono text-xs text-muted-foreground">
-                                    {course.slug}
-                                  </span>
-                                </div>
-                              </label>
-                            );
-                          })
+                          <CommandGroup className="p-2">
+                            {courses
+                              .filter(
+                                (c) =>
+                                  !courseSearch.trim() ||
+                                  c.title
+                                    .toLowerCase()
+                                    .includes(courseSearch.toLowerCase()) ||
+                                  c.slug
+                                    .toLowerCase()
+                                    .includes(courseSearch.toLowerCase()),
+                              )
+                              .map((course) => {
+                                const isSelected = selectedCourseIds.has(course.id);
+                                return (
+                                  <CommandItem
+                                    key={course.id}
+                                    value={`${course.title} ${course.slug}`}
+                                    onSelect={() => {
+                                      const next = new Set(selectedCourseIds);
+                                      if (isSelected) next.delete(course.id);
+                                      else next.add(course.id);
+                                      setSelectedCourseIds(next);
+                                    }}
+                                    className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 aria-selected:bg-accent"
+                                  >
+                                    <div
+                                      className={`flex size-5 shrink-0 items-center justify-center rounded border ${isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background"}`}
+                                    >
+                                      {isSelected && (
+                                        <IconCheck className="size-3.5" />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-sm font-medium leading-tight">
+                                        {course.title}
+                                      </p>
+                                      <p className="truncate text-xs text-muted-foreground font-mono mt-0.5">
+                                        {course.slug}
+                                      </p>
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            {courses.filter(
+                              (c) =>
+                                !courseSearch.trim() ||
+                                c.title
+                                  .toLowerCase()
+                                  .includes(courseSearch.toLowerCase()) ||
+                                c.slug
+                                  .toLowerCase()
+                                  .includes(courseSearch.toLowerCase()),
+                            ).length === 0 && (
+                              <div className="px-6 py-10 text-center text-sm text-muted-foreground">
+                                No courses found matching &ldquo;{courseSearch}&rdquo;
+                              </div>
+                            )}
+                          </CommandGroup>
                         )}
-                      </div>
-                    </ScrollArea>
+                      </CommandList>
+                    </Command>
                   </div>
+
+                  {selectedCourseIds.size > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Selected courses
+                      </p>
+                      <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-lg border border-dashed border-border/70 bg-muted/10 p-3">
+                        {Array.from(selectedCourseIds).map((id) => {
+                          const c = courses.find((x) => x.id === id);
+                          if (!c) return null;
+                          return (
+                            <Badge
+                              key={c.id}
+                              variant="secondary"
+                              className="gap-1.5 rounded-full py-1 pl-2.5 pr-1.5 bg-violet-500/10 text-violet-700 dark:text-violet-300 hover:bg-violet-500/20"
+                            >
+                              <span className="max-w-[140px] truncate">
+                                {c.title}
+                              </span>
+                              <button
+                                type="button"
+                                aria-label={`Remove ${c.title}`}
+                                className="rounded-full p-0.5 hover:bg-muted"
+                                onClick={() => {
+                                  const next = new Set(selectedCourseIds);
+                                  next.delete(c.id);
+                                  setSelectedCourseIds(next);
+                                }}
+                              >
+                                <IconX className="size-3" />
+                              </button>
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </section>
               </div>
 

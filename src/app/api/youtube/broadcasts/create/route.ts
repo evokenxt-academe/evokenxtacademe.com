@@ -6,23 +6,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createLiveBroadcast } from '@/lib/youtube/api';
+import { requireAdmin } from '@/features/admin/lib/admin-route';
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const auth = await requireAdmin();
+  if ('error' in auth) return auth.error;
+
+  const supabase = auth.supabase;
+
   try {
     const { streamId } = await req.json();
 
     if (!streamId) {
-      return NextResponse.json(
-        { error: 'streamId required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'streamId required' }, { status: 400 });
     }
 
-    // Get stream details
     const { data: stream, error: streamError } = await supabase
       .from('live_streams')
       .select('*')
@@ -30,54 +28,56 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (streamError || !stream) {
+      return NextResponse.json({ error: 'Stream not found' }, { status: 404 });
+    }
+
+    if (stream.yt_broadcast_id) {
+      return NextResponse.json({
+        success: true,
+        broadcastId: stream.yt_broadcast_id,
+        streamId: stream.yt_stream_id,
+        videoId: stream.yt_video_id,
+        rtmpUrl: stream.yt_rtmp_url,
+        streamKey: stream.yt_stream_key,
+        alreadyExists: true,
+      });
+    }
+
+    if (!stream.scheduled_at) {
       return NextResponse.json(
-        { error: 'Stream not found' },
-        { status: 404 }
+        { error: 'Stream must have a scheduled_at time before creating a YouTube broadcast' },
+        { status: 400 },
       );
     }
 
-    // Create YouTube broadcast + stream
-    const { broadcastId, streamId: youtubeStreamId, rtmpUrl, streamKey } = await createLiveBroadcast(
+    const {
+      broadcastId,
+      streamId: youtubeStreamId,
+      rtmpUrl,
+      streamKey,
+      videoId,
+      liveChatId,
+    } = await createLiveBroadcast(
       stream.title,
       stream.description || '',
       stream.scheduled_at,
       {
-        privacy: 'unlisted',
-        enableDvr: true,
-        enableChat: true,
-        resolution: '1080p',
-      }
+        privacy: stream.visibility || 'unlisted',
+        enableDvr: stream.enable_dvr !== false,
+        enableChat: stream.enable_chat !== false,
+        resolution: stream.max_quality || '1080p',
+      },
     );
 
-    // Get broadcast details to extract video ID and live chat ID
-    const accessTokenRes = await fetch('/api/youtube/token/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer internal' },
-    });
-
-    const { access_token } = await accessTokenRes.json();
-
-    const broadcastRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/liveBroadcasts?id=${broadcastId}&part=snippet`,
-      {
-        headers: { Authorization: `Bearer ${access_token}` },
-      }
-    );
-
-    const broadcastData = await broadcastRes.json();
-    const videoId = broadcastData.items?.[0]?.id;
-    const liveChatId = broadcastData.items?.[0]?.snippet?.liveChatId;
-
-    // Update live_streams with YouTube details
     const { error: updateError } = await supabase
       .from('live_streams')
       .update({
         yt_broadcast_id: broadcastId,
         yt_stream_id: youtubeStreamId,
-        yt_video_id: videoId,
+        yt_video_id: videoId ?? broadcastId,
         yt_rtmp_url: rtmpUrl,
         yt_stream_key: streamKey,
-        yt_live_chat_id: liveChatId,
+        yt_live_chat_id: liveChatId ?? null,
       })
       .eq('id', streamId);
 
@@ -89,15 +89,14 @@ export async function POST(req: NextRequest) {
       success: true,
       broadcastId,
       streamId: youtubeStreamId,
-      videoId,
+      videoId: videoId ?? broadcastId,
       rtmpUrl,
       streamKey,
+      liveChatId,
     });
   } catch (error) {
     console.error('Create broadcast error:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create broadcast' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Failed to create broadcast';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

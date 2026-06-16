@@ -245,7 +245,7 @@ export function StudyMaterialsSection({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 shrink-0 opacity-0 group-hover:opacity-100 text-destructive hover:bg-destructive/10"
+                  className="size-6 shrink-0 opacity-100 text-destructive hover:bg-destructive/10 md:opacity-0 md:group-hover:opacity-100"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (
@@ -407,7 +407,7 @@ export function StudyMaterialsSection({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label className="text-sm font-medium">File Type</Label>
                 <Select

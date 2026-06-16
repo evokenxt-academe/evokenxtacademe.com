@@ -12,199 +12,175 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   MoreVertical,
-  Play,
   BarChart3,
-  Copy,
   Trash2,
   Edit,
+  Radio,
+  Square,
+  Settings2,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
-
-interface Stream {
-  id: string;
-  title: string;
-  program?: string;
-  course?: string;
-  scheduledAt?: string;
-  status: "scheduled" | "live" | "ended" | "cancelled";
-  currentViewers?: number;
-  peakViewers?: number;
-  durationSec?: number;
-  totalChatMsgs?: number;
-}
+import { formatStreamDuration, getStatusBadgeClass } from "@/lib/live-stream/formatters";
+import {
+  streamAnalyticsPath,
+  streamControlPath,
+} from "@/lib/live-stream/admin-paths";
+import type { StreamListItem, StreamStatus } from "@/types/live-stream";
+import { cn } from "@/lib/utils";
 
 interface StreamTableProps {
-  streams: Stream[];
+  courseId: string;
+  streams: StreamListItem[];
   onEdit?: (id: string) => void;
-  onDuplicate?: (id: string) => void;
-  onCancel?: (id: string) => void;
+  onGoLive?: (id: string) => void;
+  onEndStream?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-const STATUS_VARIANTS: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  scheduled: "outline",
-  live: "default",
-  ended: "secondary",
-  cancelled: "destructive",
-};
-
 export function StreamTable({
+  courseId,
   streams,
   onEdit,
-  onDuplicate,
-  onCancel,
+  onGoLive,
+  onEndStream,
   onDelete,
 }: StreamTableProps) {
-  const formatDuration = (seconds?: number) => {
-    if (!seconds) return "-";
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  const thumbnailUrl = (stream: StreamListItem) => {
+    if (stream.ytThumbnailUrl) return stream.ytThumbnailUrl;
+    if (stream.ytVideoId) return `https://img.youtube.com/vi/${stream.ytVideoId}/mqdefault.jpg`;
+    return null;
   };
 
   return (
-    <div className="border rounded-lg">
+    <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead>#</TableHead>
+            <TableHead className="w-20">Preview</TableHead>
             <TableHead>Title</TableHead>
-            <TableHead>Program</TableHead>
-            <TableHead>Course</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Scheduled</TableHead>
-            <TableHead>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-600 rounded-full" />
-                Status
-              </div>
-            </TableHead>
-            <TableHead>Viewers</TableHead>
+            <TableHead>Peak</TableHead>
             <TableHead>Duration</TableHead>
-            <TableHead>Chat</TableHead>
             <TableHead className="w-12">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {streams.map((stream, idx) => (
-            <TableRow key={stream.id} className="hover:bg-muted/50">
-              <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
-              <TableCell>
-                <Link
-                  href={`/admin/live-streams/${stream.id}`}
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  {stream.title}
-                </Link>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {stream.program || "-"}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {stream.course || "-"}
-              </TableCell>
-              <TableCell className="text-sm">
-                {stream.scheduledAt
-                  ? format(new Date(stream.scheduledAt), "MMM d, HH:mm")
-                  : "-"}
-              </TableCell>
-              <TableCell>
-                <Badge variant={STATUS_VARIANTS[stream.status]}>
-                  {stream.status === "live" && (
-                    <div className="w-1.5 h-1.5 bg-current rounded-full mr-1.5" />
-                  )}
-                  {stream.status.toUpperCase()}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm">
-                {stream.status === "live" || stream.status === "ended"
-                  ? `${stream.currentViewers?.toLocaleString() || stream.peakViewers?.toLocaleString() || "-"}`
-                  : "-"}
-              </TableCell>
-              <TableCell className="text-sm">
-                {formatDuration(stream.durationSec)}
-              </TableCell>
-              <TableCell className="text-sm">
-                {stream.totalChatMsgs?.toLocaleString() || "-"}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href={`/admin/live-streams/${stream.id}`}
-                        className="flex items-center gap-2"
-                      >
-                        <Play className="w-4 h-4" />
-                        Control Center
-                      </Link>
-                    </DropdownMenuItem>
-                    {stream.status === "ended" && (
+          {streams.map((stream) => {
+            const thumb = thumbnailUrl(stream);
+            return (
+              <TableRow key={stream.id} className="hover:bg-muted/30">
+                <TableCell>
+                  <div className="relative aspect-video w-16 overflow-hidden rounded bg-muted">
+                    {thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={thumb} alt="" className="size-full object-cover" />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-xs text-muted-foreground">
+                        —
+                      </div>
+                    )}
+                    {stream.status === "live" && (
+                      <span className="absolute left-1 top-1 size-2 animate-pulse rounded-full bg-destructive" />
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Link
+                    href={streamControlPath(courseId, stream.id)}
+                    className="font-medium hover:underline"
+                  >
+                    {stream.title}
+                  </Link>
+                  <div className="mt-0.5 flex flex-wrap gap-1">
+                    <Badge variant="secondary" className="text-xs">
+                      {stream.programBody}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {stream.subjectCode}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{stream.courseTitle}</p>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={cn("capitalize", getStatusBadgeClass(stream.status))}
+                  >
+                    {stream.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-sm">
+                  {stream.scheduledAt
+                    ? format(new Date(stream.scheduledAt), "MMM d, HH:mm")
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {stream.peakViewers > 0 ? stream.peakViewers.toLocaleString() : "—"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {formatStreamDuration(stream.durationSec)}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <MoreVertical className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
                       <DropdownMenuItem asChild>
-                        <Link
-                          href={`/admin/live-streams/${stream.id}/analytics`}
-                          className="flex items-center gap-2"
-                        >
-                          <BarChart3 className="w-4 h-4" />
+                        <Link href={streamControlPath(courseId, stream.id)}>
+                          <Settings2 className="mr-2 size-4" />
+                          Control Room
+                        </Link>
+                      </DropdownMenuItem>
+                      {onEdit && (
+                        <DropdownMenuItem onClick={() => onEdit(stream.id)}>
+                          <Edit className="mr-2 size-4" />
+                          Edit
+                        </DropdownMenuItem>
+                      )}
+                      {stream.status === "scheduled" && onGoLive && (
+                        <DropdownMenuItem onClick={() => onGoLive(stream.id)}>
+                          <Radio className="mr-2 size-4" />
+                          Go Live
+                        </DropdownMenuItem>
+                      )}
+                      {stream.status === "live" && onEndStream && (
+                        <DropdownMenuItem onClick={() => onEndStream(stream.id)}>
+                          <Square className="mr-2 size-4" />
+                          End Stream
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem asChild>
+                        <Link href={streamAnalyticsPath(courseId, stream.id)}>
+                          <BarChart3 className="mr-2 size-4" />
                           Analytics
                         </Link>
                       </DropdownMenuItem>
-                    )}
-                    {onEdit && (
-                      <DropdownMenuItem
-                        onClick={() => onEdit(stream.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Edit
-                      </DropdownMenuItem>
-                    )}
-                    {onDuplicate && (
-                      <DropdownMenuItem
-                        onClick={() => onDuplicate(stream.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Duplicate
-                      </DropdownMenuItem>
-                    )}
-                    {(stream.status === "scheduled" ||
-                      stream.status === "live") &&
-                      onCancel && (
+                      <DropdownMenuSeparator />
+                      {onDelete && (
                         <DropdownMenuItem
-                          onClick={() => onCancel(stream.id)}
-                          className="flex items-center gap-2 text-destructive"
+                          onClick={() => onDelete(stream.id)}
+                          className="text-destructive focus:text-destructive"
                         >
-                          <Trash2 className="w-4 h-4" />
-                          Cancel
+                          <Trash2 className="mr-2 size-4" />
+                          Delete
                         </DropdownMenuItem>
                       )}
-                    {onDelete && (
-                      <DropdownMenuItem
-                        onClick={() => onDelete(stream.id)}
-                        className="flex items-center gap-2 text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

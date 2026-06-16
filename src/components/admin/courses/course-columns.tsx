@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,12 +26,14 @@ import {
   IconTrash,
   IconStar,
   IconStarFilled,
+  IconVideo,
 } from "@tabler/icons-react";
 import type { CourseListItem } from "@/lib/supabase/queries/courses-admin";
 
 interface ColumnActions {
   onEdit: (id: string) => void;
   onContent: (id: string) => void;
+  onLiveStreams: (id: string) => void;
   onPricing: (course: CourseListItem) => void;
   onDuplicate: (id: string) => void;
   onStatusChange: (id: string, status: "draft" | "published" | "archived") => void;
@@ -93,7 +96,12 @@ export function getCourseColumns(actions: ColumnActions): ColumnDef<CourseListIt
       header: "Title",
       cell: ({ row }) => (
         <div className="flex flex-col gap-0.5">
-          <span className="font-medium leading-tight">{row.original.title}</span>
+          <Link
+            href={`/admin/courses/${row.original.id}/edit`}
+            className="font-medium leading-tight hover:underline"
+          >
+            {row.original.title}
+          </Link>
           <span className="font-mono text-xs text-muted-foreground">
             /{row.original.slug}
           </span>
@@ -211,6 +219,10 @@ export function getCourseColumns(actions: ColumnActions): ColumnDef<CourseListIt
                 <DropdownMenuItem onClick={() => actions.onContent(course.id)}>
                   <IconList data-icon="inline-start" />
                   Manage Content
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => actions.onLiveStreams(course.id)}>
+                  <IconVideo data-icon="inline-start" />
+                  Live Streams
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => actions.onPricing(course)}>
                   <IconCurrencyDollar data-icon="inline-start" />

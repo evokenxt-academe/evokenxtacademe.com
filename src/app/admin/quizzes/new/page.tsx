@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,8 +65,18 @@ const QUIZ_TYPE_INFO = [
 ];
 
 export default function NewQuizPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>}>
+      <NewQuizPageContent />
+    </Suspense>
+  );
+}
+
+function NewQuizPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
+  const [prefillDone, setPrefillDone] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Step 1
@@ -95,6 +106,61 @@ export default function NewQuizPage() {
   const { data: subjects } = useSubjects(levelId || undefined);
   const { data: courses } = useCoursesBySubject(subjectId || undefined);
   const { data: chapters } = useChapters(courseId || undefined);
+
+  useEffect(() => {
+    if (prefillDone) return;
+
+    const presetCourseId = searchParams.get("courseId");
+    const presetChapterId = searchParams.get("chapterId");
+
+    if (!presetCourseId) {
+      setPrefillDone(true);
+      return;
+    }
+
+    async function prefillFromCourse() {
+      try {
+        const supabase = createClient();
+        const { data: courseRow } = await supabase
+          .from("courses")
+          .select(
+            `
+            id,
+            subject:subjects!inner(
+              id,
+              program_level:program_levels!inner(
+                id,
+                program:programs!inner(id)
+              )
+            )
+          `,
+          )
+          .eq("id", presetCourseId)
+          .maybeSingle();
+
+        if (courseRow?.subject) {
+          const subject = courseRow.subject as unknown as {
+            id: string;
+            program_level: { id: string; program: { id: string } };
+          };
+          setProgramId(subject.program_level.program.id);
+          setLevelId(subject.program_level.id);
+          setSubjectId(subject.id);
+          setCourseId(presetCourseId!);
+          if (presetChapterId) {
+            setChapterId(presetChapterId);
+          }
+        }
+      } catch {
+        setCourseId(presetCourseId!);
+        if (presetChapterId) setChapterId(presetChapterId);
+      } finally {
+        setPrefillDone(true);
+      }
+    }
+
+    void prefillFromCourse();
+  }, [prefillDone, searchParams]);
 
   const handleCreate = async () => {
     if (!title || !courseId) {
@@ -277,18 +343,18 @@ export default function NewQuizPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Chapter (optional)</Label>
+                <Label>Chapter</Label>
                 <Select
                   value={chapterId}
                   onValueChange={setChapterId}
                   disabled={!courseId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Course-level (no chapter)" />
+                    <SelectValue placeholder="All Chapters (course-wide test)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
-                      Course-level (no chapter)
+                      All Chapters (course-wide test)
                     </SelectItem>
                     {(chapters ?? []).map((c) => (
                       <SelectItem key={c.id} value={c.id}>
@@ -297,6 +363,10 @@ export default function NewQuizPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose a specific chapter for chapter-wise tests, or All
+                  Chapters for a course-wide exam covering the full course.
+                </p>
               </div>
             </div>
 
@@ -496,6 +566,15 @@ export default function NewQuizPage() {
               <div>
                 <dt className="text-muted-foreground">Title</dt>
                 <dd className="font-medium">{title || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Chapter</dt>
+                <dd>
+                  {chapterId === "none"
+                    ? "All Chapters (course-wide)"
+                    : (chapters ?? []).find((c) => c.id === chapterId)?.title ??
+                      "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Type</dt>

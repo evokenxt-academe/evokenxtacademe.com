@@ -57,7 +57,14 @@ export async function createLiveBroadcast(
     enableChat?: boolean;
     resolution?: string;
   } = {}
-): Promise<{ broadcastId: string; streamId: string; rtmpUrl: string; streamKey: string }> {
+): Promise<{
+  broadcastId: string;
+  streamId: string;
+  rtmpUrl: string;
+  streamKey: string;
+  videoId?: string;
+  liveChatId?: string;
+}> {
   const accessToken = await getAccessToken();
 
   // Step 1: Create broadcast
@@ -136,12 +143,151 @@ export async function createLiveBroadcast(
     throw new Error(`Failed to bind broadcast to stream: ${error.error?.message}`);
   }
 
+  const detailsRes = await fetch(
+    `${YOUTUBE_API}/liveBroadcasts?id=${broadcast.id}&part=snippet,status`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  let videoId: string | undefined;
+  let liveChatId: string | undefined;
+
+  if (detailsRes.ok) {
+    const details = await detailsRes.json();
+    const item = details.items?.[0];
+    videoId = item?.id;
+    liveChatId = item?.snippet?.liveChatId;
+  }
+
   return {
     broadcastId: broadcast.id,
     streamId: stream.id,
     rtmpUrl: stream.cdn.ingestionInfo.ingestionAddress,
     streamKey: stream.cdn.ingestionInfo.streamName,
+    videoId,
+    liveChatId,
   };
+}
+
+const LIVE_BROADCAST_STATUSES = new Set([
+  'live',
+  'liveStarting',
+  'testing',
+  'testStarting',
+]);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch a single live broadcast's current lifecycle status.
+ */
+export async function getBroadcast(broadcastId: string): Promise<LiveBroadcast> {
+  const accessToken = await getAccessToken();
+
+  const res = await fetch(
+    `${YOUTUBE_API}/liveBroadcasts?id=${broadcastId}&part=snippet,status,contentDetails`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(`Failed to fetch broadcast: ${error.error?.message}`);
+  }
+
+  const data = await res.json();
+  const broadcast = data.items?.[0];
+  if (!broadcast) {
+    throw new Error('YouTube broadcast not found');
+  }
+
+  return broadcast;
+}
+
+/**
+ * Fetch the RTMP ingestion stream status (active = encoder is sending data).
+ */
+export async function getLiveStreamIngestionStatus(
+  youtubeStreamId: string,
+): Promise<string> {
+  const accessToken = await getAccessToken();
+
+  const res = await fetch(
+    `${YOUTUBE_API}/liveStreams?id=${youtubeStreamId}&part=status`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(`Failed to fetch live stream status: ${error.error?.message}`);
+  }
+
+  const data = await res.json();
+  return data.items?.[0]?.status?.streamStatus ?? 'unknown';
+}
+
+/**
+ * Move scheduled start to now so YouTube allows the live transition.
+ */
+export async function ensureBroadcastScheduleNow(broadcastId: string): Promise<void> {
+  const broadcast = await getBroadcast(broadcastId);
+  const scheduled = new Date(broadcast.snippet.scheduledStartTime);
+  const now = new Date();
+
+  if (scheduled <= now) return;
+
+  const accessToken = await getAccessToken();
+  const newStart = new Date(now.getTime() - 60_000).toISOString();
+
+  const res = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      id: broadcastId,
+      snippet: {
+        title: broadcast.snippet.title,
+        description: broadcast.snippet.description ?? '',
+        scheduledStartTime: newStart,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(`Failed to update broadcast schedule: ${error.error?.message}`);
+  }
+}
+
+async function waitForEncoderSignal(
+  broadcastId: string,
+  youtubeStreamId: string,
+  maxWaitMs = 90_000,
+): Promise<string> {
+  const deadline = Date.now() + maxWaitMs;
+
+  while (Date.now() < deadline) {
+    const [lifecycle, streamStatus] = await Promise.all([
+      getBroadcast(broadcastId).then((b) => b.status.lifeCycleStatus),
+      getLiveStreamIngestionStatus(youtubeStreamId),
+    ]);
+
+    if (LIVE_BROADCAST_STATUSES.has(lifecycle)) {
+      return lifecycle;
+    }
+
+    if (streamStatus === 'active' && (lifecycle === 'ready' || lifecycle === 'created')) {
+      return lifecycle;
+    }
+
+    await sleep(2_000);
+  }
+
+  throw new Error(
+    'YouTube did not receive the encoder signal in time. Confirm OBS is streaming to the correct RTMP URL and stream key.',
+  );
 }
 
 /**
@@ -164,6 +310,67 @@ export async function transitionToLive(broadcastId: string): Promise<void> {
     const error = await res.json();
     throw new Error(`YouTube Error: ${error.error?.message || 'Failed to transition to live status. Make sure your encoder (OBS) is already streaming.'}`);
   }
+}
+
+/**
+ * Wait for encoder readiness, then transition (or detect auto-start).
+ */
+export async function goLiveBroadcast(
+  broadcastId: string,
+  youtubeStreamId: string,
+): Promise<void> {
+  await ensureBroadcastScheduleNow(broadcastId);
+
+  let lifecycle = await waitForEncoderSignal(broadcastId, youtubeStreamId);
+
+  if (lifecycle === 'live' || lifecycle === 'liveStarting') {
+    return;
+  }
+
+  const maxAttempts = 12;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    lifecycle = (await getBroadcast(broadcastId)).status.lifeCycleStatus;
+
+    if (lifecycle === 'live' || lifecycle === 'liveStarting') {
+      return;
+    }
+
+    if (lifecycle === 'ready' || lifecycle === 'testing' || lifecycle === 'testStarting') {
+      try {
+        await transitionToLive(broadcastId);
+        return;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '';
+        const lower = message.toLowerCase();
+        const currentStatus = (await getBroadcast(broadcastId)).status.lifeCycleStatus;
+
+        if (
+          currentStatus === 'live' ||
+          currentStatus === 'liveStarting' ||
+          lower.includes('redundant') ||
+          lower.includes('already')
+        ) {
+          return;
+        }
+
+        if (attempt < maxAttempts - 1) {
+          await sleep(3_000);
+          continue;
+        }
+
+        throw err;
+      }
+    }
+
+    if (lifecycle === 'created') {
+      await sleep(3_000);
+      continue;
+    }
+
+    throw new Error(`Cannot go live from YouTube broadcast status: ${lifecycle}`);
+  }
+
+  throw new Error('Timed out waiting for YouTube to go live. Ensure OBS is streaming and try again.');
 }
 
 /**

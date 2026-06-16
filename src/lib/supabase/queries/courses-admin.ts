@@ -85,6 +85,10 @@ export type Chapter = {
   description: string | null;
   position: number;
   is_published: boolean;
+  youtube_playlist_id: string | null;
+  yt_sync_enabled: boolean;
+  yt_last_synced_at: string | null;
+  yt_sync_error: string | null;
   lectures?: Lecture[];
 };
 
@@ -96,6 +100,10 @@ export type Lecture = {
   video_url: string | null;
   video_provider: string | null;
   yt_video_id: string | null;
+  thumbnail_url: string | null;
+  published_at: string | null;
+  yt_playlist_item_id: string | null;
+  yt_synced_at: string | null;
   duration_sec: number;
   position: number;
   is_preview: boolean;
@@ -152,13 +160,60 @@ export type CourseFilters = {
   instructorId?: string;
 };
 
+export const COURSES_PAGE_SIZE = 10;
+
+async function resolveSubjectIdsForFilters(
+  filters: CourseFilters,
+): Promise<string[] | null> {
+  if (filters.subjectId) {
+    return [filters.subjectId];
+  }
+
+  if (filters.levelId) {
+    const { data, error } = await supabase
+      .from("subjects")
+      .select("id")
+      .eq("program_level_id", filters.levelId);
+
+    if (error) throw error;
+    return (data ?? []).map((row) => row.id);
+  }
+
+  if (filters.programId) {
+    const { data: levels, error: levelsError } = await supabase
+      .from("program_levels")
+      .select("id")
+      .eq("program_id", filters.programId);
+
+    if (levelsError) throw levelsError;
+
+    const levelIds = (levels ?? []).map((row) => row.id);
+    if (levelIds.length === 0) return [];
+
+    const { data, error } = await supabase
+      .from("subjects")
+      .select("id")
+      .in("program_level_id", levelIds);
+
+    if (error) throw error;
+    return (data ?? []).map((row) => row.id);
+  }
+
+  return null;
+}
+
 export async function fetchCourses(
   filters: CourseFilters = {},
   page: number = 0,
-  pageSize: number = 20
+  pageSize: number = COURSES_PAGE_SIZE
 ) {
   const from = page * pageSize;
   const to = from + pageSize - 1;
+
+  const subjectIds = await resolveSubjectIdsForFilters(filters);
+  if (subjectIds !== null && subjectIds.length === 0) {
+    return { data: [], count: 0 };
+  }
 
   let query = supabase
     .from("courses")
@@ -188,8 +243,8 @@ export async function fetchCourses(
   if (filters.instructorId) {
     query = query.eq("instructor_id", filters.instructorId);
   }
-  if (filters.subjectId) {
-    query = query.eq("subject_id", filters.subjectId);
+  if (subjectIds !== null) {
+    query = query.in("subject_id", subjectIds);
   }
 
   const { data, error, count } = await query.range(from, to);
@@ -411,9 +466,11 @@ export async function fetchChapters(courseId: string) {
     .select(
       `
       id, course_id, title, description, position, is_published,
+      youtube_playlist_id, yt_sync_enabled, yt_last_synced_at, yt_sync_error,
       lectures(
         id, chapter_id, title, description, video_url, video_provider,
-        yt_video_id, duration_sec, position, is_preview, is_published,
+        yt_video_id, thumbnail_url, published_at, yt_synced_at,
+        duration_sec, position, is_preview, is_published,
         transcript_url, notes_url
       )
     `
@@ -462,13 +519,19 @@ export async function reorderChapters(
   courseId: string,
   orderedIds: string[]
 ) {
-  const updates = orderedIds.map((id, index) => ({
-    id,
-    course_id: courseId,
-    position: index,
-  }));
-  const { error } = await supabase.from("chapters").upsert(updates);
-  if (error) throw error;
+  // Use individual updates — upsert fails on partial rows (missing title) under RLS.
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("chapters")
+        .update({ position: index })
+        .eq("id", id)
+        .eq("course_id", courseId)
+    )
+  );
+
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
 }
 
 // ── Lecture Queries ──────────────────────────────────────────────────
@@ -525,13 +588,18 @@ export async function reorderLectures(
   chapterId: string,
   orderedIds: string[]
 ) {
-  const updates = orderedIds.map((id, index) => ({
-    id,
-    chapter_id: chapterId,
-    position: index,
-  }));
-  const { error } = await supabase.from("lectures").upsert(updates);
-  if (error) throw error;
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("lectures")
+        .update({ position: index })
+        .eq("id", id)
+        .eq("chapter_id", chapterId)
+    )
+  );
+
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
 }
 
 // ── Lecture Resources ────────────────────────────────────────────────

@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { transitionToLive } from '@/lib/youtube/api';
+import { goLiveBroadcast } from '@/lib/youtube/api';
 import {
   notifyLiveStream,
   resolveLiveStreamContext,
@@ -48,8 +48,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Transition to live
-    await transitionToLive(stream.yt_broadcast_id);
+    if (!stream.yt_stream_id) {
+      return NextResponse.json(
+        { error: 'YouTube stream binding missing. Recreate the broadcast from the control room.' },
+        { status: 400 }
+      );
+    }
+
+    await goLiveBroadcast(stream.yt_broadcast_id, stream.yt_stream_id);
 
     // Update stream status in database
     const { error: updateError } = await supabase

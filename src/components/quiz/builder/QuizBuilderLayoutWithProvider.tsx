@@ -7,16 +7,14 @@ import { QuizBuilderLayout } from "./QuizBuilderLayout";
 
 type Props = {
   quizId: string;
-  subjectId?: string;
 };
 
-export function QuizBuilderLayoutWithProvider({ quizId, subjectId }: Props) {
+export function QuizBuilderLayoutWithProvider({ quizId }: Props) {
   const [queryClient] = React.useState(() => new QueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
-      <QuizBuilderLayout quizId={quizId} subjectId={subjectId} />
+      <QuizBuilderLayout quizId={quizId} />
     </QueryClientProvider>
   );
 }
-

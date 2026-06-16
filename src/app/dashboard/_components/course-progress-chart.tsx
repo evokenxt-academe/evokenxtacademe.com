@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  PieChart,
-  Pie,
-  Cell,
+  RadialBar,
+  RadialBarChart,
+  PolarRadiusAxis,
 } from "recharts";
 import {
   ChartContainer,
@@ -20,11 +20,16 @@ type CourseProgressEntry = {
 };
 
 const chartConfig = {
-  completed: { label: "Completed", color: "var(--chart-1)" },
-  remaining: { label: "Remaining", color: "var(--chart-3)" },
+  progress: { label: "Progress", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
-export function CourseProgressChart({ data }: { data: CourseProgressEntry[] }) {
+export function CourseProgressChart({
+  data,
+  overallPct,
+}: {
+  data: CourseProgressEntry[];
+  overallPct?: number;
+}) {
   if (data.length === 0) {
     return (
       <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
@@ -36,76 +41,57 @@ export function CourseProgressChart({ data }: { data: CourseProgressEntry[] }) {
   const totalCompleted = data.reduce((s, d) => s + d.completed, 0);
   const totalRemaining = data.reduce((s, d) => s + d.remaining, 0);
   const total = totalCompleted + totalRemaining;
-  const overallPct = total > 0 ? Math.round((totalCompleted / total) * 100) : 0;
+  const pct = overallPct ?? (total > 0 ? Math.round((totalCompleted / total) * 100) : 0);
 
-  const pieData = [
-    { name: "Completed", value: totalCompleted },
-    { name: "Remaining", value: totalRemaining },
-  ];
-
-  const COLORS = ["var(--chart-1)", "var(--muted)"];
+  const chartData = [{ name: "progress", value: pct, fill: "var(--color-progress)" }];
 
   return (
     <ChartContainer
       id="course-progress"
-      className="min-h-[200px] w-full"
+      className="mx-auto aspect-square max-h-[220px] w-full"
       config={chartConfig}
     >
-      <PieChart>
+      <RadialBarChart
+        data={chartData}
+        startAngle={90}
+        endAngle={-270}
+        innerRadius={70}
+        outerRadius={100}
+        aria-label={`Overall course progress ${pct} percent`}
+      >
         <ChartTooltip
           cursor={false}
           content={
             <ChartTooltipContent
-              formatter={(value, name) => (
-                <div className="flex w-full items-center justify-between gap-4">
-                  <span className="text-muted-foreground">{String(name)}</span>
-                  <span className="font-mono font-medium tabular-nums">
-                    {typeof value === "number" ? value : String(value)} lectures
-                  </span>
-                </div>
+              formatter={(value) => (
+                <span className="font-mono font-medium tabular-nums">{value}%</span>
               )}
             />
           }
         />
-        <Pie
-          data={pieData}
-          cx="50%"
-          cy="50%"
-          innerRadius={60}
-          outerRadius={80}
-          paddingAngle={3}
+        <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+          <text
+            x="50%"
+            y="50%"
+            textAnchor="middle"
+            dominantBaseline="middle"
+          >
+            <tspan x="50%" dy="-0.2em" className="fill-foreground text-3xl font-bold">
+              {pct}%
+            </tspan>
+            <tspan x="50%" dy="1.4em" className="fill-muted-foreground text-xs">
+              complete
+            </tspan>
+          </text>
+        </PolarRadiusAxis>
+        <RadialBar
           dataKey="value"
-          startAngle={90}
-          endAngle={-270}
-        >
-          {pieData.map((entry, index) => (
-            <Cell
-              key={`cell-${index}`}
-              fill={COLORS[index]}
-              stroke="none"
-            />
-          ))}
-        </Pie>
-        {/* Center label */}
-        <text
-          x="50%"
-          y="48%"
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="fill-foreground text-2xl font-bold"
-        >
-          {overallPct}%
-        </text>
-        <text
-          x="50%"
-          y="60%"
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="fill-muted-foreground text-xs"
-        >
-          complete
-        </text>
-      </PieChart>
+          background
+          cornerRadius={8}
+          animationBegin={0}
+          animationDuration={800}
+        />
+      </RadialBarChart>
     </ChartContainer>
   );
 }

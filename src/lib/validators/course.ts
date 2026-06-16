@@ -74,6 +74,8 @@ export const chapterSchema = z.object({
   title: z.string().min(2, "Title required").max(200),
   description: z.string().optional().or(z.literal("")),
   is_published: z.boolean().default(false),
+  youtube_playlist_id: z.string().optional().or(z.literal("")),
+  yt_sync_enabled: z.boolean().default(true),
 });
 
 export type ChapterFormValues = z.infer<typeof chapterSchema>;

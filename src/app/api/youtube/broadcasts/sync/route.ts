@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { listLiveBroadcasts } from '@/lib/youtube/api';
+import { cleanupStreamEngagement } from '@/lib/live-stream/cleanup-engagement';
 
 /**
  * Maps YouTube lifeCycleStatus to our internal stream status.
@@ -117,10 +119,24 @@ export async function POST(req: NextRequest) {
 
         // Only update if there are changes
         if (Object.keys(updatePayload).length > 0) {
+          const becameEnded =
+            mappedStatus === 'ended' && existingStream.status !== 'ended';
+
           await supabase
             .from('live_streams')
             .update(updatePayload)
             .eq('id', existingStream.id);
+
+          if (becameEnded) {
+            after(async () => {
+              try {
+                await cleanupStreamEngagement(existingStream.id, supabase);
+              } catch (cleanupError) {
+                console.error('Stream engagement cleanup failed:', cleanupError);
+              }
+            });
+          }
+
           results.push({ 
             id: existingStream.id, 
             title, 

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink } from "lucide-react";
 import { formatDistanceToNow, isValid } from "date-fns";
 import Link from "next/link";
+import { streamControlPath } from "@/lib/live-stream/admin-paths";
 
 interface LiveStream {
   id: string;
@@ -13,10 +14,11 @@ interface LiveStream {
 }
 
 interface LiveNowBannerProps {
+  courseId: string;
   streams: LiveStream[];
 }
 
-export function LiveNowBanner({ streams }: LiveNowBannerProps) {
+export function LiveNowBanner({ courseId, streams }: LiveNowBannerProps) {
   if (streams.length === 0) {
     return null;
   }
@@ -62,7 +64,7 @@ export function LiveNowBanner({ streams }: LiveNowBannerProps) {
                 </div>
 
                 <Button asChild variant="default" size="sm" className="w-full">
-                  <Link href={`/admin/live-streams/${stream.id}`}>
+                  <Link href={streamControlPath(courseId, stream.id)}>
                     Control Center
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </Link>

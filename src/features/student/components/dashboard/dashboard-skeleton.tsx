@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
  */
 export function DashboardSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6 animate-in fade-in duration-300">
+    <div className="mx-3 max-w-7xl space-y-6 px-4   py-6 md:px-6 animate-in fade-in duration-300">
       {/* ── Welcome header ────────────────────────────── */}
       <section className="flex flex-col gap-2">
         <Skeleton className="h-7 w-48 sm:w-64 rounded-lg" />
@@ -148,7 +148,10 @@ export function DashboardSkeleton() {
         </CardHeader>
         <CardContent className="flex flex-col gap-1">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-lg p-2 sm:p-2.5">
+            <div
+              key={i}
+              className="flex items-center gap-3 rounded-lg p-2 sm:p-2.5"
+            >
               <Skeleton className="size-7 sm:size-8 shrink-0 rounded-lg" />
               <div className="min-w-0 flex-1 space-y-1.5">
                 <Skeleton className="h-4 w-32 sm:w-40 rounded-md" />

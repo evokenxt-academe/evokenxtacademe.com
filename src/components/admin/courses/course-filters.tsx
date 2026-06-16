@@ -43,13 +43,15 @@ export function CourseFiltersBar({
   const [searchValue, setSearchValue] = React.useState(filters.search || "");
   const searchTimeout = React.useRef<NodeJS.Timeout | null>(null);
 
-  // Load programs + instructors on mount
+  React.useEffect(() => {
+    setSearchValue(filters.search || "");
+  }, [filters.search]);
+
   React.useEffect(() => {
     fetchPrograms().then(setPrograms).catch(console.error);
     fetchInstructors().then(setInstructors).catch(console.error);
   }, []);
 
-  // Cascading: load levels when program changes
   React.useEffect(() => {
     if (filters.programId) {
       fetchProgramLevels(filters.programId).then(setLevels).catch(console.error);
@@ -58,7 +60,6 @@ export function CourseFiltersBar({
     }
   }, [filters.programId]);
 
-  // Cascading: load subjects when level changes
   React.useEffect(() => {
     if (filters.levelId) {
       fetchSubjects(filters.levelId).then(setSubjects).catch(console.error);
@@ -71,7 +72,7 @@ export function CourseFiltersBar({
     setSearchValue(value);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
-      onFiltersChange({ ...filters, search: value || undefined });
+      onFiltersChange({ ...filters, search: value.trim() || undefined });
     }, 400);
   };
 
@@ -118,9 +119,10 @@ export function CourseFiltersBar({
     onFiltersChange({});
   };
 
-  // Active filter chips
   const activeFilters: { key: string; label: string }[] = [];
-  if (filters.search) activeFilters.push({ key: "search", label: `Search: "${filters.search}"` });
+  if (filters.search) {
+    activeFilters.push({ key: "search", label: `Search: "${filters.search}"` });
+  }
   if (filters.programId) {
     const p = programs.find((x) => x.id === filters.programId);
     if (p) activeFilters.push({ key: "programId", label: `Program: ${p.body}` });
@@ -143,9 +145,19 @@ export function CourseFiltersBar({
 
   const removeFilter = (key: string) => {
     const next = { ...filters };
-    if (key === "search") { next.search = undefined; setSearchValue(""); }
-    if (key === "programId") { next.programId = undefined; next.levelId = undefined; next.subjectId = undefined; }
-    if (key === "levelId") { next.levelId = undefined; next.subjectId = undefined; }
+    if (key === "search") {
+      next.search = undefined;
+      setSearchValue("");
+    }
+    if (key === "programId") {
+      next.programId = undefined;
+      next.levelId = undefined;
+      next.subjectId = undefined;
+    }
+    if (key === "levelId") {
+      next.levelId = undefined;
+      next.subjectId = undefined;
+    }
     if (key === "subjectId") next.subjectId = undefined;
     if (key === "status") next.status = undefined;
     if (key === "instructorId") next.instructorId = undefined;
@@ -154,16 +166,16 @@ export function CourseFiltersBar({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-4">
+      <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-center">
         <Input
           placeholder="Search courses..."
           value={searchValue}
           onChange={(e) => handleSearch(e.target.value)}
-          className="max-w-xs"
+          className="w-full sm:w-[240px] md:w-[280px]"
         />
 
         <Select value={filters.programId || "all"} onValueChange={handleProgramChange}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Program" />
           </SelectTrigger>
           <SelectContent>
@@ -183,7 +195,7 @@ export function CourseFiltersBar({
           onValueChange={handleLevelChange}
           disabled={!filters.programId}
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue placeholder="Level" />
           </SelectTrigger>
           <SelectContent>
@@ -198,8 +210,28 @@ export function CourseFiltersBar({
           </SelectContent>
         </Select>
 
+        <Select
+          value={filters.subjectId || "all"}
+          onValueChange={handleSubjectChange}
+          disabled={!filters.levelId}
+        >
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Subject" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjects.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.code} — {s.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
         <Select value={filters.status || "all"} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -212,8 +244,11 @@ export function CourseFiltersBar({
           </SelectContent>
         </Select>
 
-        <Select value={filters.instructorId || "all"} onValueChange={handleInstructorChange}>
-          <SelectTrigger className="w-44">
+        <Select
+          value={filters.instructorId || "all"}
+          onValueChange={handleInstructorChange}
+        >
+          <SelectTrigger className="w-full sm:w-[160px]">
             <SelectValue placeholder="Instructor" />
           </SelectTrigger>
           <SelectContent>
@@ -229,9 +264,14 @@ export function CourseFiltersBar({
         </Select>
 
         {activeFilters.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={resetFilters}
+            className="w-full sm:w-auto"
+          >
             <IconFilterOff data-icon="inline-start" />
-            Reset
+            Reset filters
           </Button>
         )}
       </div>
@@ -242,6 +282,7 @@ export function CourseFiltersBar({
             <Badge key={f.key} variant="secondary" className="gap-1 pr-1">
               {f.label}
               <button
+                type="button"
                 onClick={() => removeFilter(f.key)}
                 className="ml-1 rounded-full p-0.5 hover:bg-muted"
               >

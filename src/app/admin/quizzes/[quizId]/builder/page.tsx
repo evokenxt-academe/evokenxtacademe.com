@@ -11,28 +11,23 @@ import {
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { LiveIndicator } from "@/components/quiz/LiveIndicator";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 
 async function getQuiz(id: string) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase
     .from("quizzes")
-    .select("id, title, course:courses(subject_id)")
+    .select("id, title")
     .eq("id", id)
-    .single();
+    .single() as any);
 
   if (error || !data) return null;
-  const quiz = data as {
-    id: string;
-    title: string;
-    course?: { subject_id?: string | null } | null;
-  };
 
   return {
-    id: quiz.id,
-    title: quiz.title,
-    subject_id: quiz.course?.subject_id ?? null,
+    id: data.id,
+    title: data.title,
   };
 }
 
@@ -47,16 +42,16 @@ export default async function BuilderPage({
   if (!quiz) notFound();
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4 md:p-10 p-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
+    <div className="mx-auto max-w-[1400px] space-y-4 p-4 md:p-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Breadcrumb className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <BreadcrumbList className="flex-nowrap">
+            <BreadcrumbItem className="hidden sm:inline-flex">
               <BreadcrumbLink asChild>
                 <Link href="/admin">Admin</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
+            <BreadcrumbSeparator className="hidden sm:inline-flex" />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link href="/admin/quizzes">Quizzes</Link>
@@ -65,7 +60,9 @@ export default async function BuilderPage({
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={`/admin/quizzes/${quiz.id}`}>{quiz.title}</Link>
+                <Link href={`/admin/quizzes/${quiz.id}`} className="max-w-[140px] truncate sm:max-w-none">
+                  {quiz.title}
+                </Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -75,22 +72,32 @@ export default async function BuilderPage({
           </BreadcrumbList>
         </Breadcrumb>
 
-        <LiveIndicator table={`quiz-builder-${quizId}`} />
+        <div className="flex items-center gap-2">
+          <LiveIndicator table={`quiz-builder-${quizId}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden h-8 sm:inline-flex"
+            asChild
+          >
+            <Link href={`/admin/quizzes/${quiz.id}`}>
+              <Settings className="mr-1.5 h-3.5 w-3.5" />
+              Quiz settings
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-2">
-        <h1 className="text-2xl font-bold tracking-tight truncate">
+      <div className="space-y-1">
+        <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">
           {quiz.title}
         </h1>
-        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-          Builder Mode
-        </Badge>
+        <p className="text-sm text-muted-foreground">
+          Add, edit, and reorder questions for this quiz.
+        </p>
       </div>
 
-      <QuizBuilderLayoutWithProvider
-        quizId={quiz.id}
-        subjectId={quiz.subject_id ?? undefined}
-      />
+      <QuizBuilderLayoutWithProvider quizId={quiz.id} />
     </div>
   );
 }

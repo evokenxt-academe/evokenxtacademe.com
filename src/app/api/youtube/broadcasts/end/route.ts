@@ -4,8 +4,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { endBroadcast } from '@/lib/youtube/api';
+import { cleanupStreamEngagement } from '@/lib/live-stream/cleanup-engagement';
 
 export async function POST(req: NextRequest) {
   const supabase = createClient(
@@ -64,6 +66,14 @@ export async function POST(req: NextRequest) {
     if (updateError) {
       throw new Error(updateError.message);
     }
+
+    after(async () => {
+      try {
+        await cleanupStreamEngagement(streamId, supabase);
+      } catch (cleanupError) {
+        console.error('Stream engagement cleanup failed:', cleanupError);
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

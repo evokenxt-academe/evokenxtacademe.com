@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DashboardNavbar } from "@/components/dashboard-navbar";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
+import { DashboardSearchProvider } from "@/components/dashboard-search-context";
 import { createClient } from "@/utils/supabase/server";
 import { fetchStudentShellProfile } from "@/features/student/lib/student-shell";
 
@@ -30,18 +32,25 @@ export default async function DashboardRouteLayout({
   };
 
   const navbarUser = {
+    id: user.id,
     name: sidebarUser.name,
     email: sidebarUser.email,
     avatar: sidebarUser.avatar,
+    role: sidebarUser.role,
   };
 
   return (
-    <SidebarProvider>
-      <DashboardSidebar user={sidebarUser} />
-      <SidebarInset className="bg-background pb-4 sm:pb-0">
-        <DashboardNavbar user={navbarUser} />
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+    <DashboardSearchProvider>
+      <SidebarProvider defaultOpen>
+        <DashboardSidebar user={sidebarUser} />
+        <SidebarInset className="bg-background">
+          <DashboardNavbar user={navbarUser} />
+          <main className="min-h-[calc(100vh-4rem)] pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+            {children}
+          </main>
+          <DashboardMobileNav />
+        </SidebarInset>
+      </SidebarProvider>
+    </DashboardSearchProvider>
   );
 }

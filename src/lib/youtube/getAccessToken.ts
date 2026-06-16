@@ -1,21 +1,35 @@
 /**
- * Get fresh YouTube access token
- * Automatically refreshes if expired or expiring within 5 minutes
+ * Get fresh YouTube access token for an admin user.
+ * Automatically refreshes if expired or expiring within 5 minutes.
  */
 
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-export async function getAccessToken(email: string = 'amarbiradar147@gmail.com'): Promise<string> {
-  // Get current token
+const ADMIN_EMAIL = process.env.YOUTUBE_ADMIN_EMAIL || 'amarbiradar147@gmail.com';
+
+async function resolveUserId(userId?: string): Promise<string> {
+  if (userId) return userId;
+
+  const { data: users } = await supabase.auth.admin.listUsers();
+  const adminUser = users?.users?.find((u) => u.email === ADMIN_EMAIL);
+  if (!adminUser) {
+    throw new Error('Admin user not found. Please connect your YouTube account.');
+  }
+  return adminUser.id;
+}
+
+export async function getAccessTokenForUser(userId?: string): Promise<string> {
+  const resolvedUserId = await resolveUserId(userId);
+
   const { data: token, error } = await supabase
     .from('youtube_tokens')
     .select('access_token, expires_at, refresh_token, user_id, scopes')
-    .eq('user_id', (await supabase.auth.admin.listUsers()).data?.users?.find(u => u.email === email)?.id)
+    .eq('user_id', resolvedUserId)
     .single();
 
   if (error || !token) {
@@ -26,17 +40,17 @@ export async function getAccessToken(email: string = 'amarbiradar147@gmail.com')
     throw new Error('No refresh token stored. Please reconnect your YouTube account.');
   }
 
-  // Verify required scopes are present
-  // If scopes field is empty/missing, assume it's an old token that needs reauth
   const scopes = token.scopes || '';
   if (scopes) {
     const scopeList = scopes.split(/\s+/);
-    const hasFullScope = scopeList.some((s: string) => 
-      s === 'https://www.googleapis.com/auth/youtube' || 
-      s.endsWith('/auth/youtube')
+    const hasFullScope = scopeList.some(
+      (s: string) =>
+        s === 'https://www.googleapis.com/auth/youtube' || s.endsWith('/auth/youtube'),
     );
     if (!hasFullScope) {
-      throw new Error('Request had insufficient authentication scopes. Please reconnect your YouTube account with full broadcast permissions.');
+      throw new Error(
+        'Insufficient authentication scopes. Please reconnect with full broadcast permissions.',
+      );
     }
   }
 
@@ -44,21 +58,17 @@ export async function getAccessToken(email: string = 'amarbiradar147@gmail.com')
   const now = new Date();
   const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
 
-  // If token expires within 5 minutes, refresh it
   if (expiresAt < fiveMinutesFromNow) {
-    const refreshResponse = await fetch(
-      'https://oauth2.googleapis.com/token',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: process.env.GOOGLE_CLIENT_ID!,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-          refresh_token: token.refresh_token,
-          grant_type: 'refresh_token',
-        }).toString(),
-      }
-    );
+    const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        refresh_token: token.refresh_token,
+        grant_type: 'refresh_token',
+      }).toString(),
+    });
 
     const refreshData = await refreshResponse.json();
 
@@ -66,7 +76,6 @@ export async function getAccessToken(email: string = 'amarbiradar147@gmail.com')
       throw new Error(`Failed to refresh YouTube token: ${refreshData.error}`);
     }
 
-    // Update token in database
     const newExpiresAt = new Date(now.getTime() + refreshData.expires_in * 1000);
     await supabase
       .from('youtube_tokens')
@@ -79,5 +88,12 @@ export async function getAccessToken(email: string = 'amarbiradar147@gmail.com')
     return refreshData.access_token;
   }
 
-  return token.access_token;
+  return token.access_token!;
+}
+
+/** @deprecated Use getAccessTokenForUser */
+export async function getAccessToken(email: string = ADMIN_EMAIL): Promise<string> {
+  const { data: users } = await supabase.auth.admin.listUsers();
+  const adminUser = users?.users?.find((u) => u.email === email);
+  return getAccessTokenForUser(adminUser?.id);
 }

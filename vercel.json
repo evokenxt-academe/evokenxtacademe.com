@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/stream-analytics",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/youtube-playlist-sync",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

@@ -12,6 +12,8 @@ export async function getAllQuizzes(
     program?: string;
     type?: string;
     status?: string;
+    courseId?: string;
+    chapterId?: string;
   }
 ) {
   let query = supabase
@@ -46,6 +48,14 @@ export async function getAllQuizzes(
     query = query.eq("is_published", true);
   } else if (filters?.status === "draft") {
     query = query.eq("is_published", false);
+  }
+  if (filters?.courseId) {
+    query = query.eq("course_id", filters.courseId);
+  }
+  if (filters?.chapterId === "course-wide") {
+    query = query.is("chapter_id", null);
+  } else if (filters?.chapterId) {
+    query = query.eq("chapter_id", filters.chapterId);
   }
 
   const { data, error } = await query;
@@ -86,7 +96,10 @@ export async function getAllQuizzes(
       attempt_count: attempts.length,
       avg_score: avgScore ? Math.round(avgScore * 10) / 10 : null,
       pass_rate_pct: passRate ? Math.round(passRate * 10) / 10 : null,
+      course_id: quiz.course?.id ?? null,
       course_title: quiz.course?.title ?? null,
+      chapter_id: quiz.chapter?.id ?? null,
+      chapter_title: quiz.chapter?.title ?? null,
       program_body: quiz.course?.subject?.program_level?.program?.body ?? null,
       level_label: quiz.course?.subject?.program_level?.label ?? null,
       subject_name: quiz.course?.subject?.name ?? null,

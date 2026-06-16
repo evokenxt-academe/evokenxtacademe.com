@@ -1,205 +1,167 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
-import { useQueryClient } from '@tanstack/react-query';
-
-interface PollOption {
-    id: string;
-    poll_id: string;
-    option_text: string;
-    votes: number;
-}
+import { createClient } from '@/lib/supabase/client';
+import type { PollOption } from '@/types/live-stream';
 
 interface Poll {
     id: string;
     live_stream_id: string;
     question: string;
+    options: PollOption[];
     is_active: boolean;
     is_anonymous: boolean;
     created_at: string;
-    ended_at?: string;
-    options: PollOption[];
+    closed_at?: string;
 }
 
-/**
- * Hook for real-time poll updates and voting
- */
 export function useStreamPolls(streamId: string) {
     const [polls, setPolls] = useState<Poll[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [loading, setLoading] = useState(true);
-    const queryClient = useQueryClient();
+    const supabase = createClient();
 
-    const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const formatPoll = (poll: Record<string, unknown>, votes: Array<{ option_id: number }>): Poll => {
+        const options = (poll.options as PollOption[]) ?? [];
+        const voteCounts = votes.reduce<Record<number, number>>((acc, v) => {
+            acc[v.option_id] = (acc[v.option_id] ?? 0) + 1;
+            return acc;
+        }, {});
+
+        return {
+            id: poll.id as string,
+            live_stream_id: poll.live_stream_id as string,
+            question: poll.question as string,
+            options: options.map((o) => ({
+                ...o,
+                votes: voteCounts[o.id] ?? o.votes ?? 0,
+            })),
+            is_active: poll.is_active as boolean,
+            is_anonymous: poll.is_anonymous as boolean,
+            created_at: poll.created_at as string,
+            closed_at: poll.closed_at as string | undefined,
+        };
+    };
+
+    const fetchPolls = async () => {
+        try {
+            const { data: pollRows, error } = await supabase
+                .from('stream_polls')
+                .select('*')
+                .eq('live_stream_id', streamId)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            const formatted: Poll[] = [];
+            for (const poll of pollRows ?? []) {
+                const { data: votes } = await supabase
+                    .from('stream_poll_votes')
+                    .select('option_id')
+                    .eq('poll_id', poll.id);
+                formatted.push(formatPoll(poll, votes ?? []));
+            }
+
+            setPolls(formatted);
+            setActivePoll(formatted.find((p) => p.is_active) ?? null);
+            setLoading(false);
+        } catch (err) {
+            console.error('Failed to fetch polls:', err);
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!streamId) return;
 
-        // Fetch polls
-        const fetchPolls = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('stream_polls')
-                    .select(`
-            *,
-            options:stream_poll_options(
-              id,
-              poll_id,
-              option_text,
-              votes:stream_poll_votes(count)
-            )
-          `)
-                    .eq('live_stream_id', streamId)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                const formattedPolls = (data || []).map((p: any) => ({
-                    ...p,
-                    options: p.options.map((o: any) => ({
-                        ...o,
-                        votes: o.votes?.[0]?.count || 0,
-                    })),
-                }));
-
-                setPolls(formattedPolls);
-                setActivePoll(formattedPolls.find((p) => p.is_active) || null);
-                setLoading(false);
-            } catch (err) {
-                console.error('Failed to fetch polls:', err);
-                setLoading(false);
-            }
-        };
-
         fetchPolls();
 
-        // Subscribe to poll changes
         const channel = supabase
             .channel(`polls-${streamId}`)
             .on(
                 'postgres_changes',
                 {
-                    event: 'INSERT',
+                    event: '*',
                     schema: 'public',
                     table: 'stream_polls',
                     filter: `live_stream_id=eq.${streamId}`,
                 },
-                (payload) => {
-                    setActivePoll(payload.new as Poll);
-                    queryClient.invalidateQueries({ queryKey: ['polls', streamId] });
-                }
+                () => fetchPolls(),
             )
             .on(
                 'postgres_changes',
                 {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'stream_polls',
-                    filter: `live_stream_id=eq.${streamId}`,
-                },
-                (payload) => {
-                    if ((payload.new as any).is_active) {
-                        setActivePoll(payload.new as Poll);
-                    }
-                    queryClient.invalidateQueries({ queryKey: ['polls', streamId] });
-                }
-            )
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
+                    event: '*',
                     schema: 'public',
                     table: 'stream_poll_votes',
                 },
-                () => {
-                    queryClient.invalidateQueries({ queryKey: ['polls', streamId] });
-                }
+                () => fetchPolls(),
             )
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [streamId, supabase, queryClient]);
+    }, [streamId]);
 
     const createPoll = async (
         question: string,
-        options: string[],
-        isAnonymous: boolean = false
+        optionTexts: string[],
+        isAnonymous = false,
     ) => {
-        try {
-            // Create poll
-            const { data: poll, error: pollError } = await supabase
-                .from('stream_polls')
-                .insert([
-                    {
-                        live_stream_id: streamId,
-                        question,
-                        is_anonymous: isAnonymous,
-                        is_active: true,
-                    },
-                ])
-                .select()
-                .single();
+        const options: PollOption[] = optionTexts.map((text, i) => ({
+            id: i + 1,
+            text,
+            votes: 0,
+        }));
 
-            if (pollError) throw pollError;
+        await supabase
+            .from('stream_polls')
+            .update({ is_active: false, closed_at: new Date().toISOString() })
+            .eq('live_stream_id', streamId)
+            .eq('is_active', true);
 
-            // Create options
-            const { error: optionsError } = await supabase
-                .from('stream_poll_options')
-                .insert(options.map((text) => ({ poll_id: poll.id, option_text: text })));
+        const { data: poll, error } = await supabase
+            .from('stream_polls')
+            .insert({
+                live_stream_id: streamId,
+                question,
+                options,
+                is_anonymous: isAnonymous,
+                is_active: true,
+            })
+            .select()
+            .single();
 
-            if (optionsError) throw optionsError;
-
-            setActivePoll(poll as Poll);
-            return poll;
-        } catch (err) {
-            console.error('Failed to create poll:', err);
-            throw err;
-        }
+        if (error) throw error;
+        await fetchPolls();
+        return poll;
     };
 
-    const votePoll = async (pollId: string, optionId: string) => {
-        try {
-            const {
-                data: { user },
-            } = await supabase.auth.getUser();
+    const votePoll = async (pollId: string, optionId: number) => {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
 
-            if (!user) throw new Error('Not authenticated');
+        const { error } = await supabase.from('stream_poll_votes').upsert(
+            { poll_id: pollId, option_id: optionId, user_id: user.id },
+            { onConflict: 'poll_id,user_id' },
+        );
 
-            const { error } = await supabase.from('stream_poll_votes').insert([
-                {
-                    poll_id: pollId,
-                    option_id: optionId,
-                    user_id: user.id,
-                },
-            ]);
-
-            if (error) throw error;
-        } catch (err) {
-            console.error('Failed to vote on poll:', err);
-            throw err;
-        }
+        if (error) throw error;
+        await fetchPolls();
     };
 
     const closePoll = async (pollId: string) => {
-        try {
-            const { error } = await supabase
-                .from('stream_polls')
-                .update({ is_active: false, ended_at: new Date().toISOString() })
-                .eq('id', pollId);
+        const { error } = await supabase
+            .from('stream_polls')
+            .update({ is_active: false, closed_at: new Date().toISOString() })
+            .eq('id', pollId);
 
-            if (error) throw error;
-
-            setActivePoll(null);
-        } catch (err) {
-            console.error('Failed to close poll:', err);
-            throw err;
-        }
+        if (error) throw error;
+        setActivePoll(null);
+        await fetchPolls();
     };
 
     return {
