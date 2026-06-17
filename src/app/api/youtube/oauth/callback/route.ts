@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getRequestOrigin } from '@/lib/youtube/oauth-helper';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
@@ -7,9 +8,11 @@ export async function GET(req: NextRequest) {
   const error = searchParams.get('error');
   const state = searchParams.get('state') || '';
 
+  const origin = getRequestOrigin(req);
+
   // Helper to build redirect URL with from param preserved
   const getRedirectUrl = (params: Record<string, string>) => {
-    const url = new URL('/admin/youtube/connect', req.url);
+    const url = new URL('/admin/youtube/connect', origin);
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
     if (state) {
       url.searchParams.set('from', state);
@@ -27,16 +30,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Build the exact same redirect URI as the authorize route
-  const protocol = req.headers.get('x-forwarded-proto') || 'https';
-  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host;
-  
-  // Quick fix for localhost to avoid redirect_uri mismatch during token exchange if https was assumed
-  const isLocalhost = host?.includes('localhost') || host?.includes('127.0.0.1');
-  
-  // Note: we're using the same logic as authorize route to match EXACTLY what Google saw
-  // However, authorize route has a bug where it falls back to 'https' for localhost if x-forwarded-proto is missing.
-  // We'll try the resolvedProtocol first, and if it fails, we'll try the exact same construction as authorize.
-  const redirectUri = `${protocol}://${host}/api/youtube/oauth/callback`;
+  const redirectUri = `${origin}/api/youtube/oauth/callback`;
+  const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
 
   try {
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -55,7 +50,7 @@ export async function GET(req: NextRequest) {
 
     // If it fails due to redirect_uri_mismatch on localhost, try the 'http' protocol instead
     if (!tokenResponse.ok && tokenData.error === 'redirect_uri_mismatch' && isLocalhost) {
-      const httpRedirectUri = `http://${host}/api/youtube/oauth/callback`;
+      const httpRedirectUri = `http://${new URL(origin).host}/api/youtube/oauth/callback`;
       const retryTokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
