@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getChannelInfo } from '@/lib/youtube/api';
 
 export async function GET(req: NextRequest) {
   const supabase = createClient(
@@ -50,16 +51,12 @@ export async function GET(req: NextRequest) {
     const hasRequiredScopes = hasFullScope && hasForceSsl;
 
     // Try to get channel info if connected
-    let channelInfo = null;
+    let channelInfo: any = null;
     if (!isExpired && hasRequiredScopes) {
       try {
-        const channelRes = await fetch(`${req.nextUrl.origin}/api/youtube/channel`, {
-          headers: { 'Cookie': req.headers.get('cookie') || '' },
-        });
-        if (channelRes.ok) {
-          channelInfo = await channelRes.json();
-        }
-      } catch {
+        channelInfo = await getChannelInfo();
+      } catch (e) {
+        console.error('Error fetching channel info directly:', e);
         // Channel info is optional
       }
     }
