@@ -32,7 +32,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { createClient } from "@/utils/supabase/client";
+import { signOutUser } from "@/features/auth/lib/sign-out";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
@@ -118,9 +118,7 @@ export function DashboardNavbar({
   const pageTitle = getPageTitle(pathname);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    await signOutUser("/");
   };
 
   return (

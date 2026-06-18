@@ -256,8 +256,10 @@ export function StreamSetupPanel({
 
       {stream.status === "scheduled" && (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Open OBS on this machine, then press <strong>Go Live</strong>. RTMP settings
-          are applied automatically.
+          Open OBS on this machine, then press <strong>Go Live</strong>. YouTube RTMP
+          settings are applied automatically. If OBS shows &quot;No Broadcast Configured&quot;
+          the first time only, open <strong>Settings → Stream → Custom</strong>, click{" "}
+          <strong>Apply</strong> once, then use Go Live again.
         </p>
       )}
 

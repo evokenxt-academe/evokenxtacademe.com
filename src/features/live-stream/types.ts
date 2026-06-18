@@ -1,4 +1,4 @@
-export type LiveStreamStatus = "live" | "ended"
+export type LiveStreamStatus = "scheduled" | "live" | "ended"
 
 export type LiveStreamCourseOption = {
     id: string
@@ -20,7 +20,7 @@ export type LiveStreamSummary = {
 export type LiveChatMessage = {
     id: string
     liveStreamId: string
-    userId: string
+    userId: string | null
     userName: string
     userAvatar: string | null
     message: string

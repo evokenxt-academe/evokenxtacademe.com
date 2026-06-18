@@ -99,10 +99,8 @@ export default function StreamControlRoomPage() {
   useEffect(() => {
     if (stream?.status !== "live") return;
     const interval = setInterval(async () => {
-      await fetch("/api/youtube/chat/sync", {
+      await fetch(`/api/admin/live-streams/${streamId}/sync-chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ streamId }),
       }).catch(() => {});
     }, 5000);
     return () => clearInterval(interval);
@@ -115,15 +113,29 @@ export default function StreamControlRoomPage() {
 
     const hasBroadcast = Boolean(stream.yt_broadcast_id);
     const hasRtmp = Boolean(stream.yt_rtmp_url && stream.yt_stream_key);
+    const obsConnected = obs.status === "connected";
+    const obsConnecting =
+      obs.status === "connecting" ||
+      (actionLoading && goLiveStep === "Connecting to OBS…");
+    const encoderStarting =
+      actionLoading &&
+      Boolean(
+        goLiveStep &&
+          /preparing obs encoder|configuring obs stream|starting obs encoder/i.test(
+            goLiveStep,
+          ),
+      );
+    const encoderDone =
+      obs.isStreaming || stream.status === "live" || stream.status === "ended";
 
     return [
       { id: 1, label: "YouTube broadcast", status: step(hasBroadcast) },
       { id: 2, label: "Stream credentials", status: step(hasRtmp) },
-      { id: 3, label: "OBS connected", status: step(obs.status === "connected", obs.status === "connecting") },
-      { id: 4, label: "Encoder streaming", status: step(obs.isStreaming, obs.status === "connected" && !obs.isStreaming) },
+      { id: 3, label: "OBS connected", status: step(obsConnected, obsConnecting) },
+      { id: 4, label: "Encoder streaming", status: step(encoderDone, encoderStarting) },
       { id: 5, label: "Published live", status: step(stream.status === "live") },
     ];
-  }, [stream, obs.status, obs.isStreaming]);
+  }, [stream, obs.status, obs.isStreaming, actionLoading, goLiveStep]);
 
   const handleGoLive = async () => {
     setActionLoading(true);

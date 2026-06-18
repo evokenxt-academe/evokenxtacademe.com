@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   connectObs,
   getObsStreamStatus,
+  isObsConfiguredForStream,
   isObsConnected,
   pushRtmpToObs,
   startObsStream,
@@ -116,11 +117,12 @@ export function useObsEncoder({
   const ensureConnected = useCallback(async () => {
     if (isObsConnected()) {
       setStatus("connected");
+      await refreshStreamStatus();
       return;
     }
     const cfg = await loadSettings();
     await connect(cfg);
-  }, [loadSettings, connect]);
+  }, [loadSettings, connect, refreshStreamStatus]);
 
   const pushRtmp = useCallback(
     async (url?: string | null, key?: string | null) => {
@@ -130,6 +132,14 @@ export function useObsEncoder({
         throw new Error("YouTube broadcast RTMP credentials not ready yet");
       }
       await ensureConnected();
+
+      if (await isObsConfiguredForStream(server, streamKeyValue)) {
+        setRtmpPushed(true);
+        setError(null);
+        await refreshStreamStatus();
+        return;
+      }
+
       try {
         await pushRtmpToObs(server, streamKeyValue);
         setRtmpPushed(true);
@@ -150,7 +160,7 @@ export function useObsEncoder({
     if (!rtmpPushed && rtmpUrl && streamKey) {
       await pushRtmp(rtmpUrl, streamKey);
     }
-    await startObsStream();
+    await startObsStream(streamKey ?? undefined);
 
     const deadline = Date.now() + 15_000;
     while (Date.now() < deadline) {
@@ -175,26 +185,70 @@ export function useObsEncoder({
   }, []);
 
   useEffect(() => {
-    if (!autoConnect || connectAttemptedRef.current) return;
-    connectAttemptedRef.current = true;
+    if (!autoConnect) return;
 
-    loadSettings().then((cfg) => {
-      connect(cfg).catch(() => {});
-    });
-  }, [autoConnect, loadSettings, connect]);
+    let cancelled = false;
 
-  useEffect(() => {
-    setRtmpPushed(false);
-  }, [rtmpUrl, streamKey]);
+    const init = async () => {
+      try {
+        if (isObsConnected()) {
+          if (cancelled) return;
+          setStatus("connected");
+          const { isStreaming: active } = await getObsStreamStatus();
+          if (cancelled) return;
+          setIsStreaming(active);
+          if (rtmpUrl && streamKey) {
+            const configured = await isObsConfiguredForStream(rtmpUrl, streamKey);
+            if (cancelled) return;
+            if (configured) setRtmpPushed(true);
+          }
+          return;
+        }
+
+        if (connectAttemptedRef.current) return;
+        connectAttemptedRef.current = true;
+
+        const cfg = await loadSettings();
+        if (cancelled) return;
+        await connect(cfg);
+      } catch {
+        /* connect() sets error state */
+      }
+    };
+
+    void init();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [autoConnect, loadSettings, connect, rtmpUrl, streamKey]);
 
   useEffect(() => {
     if (!rtmpUrl || !streamKey || rtmpPushed) return;
     if (!isObsConnected() && status !== "connected") return;
-    if (isStreaming) return;
 
-    pushRtmp(rtmpUrl, streamKey).catch(() => {
-      /* error state set in pushRtmp */
-    });
+    const maybePush = async () => {
+      try {
+        const { isStreaming: active } = await getObsStreamStatus();
+        if (active) {
+          setIsStreaming(true);
+          if (await isObsConfiguredForStream(rtmpUrl, streamKey)) {
+            setRtmpPushed(true);
+          }
+          return;
+        }
+      } catch {
+        /* OBS not ready yet */
+      }
+
+      if (isStreaming) return;
+
+      pushRtmp(rtmpUrl, streamKey).catch(() => {
+        /* error state set in pushRtmp */
+      });
+    };
+
+    void maybePush();
   }, [rtmpUrl, streamKey, rtmpPushed, status, isStreaming, pushRtmp]);
 
   useEffect(() => {

@@ -1,3 +1,5 @@
+import { getObsStreamStatus, isObsConfiguredForStream, wait } from "@/lib/obs/obs-client";
+
 type GoLiveSteps = {
   onStep?: (step: string) => void;
 };
@@ -63,14 +65,22 @@ export async function runGoLiveSequence(
   await obs.ensureConnected();
 
   onStep?.("Preparing OBS encoder…");
-  try {
-    await obs.stopStreaming();
-  } catch {
-    /* OBS may already be stopped */
+  const alreadyConfigured = await isObsConfiguredForStream(rtmpUrl, streamKey);
+  const { isStreaming: obsAlreadyLive } = await getObsStreamStatus().catch(() => ({
+    isStreaming: false,
+  }));
+
+  if (!alreadyConfigured || !obsAlreadyLive) {
+    try {
+      await obs.stopStreaming();
+    } catch {
+      /* OBS may already be stopped */
+    }
   }
 
   onStep?.("Configuring OBS stream…");
   await obs.pushRtmp(rtmpUrl, streamKey);
+  await wait(500);
 
   onStep?.("Starting OBS encoder…");
   await obs.startStreaming();

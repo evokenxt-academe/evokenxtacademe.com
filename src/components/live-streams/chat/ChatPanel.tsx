@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -325,7 +324,7 @@ export function ChatPanel({
 
       <Separator />
 
-      <CardContent className="flex-1 flex flex-col gap-4 overflow-hidden p-0">
+      <CardContent className="relative flex min-h-0 flex-1 flex-col gap-0 overflow-hidden p-0">
         {/* Pinned Messages Section */}
         {showPinned && pinnedMessages.length > 0 && (
           <div className="border-b bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
@@ -370,10 +369,10 @@ export function ChatPanel({
         )}
 
         {/* Messages List */}
-        <ScrollArea 
-          className="flex-1 px-4" 
+        <div
           ref={scrollRef}
-          onScrollCapture={handleScroll}
+          onScroll={handleScroll}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3"
         >
           <div className="space-y-3 pb-4">
             {loading ? (
@@ -443,8 +442,8 @@ export function ChatPanel({
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm text-foreground">
-                              {msg.author_name || msg.user_id?.slice(0, 8) || "Anonymous"}
+                            <span className="break-words text-sm font-semibold text-foreground">
+                              {msg.author_name || "Anonymous"}
                             </span>
                             {getMessageTypeBadge(msg.type)}
                           </div>
@@ -543,19 +542,22 @@ export function ChatPanel({
               })
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Scroll to Bottom Button */}
         {!autoScroll && (
-          <div className="absolute bottom-32 right-8">
+          <div className="pointer-events-none absolute inset-x-0 bottom-36 flex justify-center">
             <Button
               size="sm"
               variant="secondary"
-              className="rounded-full shadow-lg"
+              className="pointer-events-auto rounded-full shadow-lg"
               onClick={() => {
                 setAutoScroll(true);
                 if (scrollRef.current) {
-                  scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                  scrollRef.current.scrollTo({
+                    top: scrollRef.current.scrollHeight,
+                    behavior: "smooth",
+                  });
                 }
               }}
             >

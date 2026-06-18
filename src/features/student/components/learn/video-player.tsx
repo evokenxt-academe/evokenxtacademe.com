@@ -22,6 +22,7 @@ interface VideoPlayerProps {
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   initialTimeSeconds?: number | null;
   autoplay?: boolean;
+  userId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────
@@ -32,6 +33,7 @@ export function VideoPlayer({
   onTimeUpdate,
   initialTimeSeconds,
   autoplay = true,
+  userId,
 }: VideoPlayerProps) {
   const videoId = extractYouTubeId(lecture?.yt_video_id ?? null);
 
@@ -66,6 +68,7 @@ export function VideoPlayer({
         startAt={initialTimeSeconds ?? 0}
         onEnd={onVideoEnded}
         onTimeUpdate={onTimeUpdate}
+        forensicUserId={userId}
         className="w-full aspect-video border-0"
       />
     </div>

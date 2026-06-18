@@ -11,15 +11,17 @@ export default function SessionExpiredPage() {
   useEffect(() => {
     const performSignOut = async () => {
       try {
-        const supabase = createClient() as any;
-        await supabase.auth.signOut();
-        // Clear session ID cookie to ensure clean state
-        document.cookie = "lms_session_id=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        await fetch("/api/auth/sign-out", {
+          method: "POST",
+          credentials: "include",
+        });
+        const supabase = createClient();
+        await supabase.auth.signOut({ scope: "local" });
       } catch (err) {
         console.error("Error cleaning up authentication session:", err);
       }
     };
-    performSignOut();
+    void performSignOut();
   }, []);
 
   return (

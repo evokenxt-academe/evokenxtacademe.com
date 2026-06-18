@@ -27,7 +27,7 @@ type LiveStreamRoomProps = {
 };
 
 export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
-  const { currentStream, initialMessages, isLoading, error } =
+  const { currentStream, initialMessages, isLoading, error, wentLive } =
     useLiveStream(courseId);
   const { messages } = useChatMessages(
     currentStream?.id ?? null,
@@ -37,6 +37,14 @@ export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
   const [inputMessage, setInputMessage] = React.useState("");
 
   const canChat = Boolean(currentStream && currentStream.status === "live");
+
+  React.useEffect(() => {
+    if (wentLive) {
+      toast.success("The class is live now!", {
+        description: "Starting playback…",
+      });
+    }
+  }, [wentLive]);
 
   const handleSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -107,8 +115,8 @@ export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
           </EmptyMedia>
           <EmptyTitle>No live stream yet</EmptyTitle>
           <EmptyDescription>
-            Your instructor has not started a live class for this course yet.
-            Check back when the broadcast goes live.
+            Your instructor has not scheduled a live class for this course yet.
+            This page will update automatically when a broadcast is scheduled or goes live.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -120,19 +128,30 @@ export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
     );
   }
 
+  const isWaiting =
+    currentStream.status === "scheduled" || !currentStream.ytVideoId;
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
       <LiveVideoPanel stream={currentStream} courseName={courseName} />
-      <LiveChatPanel
-        streamId={currentStream.id}
-        streamStatus={currentStream.status}
-        messages={messages}
-        inputMessage={inputMessage}
-        onInputMessageChange={setInputMessage}
-        onSubmit={handleSubmit}
-        isSending={isSending}
-        disabled={!canChat}
-      />
+      <div className="xl:sticky xl:top-20">
+        <LiveChatPanel
+          className="h-[min(720px,calc(100dvh-9rem))]"
+          streamId={currentStream.id}
+          streamStatus={currentStream.status}
+          messages={messages}
+          inputMessage={inputMessage}
+          onInputMessageChange={setInputMessage}
+          onSubmit={handleSubmit}
+          isSending={isSending}
+          disabled={!canChat}
+        />
+        {isWaiting ? (
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Chat opens when the instructor goes live.
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

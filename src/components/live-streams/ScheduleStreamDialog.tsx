@@ -149,7 +149,7 @@ export function ScheduleStreamDialog({
 
 
   const handleSubmit = async () => {
-    if (!form.title.trim() || !form.courseId || !form.scheduledDate || !form.scheduledTime) {
+    if (!form.title.trim() || !form.courseId) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -161,7 +161,7 @@ export function ScheduleStreamDialog({
       } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const scheduledAt = `${form.scheduledDate}T${form.scheduledTime}:00`;
+      const scheduledAt = new Date().toISOString();
 
       const { data: stream, error } = await supabase
         .from("live_streams")
@@ -186,7 +186,21 @@ export function ScheduleStreamDialog({
 
       if (error) throw error;
 
-      toast.success(`Stream scheduled (ID: ${stream.id.slice(0, 8)}…)`);
+      // Pre-create YouTube broadcast + RTMP credentials so OBS can be configured automatically
+      const broadcastRes = await fetch("/api/youtube/broadcasts/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ streamId: stream.id }),
+      });
+      if (!broadcastRes.ok) {
+        const data = await broadcastRes.json().catch(() => ({}));
+        toast.warning(
+          (data.error as string) ??
+            "Stream created, but YouTube setup failed. Fix it in the Control Room.",
+        );
+      }
+
+      toast.success(`Stream created (ID: ${stream.id.slice(0, 8)}…)`);
       onOpenChange(false);
       if (onCreated) {
         onCreated(stream.id);
@@ -203,33 +217,6 @@ export function ScheduleStreamDialog({
 
   const formContent = (
     <div className="flex flex-col gap-5">
-      {/* YouTube OAuth Banner */}
-      <Alert variant={ytStatus.connected && !ytStatus.expired ? "default" : "destructive"}>
-        <AlertCircle className="size-4" />
-        <AlertTitle className="flex items-center gap-2">
-          YouTube Connection
-          {ytStatus.connected && !ytStatus.expired ? (
-            <Badge className="bg-green-600">Connected ✓</Badge>
-          ) : (
-            <Badge variant="outline" className="border-amber-500 text-amber-700">
-              Not Connected
-            </Badge>
-          )}
-        </AlertTitle>
-        <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <span>
-            {ytStatus.connected && !ytStatus.expired
-              ? `Linked to ${ytStatus.channel?.channelName ?? "your channel"}`
-              : "Connect YouTube to create broadcasts from the control room."}
-          </span>
-          {(!ytStatus.connected || ytStatus.expired) && (
-            <Button size="sm" variant="outline" asChild>
-              <Link href={`/admin/youtube/connect?from=${encodeURIComponent(pathname)}`}>Connect YouTube Account</Link>
-            </Button>
-          )}
-        </AlertDescription>
-      </Alert>
-
       <div className="flex flex-col gap-2">
         <Label htmlFor="title">
           Title <span className="text-destructive">*</span>
@@ -300,51 +287,6 @@ export function ScheduleStreamDialog({
         />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label>Visibility</Label>
-        <RadioGroup
-          value={form.visibility}
-          onValueChange={(v) =>
-            setForm((f) => ({ ...f, visibility: v as StreamVisibility }))
-          }
-          className="flex flex-col gap-2 sm:flex-row sm:gap-4"
-        >
-          {(["public", "unlisted", "private"] as const).map((v) => (
-            <div key={v} className="flex items-center gap-2">
-              <RadioGroupItem value={v} id={`vis-${v}`} />
-              <Label htmlFor={`vis-${v}`} className="capitalize font-normal cursor-pointer">
-                {v}
-              </Label>
-            </div>
-          ))}
-        </RadioGroup>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="date">
-            Date <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="date"
-            type="date"
-            value={form.scheduledDate}
-            onChange={(e) => setForm((f) => ({ ...f, scheduledDate: e.target.value }))}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="time">
-            Time <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="time"
-            type="time"
-            value={form.scheduledTime}
-            onChange={(e) => setForm((f) => ({ ...f, scheduledTime: e.target.value }))}
-          />
-        </div>
-      </div>
-
       <div className="flex flex-col gap-3 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="chat">Enable Chat</Label>
@@ -360,10 +302,10 @@ export function ScheduleStreamDialog({
         {loading ? (
           <>
             <Loader2 className="mr-2 size-4 animate-spin" />
-            Scheduling…
+            Creating…
           </>
         ) : (
-          "Schedule Stream"
+          "Create Live"
         )}
       </Button>
     </div>
@@ -374,8 +316,8 @@ export function ScheduleStreamDialog({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="max-h-[96vh]">
           <DrawerHeader>
-            <DrawerTitle>Schedule Live Stream</DrawerTitle>
-            <DrawerDescription>Create a new scheduled broadcast</DrawerDescription>
+            <DrawerTitle>Create Live Stream</DrawerTitle>
+            <DrawerDescription>Create a new live stream</DrawerDescription>
           </DrawerHeader>
           <div className="overflow-y-auto px-4 pb-8">{formContent}</div>
         </DrawerContent>
@@ -387,8 +329,8 @@ export function ScheduleStreamDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Schedule Live Stream</DialogTitle>
-          <DialogDescription>Create a new scheduled broadcast</DialogDescription>
+          <DialogTitle>Create Live Stream</DialogTitle>
+          <DialogDescription>Create a new live stream</DialogDescription>
         </DialogHeader>
         {formContent}
       </DialogContent>

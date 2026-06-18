@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { resolveChatAuthorName } from "@/features/live-stream/lib";
 
 const supabase = createClient();
 
@@ -88,9 +89,28 @@ export async function sendChatMessage(
   userId: string,
   message: string,
 ) {
-  const { error } = await supabase
-    .from("chat_messages")
-    .insert({ live_stream_id: streamId, user_id: userId, message, type: "message" });
+  const { data: profile } = await supabase
+    .from("users")
+    .select("name, avatar, email")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const authorName = resolveChatAuthorName({
+    authorName: null,
+    profileName: profile?.name ?? null,
+    userEmail: profile?.email ?? null,
+  });
+
+  const { error } = await supabase.from("chat_messages").insert({
+    live_stream_id: streamId,
+    user_id: userId,
+    message,
+    type: "message",
+    author_name: authorName,
+    author_avatar: profile?.avatar ?? null,
+    is_approved: true,
+    is_deleted: false,
+  });
   if (error) throw error;
 }
 

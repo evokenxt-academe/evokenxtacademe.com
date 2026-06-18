@@ -96,18 +96,21 @@ export function LiveChatAdminPage({ streamId }: { streamId: string }) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
       <LiveVideoPanel stream={currentStream} courseName={currentStream.courseName} />
-      <LiveChatPanel
-        streamId={currentStream.id}
-        streamStatus={currentStream.status}
-        messages={messages}
-        inputMessage={inputMessage}
-        onInputMessageChange={setInputMessage}
-        onSubmit={handleSubmit}
-        isSending={isSending}
-        disabled={!canChat}
-      />
+      <div className="xl:sticky xl:top-20">
+        <LiveChatPanel
+          className="h-[min(720px,calc(100dvh-9rem))]"
+          streamId={currentStream.id}
+          streamStatus={currentStream.status}
+          messages={messages}
+          inputMessage={inputMessage}
+          onInputMessageChange={setInputMessage}
+          onSubmit={handleSubmit}
+          isSending={isSending}
+          disabled={!canChat}
+        />
+      </div>
     </div>
   )
 }

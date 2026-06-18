@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { createClient } from "@/utils/supabase/server"
+import { createAdminClient } from "@/utils/supabase/adminClient"
+import {
+    fetchChatAuthorProfiles,
+    resolveChatAuthorName,
+    resolveChatMessageDisplay,
+} from "@/features/live-stream/lib"
 import type { LiveChatMessage, LiveStreamSummary } from "@/features/live-stream/types"
 
 export const runtime = "nodejs"
@@ -65,10 +71,10 @@ export async function GET(request: NextRequest) {
         )
     }
 
-    const [liveStreamResult, endedStreamResult] = await Promise.all([
+    const [liveStreamResult, scheduledStreamResult, endedStreamResult] = await Promise.all([
         (supabase as any)
             .from("live_streams")
-            .select("id, title, course_id, yt_video_id, status, started_at, ended_at")
+            .select("id, title, course_id, yt_video_id, status, started_at, ended_at, scheduled_at")
             .eq("course_id", courseId)
             .eq("status", "live")
             .order("started_at", { ascending: false })
@@ -76,7 +82,15 @@ export async function GET(request: NextRequest) {
             .maybeSingle(),
         (supabase as any)
             .from("live_streams")
-            .select("id, title, course_id, yt_video_id, status, started_at, ended_at")
+            .select("id, title, course_id, yt_video_id, status, started_at, ended_at, scheduled_at")
+            .eq("course_id", courseId)
+            .eq("status", "scheduled")
+            .order("scheduled_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        (supabase as any)
+            .from("live_streams")
+            .select("id, title, course_id, yt_video_id, status, started_at, ended_at, scheduled_at")
             .eq("course_id", courseId)
             .eq("status", "ended")
             .order("ended_at", { ascending: false })
@@ -85,7 +99,10 @@ export async function GET(request: NextRequest) {
             .maybeSingle(),
     ])
 
-    const stream = (liveStreamResult.data ?? endedStreamResult.data ?? null) as any
+    const stream = (liveStreamResult.data ??
+        scheduledStreamResult.data ??
+        endedStreamResult.data ??
+        null) as any
 
     if (!stream) {
         return NextResponse.json({ currentStream: null, messages: [] })
@@ -100,11 +117,26 @@ export async function GET(request: NextRequest) {
             message,
             created_at,
             user_id,
-            users:user_id ( name, avatar )
+            author_name,
+            author_avatar
         `)
         .eq("live_stream_id", stream.id)
+        .eq("is_deleted", false)
         .order("created_at", { ascending: true })
-        .limit(200)
+        .limit(500)
+
+    const adminSupabase = createAdminClient()
+    const missingAuthorUserIds = (messages ?? [])
+        .filter((msg: Record<string, unknown>) => !String(msg.author_name ?? "").trim() && msg.user_id)
+        .map((msg: Record<string, unknown>) => String(msg.user_id))
+    const authorProfiles = await fetchChatAuthorProfiles(adminSupabase, missingAuthorUserIds)
+
+    const streamStatus: LiveStreamSummary["status"] =
+        stream.status === "live"
+            ? "live"
+            : stream.status === "scheduled"
+              ? "scheduled"
+              : "ended"
 
     const currentStream: LiveStreamSummary = {
         id: stream.id,
@@ -112,22 +144,32 @@ export async function GET(request: NextRequest) {
         courseId: stream.course_id,
         courseName: course.title ?? "Untitled course",
         ytVideoId: stream.yt_video_id,
-        status: stream.status === "live" ? "live" : "ended",
+        status: streamStatus,
         startedAt: stream.started_at,
         endedAt: stream.ended_at,
     }
 
     return NextResponse.json({
         currentStream,
-        messages: (messages ?? []).map((msg: Record<string, unknown>) => ({
-            id: String(msg.id ?? ""),
-            liveStreamId: String(msg.live_stream_id ?? stream.id),
-            message: String(msg.message ?? ""),
-            createdAt: String(msg.created_at ?? ""),
-            userId: String(msg.user_id ?? ""),
-            userName: (msg.users as Record<string, unknown> | null)?.name ?? "Anonymous",
-            userAvatar: (msg.users as Record<string, unknown> | null)?.avatar ?? null,
-        })) as LiveChatMessage[],
+        messages: (messages ?? []).map((msg: Record<string, unknown>) => {
+            const userId = msg.user_id ? String(msg.user_id) : null
+            const display = resolveChatMessageDisplay({
+                authorName: msg.author_name as string | null,
+                authorAvatar: msg.author_avatar as string | null,
+                userId,
+                profile: userId ? authorProfiles.get(userId) ?? null : null,
+            })
+
+            return {
+                id: String(msg.id ?? ""),
+                liveStreamId: String(msg.live_stream_id ?? stream.id),
+                message: String(msg.message ?? ""),
+                createdAt: String(msg.created_at ?? ""),
+                userId,
+                userName: display.authorName,
+                userAvatar: display.authorAvatar,
+            }
+        }) as LiveChatMessage[],
     })
 }
 
@@ -189,12 +231,28 @@ export async function POST(request: NextRequest) {
         )
     }
 
+    const { data: profile } = await (supabase as any)
+        .from("users")
+        .select("name, avatar, email")
+        .eq("id", user.id)
+        .maybeSingle()
+
+    const authorName = resolveChatAuthorName({
+        authorName: null,
+        profileName: profile?.name,
+        userEmail: profile?.email ?? user.email,
+    })
+
     const { data: chatMsg, error: insertError } = await (supabase as any)
         .from("chat_messages")
         .insert({
             live_stream_id: streamId,
             user_id: user.id,
             message: message.trim(),
+            author_name: authorName,
+            author_avatar: profile?.avatar ?? null,
+            is_approved: true,
+            is_deleted: false,
         })
         .select("id, message, created_at")
         .single()
@@ -207,12 +265,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user profile for response
-    const { data: profile } = await (supabase as any)
-        .from("users")
-        .select("name, avatar")
-        .eq("id", user.id)
-        .maybeSingle()
-
     return NextResponse.json({
         success: true,
         chatMessage: {
@@ -221,7 +273,7 @@ export async function POST(request: NextRequest) {
             message: chatMsg.message,
             createdAt: chatMsg.created_at,
             userId: user.id,
-            userName: profile?.name ?? "Anonymous",
+            userName: authorName,
             userAvatar: profile?.avatar ?? null,
         },
     })

@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+
 const YOUTUBE_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/
 
 export function extractYoutubeVideoId(input: string) {
@@ -79,5 +81,75 @@ export function getInitials(name: string) {
             .join("")
             .toUpperCase()
             .slice(0, 2) || "U"
+    )
+}
+
+export function resolveChatAuthorName(options: {
+    authorName?: string | null
+    profileName?: string | null
+    userEmail?: string | null
+}) {
+    const fromAuthor = options.authorName?.trim()
+    if (fromAuthor) return fromAuthor
+
+    const fromProfile = options.profileName?.trim()
+    if (fromProfile) return fromProfile
+
+    const emailPrefix = options.userEmail?.split("@")[0]?.trim()
+    if (emailPrefix) return emailPrefix
+
+    return "Anonymous"
+}
+
+type ChatAuthorProfile = {
+    name: string | null
+    avatar: string | null
+    email?: string | null
+}
+
+export function resolveChatMessageDisplay(options: {
+    authorName?: string | null
+    authorAvatar?: string | null
+    userId?: string | null
+    profile?: ChatAuthorProfile | null
+}) {
+    const authorName = resolveChatAuthorName({
+        authorName: options.authorName,
+        profileName: options.profile?.name,
+        userEmail: options.profile?.email,
+    })
+
+    return {
+        authorName,
+        authorAvatar:
+            options.authorAvatar?.trim() ||
+            options.profile?.avatar ||
+            null,
+    }
+}
+
+export async function fetchChatAuthorProfiles(
+    supabase: SupabaseClient,
+    userIds: string[],
+) {
+    const uniqueIds = [...new Set(userIds.filter(Boolean))]
+    if (uniqueIds.length === 0) {
+        return new Map<string, ChatAuthorProfile>()
+    }
+
+    const { data } = await supabase
+        .from("users")
+        .select("id, name, avatar, email")
+        .in("id", uniqueIds)
+
+    return new Map(
+        (data ?? []).map((user) => [
+            user.id,
+            {
+                name: user.name,
+                avatar: user.avatar,
+                email: user.email ?? null,
+            },
+        ]),
     )
 }

@@ -185,7 +185,7 @@ export default function StreamsPage() {
       actions={
         <Button className="gap-2">
           <Plus className="size-4" />
-          Schedule Stream
+          Create Live Stream
         </Button>
       }
     >

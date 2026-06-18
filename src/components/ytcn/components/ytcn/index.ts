@@ -17,6 +17,7 @@ export { YtcnQuality } from "./ytcn-quality";
 export { YtcnFullscreen } from "./ytcn-fullscreen";
 export { YtcnOverlay } from "./ytcn-overlay";
 export { YtcnLoader } from "./ytcn-loader";
+export { VideoForensicWatermark } from "./video-forensic-watermark";
 
 // ── Component Props ──
 export type { YtcnPlayerProps } from "./ytcn-player";

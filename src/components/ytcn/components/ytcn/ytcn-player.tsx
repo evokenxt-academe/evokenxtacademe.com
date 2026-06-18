@@ -10,6 +10,7 @@ import type {
   KeyboardBindings,
 } from "./types";
 import { YtcnControls } from "./ytcn-controls";
+import { VideoForensicWatermark } from "./video-forensic-watermark";
 import { useIdleControls } from "@/components/ytcn/hooks/ytcn/use-idle-controls";
 import { IconPlayerPlayFilled, IconLoader2 } from "@tabler/icons-react";
 
@@ -53,6 +54,7 @@ export function YtcnPlayer({
   keyboardShortcuts = true,
   keyboardBindings,
   className,
+  forensicUserId,
 }: YtcnPlayerProps): React.JSX.Element {
   // ── Thumbnail probe — tries CDN URLs in priority order ──
   const { thumbnailUrl, thumbnailLoaded, thumbnailFailed } = useThumbnail(videoId);
@@ -162,7 +164,15 @@ export function YtcnPlayer({
        *  of YouTube's red play button or watermark.
        * ═══════════════════════════════════════════════════════════════ */}
       {state.phase === "loading" && (
-        <div className="absolute inset-0 z-10 bg-black" aria-hidden="true" />
+        <div className="absolute inset-0 z-10 bg-black/90" aria-hidden="true" />
+      )}
+
+      {state.phase === "loading" && isLive && (
+        <div className="pointer-events-none absolute inset-x-0 top-4 z-50 flex justify-center">
+          <div className="rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white shadow-lg ring-1 ring-white/10">
+            Connecting to live broadcast…
+          </div>
+        </div>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -172,7 +182,7 @@ export function YtcnPlayer({
        *  it. When phase becomes "ready", opacity transitions to 0 over
        *  500ms, creating a seamless reveal of the already-playing video.
        * ═══════════════════════════════════════════════════════════════ */}
-      {thumbnailUrl && (
+      {thumbnailUrl && !isLive && (
         <div
           className={cn(
             "absolute inset-0 z-20 transition-opacity duration-500",
@@ -212,6 +222,41 @@ export function YtcnPlayer({
         </div>
       )}
 
+      {(state.phase === "loading" ||
+        (state.phase === "ready" && !state.isPlaying && (state.isCued || state.isLive))) && (
+        <button
+          type="button"
+          onClick={() => {
+            showControls();
+            controls.play();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            showControls();
+            controls.play();
+          }}
+          className="absolute inset-0 z-45 flex flex-col items-center justify-center gap-3 bg-transparent border-0 cursor-pointer touch-manipulation"
+          aria-label={state.isLive ? "Play live stream" : "Play video"}
+        >
+          <div
+            className={cn(
+              "flex items-center justify-center",
+              "h-16 w-16 rounded-full",
+              "bg-black/60 text-white",
+              "transition-transform duration-200",
+              "hover:scale-110",
+            )}
+          >
+            <IconPlayerPlayFilled className="h-8 w-8 translate-x-0.5" fill="currentColor" />
+          </div>
+          {state.isLive && state.isMuted ? (
+            <span className="rounded-full bg-black/70 px-3 py-1 text-xs text-white/90">
+              Tap to play with sound
+            </span>
+          ) : null}
+        </button>
+      )}
+
       {/* ═══════════════════════════════════════════════════════════════
        *  z-40 — Thumbnail play button (thumbnail phase only)
        * ═══════════════════════════════════════════════════════════════ */}
@@ -245,6 +290,10 @@ export function YtcnPlayer({
        *  Only rendered once the video is playing. The click overlay
        *  intercepts clicks for play/pause. Controls bar sits at bottom.
        * ═══════════════════════════════════════════════════════════════ */}
+      {forensicUserId && state.phase === "ready" && (
+        <VideoForensicWatermark userId={forensicUserId} />
+      )}
+
       {state.phase === "ready" && (
         <>
           <div
