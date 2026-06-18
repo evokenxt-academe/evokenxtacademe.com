@@ -178,27 +178,14 @@ export function CourseLiveStreamsDashboard({ courseId }: CourseLiveStreamsDashbo
     else toast.success("Stream deleted");
   };
 
-  const handleGoLive = async (id: string) => {
-    const res = await fetch("/api/youtube/broadcasts/go-live", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ streamId: id }),
-    });
-    if (res.ok) toast.success("Stream is live");
-    else {
-      const data = await res.json();
-      toast.error(data.error ?? "Failed to go live");
-    }
+  const handleGoLive = (id: string) => {
+    router.push(streamControlPath(courseId, id));
+    toast.info("Use Go Live in the Control Room — OBS must be running on this machine.");
   };
 
-  const handleEndStream = async (id: string) => {
-    const res = await fetch("/api/youtube/broadcasts/end", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ streamId: id }),
-    });
-    if (res.ok) toast.success("Stream ended");
-    else toast.error("Failed to end stream");
+  const handleEndStream = (id: string) => {
+    router.push(streamControlPath(courseId, id));
+    toast.info("Use End Stream in the Control Room to stop OBS and YouTube.");
   };
 
   return (
@@ -217,7 +204,7 @@ export function CourseLiveStreamsDashboard({ courseId }: CourseLiveStreamsDashbo
           </Button>
           <Button onClick={() => setScheduleOpen(true)}>
             <Plus className="mr-2 size-4" />
-            Schedule Stream
+            Create Live Stream
           </Button>
         </div>
       </div>
@@ -299,12 +286,12 @@ export function CourseLiveStreamsDashboard({ courseId }: CourseLiveStreamsDashbo
             <div>
               <h3 className="font-semibold">No streams found</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Schedule your first live class for this course.
+                Create your first live stream for this course.
               </p>
             </div>
             <Button onClick={() => setScheduleOpen(true)}>
               <Plus className="mr-2 size-4" />
-              Schedule First Stream
+              Create First Stream
             </Button>
           </CardContent>
         </Card>

@@ -132,8 +132,21 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   // state inside YT callbacks — they fire asynchronously outside React's
   // render cycle and would capture stale values.
   const volumeRef = useRef(100);
-  const isMutedRef = useRef(true);
+  const shouldStartMuted = autoplay && isLive;
+  const isMutedRef = useRef(shouldStartMuted);
   const playbackSpeedRef = useRef<PlaybackSpeed>(defaultSpeed);
+  const autoplayAttemptRef = useRef(0);
+  const liveRetryRef = useRef(0);
+  const isLiveRef = useRef(isLive);
+  const autoplayRef = useRef(autoplay);
+  const videoIdRef = useRef(videoId);
+
+  useEffect(() => {
+    isLiveRef.current = isLive;
+    autoplayRef.current = autoplay;
+    videoIdRef.current = videoId;
+    isMutedRef.current = shouldStartMuted;
+  }, [isLive, autoplay, videoId, shouldStartMuted]);
 
   // Phase ref — allows async functions to read latest phase without stale closure
   const phaseRef = useRef<PlayerState["phase"]>("thumbnail");
@@ -249,9 +262,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
         disablekb: 1,        // Disable YouTube's keyboard controls (we have our own)
         playsinline: 1,      // Inline playback on iOS
         autoplay: 1,         // Start immediately when iframe loads
-        mute: 0,             // Start with sound on by default
+        mute: shouldStartMuted ? 1 : 0,
         origin: window.location.origin,
-        start: Math.floor(seekSeconds),
+        ...(isLive ? {} : { start: Math.floor(seekSeconds) }),
       };
 
       playerRef.current = new yt.Player(newDiv, {
@@ -270,19 +283,69 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             try {
               player.setVolume(volumeRef.current);
               if (!isMutedRef.current) player.unMute();
-              if (playbackSpeedRef.current !== 1) {
+              if (playbackSpeedRef.current !== 1 && !isLive) {
                 player.setPlaybackRate(playbackSpeedRef.current);
               }
               // First caption suppression — before any frames render
               suppressCaptions(player);
+              player.playVideo();
+              if (isLiveRef.current) {
+                window.setTimeout(() => {
+                  try {
+                    const duration = player.getDuration();
+                    if (duration > 0) {
+                      player.seekTo(duration, true);
+                    }
+                  } catch {
+                    /* player may not be ready */
+                  }
+                }, 600);
+              }
             } catch {
               /* player may reject these calls during initialization */
             }
+
+            const attemptId = ++autoplayAttemptRef.current;
+            window.setTimeout(() => {
+              if (!mountedRef.current || attemptId !== autoplayAttemptRef.current) return;
+              const yt3 = getYT();
+              if (!yt3) return;
+              try {
+                const playerState = player.getPlayerState();
+                if (
+                  playerState === yt3.PlayerState.PLAYING ||
+                  playerState === yt3.PlayerState.BUFFERING
+                ) {
+                  return;
+                }
+                if (
+                  playerState === yt3.PlayerState.CUED ||
+                  playerState === yt3.PlayerState.UNSTARTED ||
+                  playerState === yt3.PlayerState.PAUSED
+                ) {
+                  player.playVideo();
+                }
+                setState((prev) =>
+                  prev.phase === "loading"
+                    ? {
+                        ...prev,
+                        phase: "ready",
+                        isPlaying: false,
+                        isCued: true,
+                        isLoading: false,
+                      }
+                    : prev,
+                );
+              } catch {
+                /* player may be destroyed */
+              }
+            }, 1800);
 
             if (!mountedRef.current) return;
             setState((prev) => ({
               ...prev,
               isLoading: false,
+              isMuted: shouldStartMuted,
               duration: player.getDuration() || prev.duration,
               availableQualities: (player as any).getAvailableQualityLevels() || [],
               currentQuality: (player as any).getPlaybackQuality() || "auto",
@@ -297,18 +360,31 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             switch (event.data) {
               case yt2.PlayerState.UNSTARTED:
                 if (!mountedRef.current) return;
-                setState((prev) => ({ ...prev, isCued: true, isPlaying: false }));
+                setState((prev) => ({
+                  ...prev,
+                  phase: prev.phase === "loading" ? "ready" : prev.phase,
+                  isCued: true,
+                  isPlaying: false,
+                  isLoading: false,
+                }));
                 break;
 
               case yt2.PlayerState.CUED:
                 if (!mountedRef.current) return;
-                setState((prev) => ({ ...prev, isCued: true, isPlaying: false }));
+                setState((prev) => ({
+                  ...prev,
+                  phase: prev.phase === "loading" ? "ready" : prev.phase,
+                  isCued: true,
+                  isPlaying: false,
+                  isLoading: false,
+                }));
                 break;
 
               case yt2.PlayerState.PLAYING: {
                 // Suppress captions on every PLAYING event — YouTube re-enables
                 // captions after seek for signed-in users
                 suppressCaptions(player);
+                liveRetryRef.current = 0;
 
                 if (!mountedRef.current) return;
                 // Phase transition: loading → ready (thumbnail fades out)
@@ -367,9 +443,37 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             setState((prev) => ({ ...prev, currentQuality: nextQuality }));
           },
 
-          onError: () => {
+          onError: (event: any) => {
             if (!mountedRef.current) return;
             setState((prev) => ({ ...prev, isLoading: false }));
+
+            if (!isLiveRef.current || liveRetryRef.current >= 15) {
+              return;
+            }
+
+            liveRetryRef.current += 1;
+            const retryDelay = Math.min(2_000 + liveRetryRef.current * 1_000, 8_000);
+            window.setTimeout(() => {
+              if (!mountedRef.current || !videoIdRef.current) return;
+              const player = playerRef.current;
+              try {
+                const anyPlayer = player as any;
+                if (anyPlayer?.loadVideoById) {
+                  anyPlayer.loadVideoById(videoIdRef.current);
+                  anyPlayer.playVideo();
+                  if (isLiveRef.current) {
+                    const duration = anyPlayer.getDuration();
+                    if (duration > 0) {
+                      anyPlayer.seekTo(duration, true);
+                    }
+                  }
+                  return;
+                }
+              } catch {
+                /* fall through to full recreate */
+              }
+              createPlayer(0);
+            }, retryDelay);
           },
         } as any,
       });
@@ -377,25 +481,32 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     // videoId and suppressCaptions are the only true dependencies.
     // All other values (volumeRef, isMutedRef, etc.) are accessed via refs
     // to avoid stale closures, so they don't need to be in the dep array.
-    [videoId, isLive, suppressCaptions]
+    [videoId, isLive, shouldStartMuted, suppressCaptions]
   );
 
-  const handleThumbnailClick = useCallback(async () => {
-    // Use ref to read latest phase — avoids stale closure in async flow
-    if (phaseRef.current !== "thumbnail") return;
+  const beginPlayback = useCallback(async () => {
+    if (phaseRef.current === "ready" || phaseRef.current === "loading") {
+      return;
+    }
 
+    phaseRef.current = "loading";
     if (!mountedRef.current) return;
     setState((prev) => ({ ...prev, phase: "loading", isLoading: true }));
     await loadYouTubeAPI();
 
-    // Guard: component may have unmounted during API load
     if (!mountedRef.current) return;
     createPlayer(startAt);
   }, [startAt, createPlayer]);
 
-  // Reset player and state when videoId changes
+  const handleThumbnailClick = useCallback(async () => {
+    await beginPlayback();
+  }, [beginPlayback]);
+
+  // Reset player and state when videoId or live mode changes
   useEffect(() => {
     if (!videoId) return;
+
+    liveRetryRef.current = 0;
 
     try {
       playerRef.current?.destroy();
@@ -403,6 +514,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       /* player may already be destroyed */
     }
     playerRef.current = null;
+    phaseRef.current = "thumbnail";
 
     setState((prev) => ({
       ...prev,
@@ -417,31 +529,32 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       isAtLiveEdge: false,
       currentQuality: "auto",
       availableQualities: [],
+      isMuted: shouldStartMuted,
     }));
-  }, [videoId, isLive]);
+
+    if (isLive && autoplay) {
+      void beginPlayback();
+    }
+  }, [videoId, isLive, shouldStartMuted, autoplay, beginPlayback]);
 
   useEffect(() => {
     if (!mountedRef.current) return;
-    setState((prev) => ({ ...prev, isLive }));
-  }, [isLive]);
+    setState((prev) => ({ ...prev, isLive, isMuted: shouldStartMuted ? prev.isMuted : prev.isMuted }));
+  }, [isLive, shouldStartMuted]);
 
-  // Autoplay: skip thumbnail phase and start loading immediately
+  // Autoplay for VOD (live autoplay is handled in the reset effect above)
   useEffect(() => {
-    if (autoplay && videoId && phaseRef.current === "thumbnail") {
-      handleThumbnailClick();
-    }
-    // Only trigger on videoId/autoplay changes — handleThumbnailClick is
-    // intentionally excluded to prevent re-triggering on every render
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment above
-  }, [videoId, autoplay]);
+    if (!videoId || !autoplay || isLive) return;
+    if (phaseRef.current !== "thumbnail") return;
+    void beginPlayback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- beginPlayback intentionally excluded
+  }, [videoId, autoplay, isLive]);
 
   // If thumbnail probing fails, skip directly to loading phase
   useEffect(() => {
-    if (thumbnailFailed && phaseRef.current === "thumbnail") {
-      handleThumbnailClick();
-    }
-    // Only trigger when thumbnailFailed changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- see comment above
+    if (!thumbnailFailed || phaseRef.current !== "thumbnail") return;
+    void beginPlayback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- beginPlayback intentionally excluded
   }, [thumbnailFailed]);
 
   // Poll for currentTime / buffered every 250ms
@@ -480,12 +593,34 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   /* ================================================================ */
 
   const play = useCallback((): void => {
+    const player = playerRef.current;
+    if (!player) return;
     try {
-      (playerRef.current as any)?.playVideo();
+      if (isLive) {
+        if (isMutedRef.current) {
+          (player as any).unMute();
+          isMutedRef.current = false;
+          if (mountedRef.current) {
+            setState((prev) => ({ ...prev, isMuted: false }));
+          }
+        }
+        const duration = (player as any).getDuration();
+        if (duration > 0) {
+          (player as any).seekTo(duration, true);
+        }
+      }
+      (player as any).playVideo();
+      if (mountedRef.current) {
+        setState((prev) => ({
+          ...prev,
+          phase: prev.phase === "loading" ? "ready" : prev.phase,
+          isCued: false,
+        }));
+      }
     } catch {
       /* noop — player may not be ready */
     }
-  }, []);
+  }, [isLive]);
 
   const pause = useCallback((): void => {
     try {

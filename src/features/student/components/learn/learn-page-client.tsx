@@ -311,6 +311,7 @@ export function LearnPageClient({
                 onNext={handleNext}
                 sectionTitle={currentFlat?.chapterTitle ?? ""}
                 onTimeUpdate={handleTimeUpdate}
+                userId={userId}
                 initialTimeSeconds={
                   activeLectureId === initialLectureId
                     ? (initialTimeSeconds ?? null)

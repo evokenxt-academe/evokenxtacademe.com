@@ -3,30 +3,42 @@
 import * as React from "react"
 
 import { createClient } from "@/utils/supabase/client"
+import { resolveChatMessageDisplay } from "@/features/live-stream/lib"
 import type { LiveChatMessage } from "@/features/live-stream/types"
 
 type UserProfile = {
     name: string | null
     avatar: string | null
+    email?: string | null
 }
 
-function mapChatMessage(payload: Record<string, unknown>, profile: UserProfile | null): LiveChatMessage | null {
+function mapChatMessage(
+    payload: Record<string, unknown>,
+    profile: UserProfile | null,
+): LiveChatMessage | null {
     const id = String(payload.id ?? "")
     const liveStreamId = String(payload.live_stream_id ?? "")
-    const userId = String(payload.user_id ?? "")
     const message = String(payload.message ?? "")
     const createdAt = String(payload.created_at ?? "")
+    const userId = payload.user_id ? String(payload.user_id) : null
 
-    if (!id || !liveStreamId || !userId || !message || !createdAt) {
+    if (!id || !liveStreamId || !message || !createdAt) {
         return null
     }
+
+    const display = resolveChatMessageDisplay({
+        authorName: payload.author_name as string | null | undefined,
+        authorAvatar: payload.author_avatar as string | null | undefined,
+        userId,
+        profile,
+    })
 
     return {
         id,
         liveStreamId,
         userId,
-        userName: profile?.name?.trim() || "Anonymous",
-        userAvatar: profile?.avatar ?? null,
+        userName: display.authorName,
+        userAvatar: display.authorAvatar,
         message,
         createdAt,
     }
@@ -60,15 +72,31 @@ export function useChatMessages(
                 },
                 async (payload) => {
                     const nextMessage = payload.new as Record<string, unknown>
-                    const userId = String(nextMessage.user_id ?? "")
+                    const userId = nextMessage.user_id
+                        ? String(nextMessage.user_id)
+                        : null
 
-                    const { data: profile } = await supabase
-                        .from("users")
-                        .select("name, avatar")
-                        .eq("id", userId)
-                        .maybeSingle()
+                    let profile: UserProfile | null = null
+                    const hasAuthorName = Boolean(
+                        String(nextMessage.author_name ?? "").trim(),
+                    )
 
-                    const chatMessage = mapChatMessage(nextMessage, profile ?? null)
+                    // Only look up the signed-in user's profile — RLS blocks other users.
+                    if (userId && !hasAuthorName) {
+                        const {
+                            data: { user },
+                        } = await supabase.auth.getUser()
+                        if (user?.id === userId) {
+                            const { data } = await supabase
+                                .from("users")
+                                .select("name, avatar, email")
+                                .eq("id", userId)
+                                .maybeSingle()
+                            profile = data ?? null
+                        }
+                    }
+
+                    const chatMessage = mapChatMessage(nextMessage, profile)
                     if (!chatMessage) {
                         return
                     }

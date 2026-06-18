@@ -27,7 +27,7 @@ import {
   SidebarGroupContent,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { createClient } from "@/utils/supabase/client";
+import { signOutUser } from "@/features/auth/lib/sign-out";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,9 +84,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
   };
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
+    await signOutUser("/");
   };
 
   const initials = user?.name

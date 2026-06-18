@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import {
+    fetchChatAuthorProfiles,
+    resolveChatMessageDisplay,
+} from '@/features/live-stream/lib';
 import type { ChatMsgType } from '@/types/live-stream';
 
 const supabase = createClient();
@@ -19,6 +23,46 @@ interface ChatMessage {
     author_avatar?: string;
     yt_message_id?: string;
     created_at: string;
+}
+
+async function enrichChatMessages(messages: ChatMessage[]): Promise<ChatMessage[]> {
+    const missingUserIds = [
+        ...new Set(
+            messages
+                .filter((message) => !message.author_name?.trim() && message.user_id)
+                .map((message) => message.user_id as string),
+        ),
+    ];
+
+    if (missingUserIds.length === 0) {
+        return messages;
+    }
+
+    const profiles = await fetchChatAuthorProfiles(supabase, missingUserIds);
+
+    return messages.map((message) => {
+        if (message.author_name?.trim()) {
+            return message;
+        }
+
+        const profile = message.user_id ? profiles.get(message.user_id) : null;
+        if (!profile) {
+            return message;
+        }
+
+        const display = resolveChatMessageDisplay({
+            authorName: message.author_name,
+            authorAvatar: message.author_avatar,
+            userId: message.user_id,
+            profile,
+        });
+
+        return {
+            ...message,
+            author_name: display.authorName,
+            author_avatar: display.authorAvatar ?? message.author_avatar,
+        };
+    });
 }
 
 export function useStreamChat(streamId: string, chatModeration = false) {
@@ -45,7 +89,7 @@ export function useStreamChat(streamId: string, chatModeration = false) {
                 if (error) throw error;
                 if (!mounted) return;
 
-                setMessages(data || []);
+                setMessages(await enrichChatMessages(data || []));
                 setLoading(false);
             } catch (err) {
                 console.error('Failed to fetch chat messages:', err);
@@ -65,11 +109,17 @@ export function useStreamChat(streamId: string, chatModeration = false) {
                         filter: `live_stream_id=eq.${streamId}`,
                     },
                     (payload) => {
-                        setMessages((prev) => {
-                            const exists = prev.some((m) => m.id === (payload.new as ChatMessage).id);
-                            if (exists) return prev;
-                            return [...prev, payload.new as ChatMessage];
-                        });
+                        void enrichChatMessages([payload.new as ChatMessage]).then(
+                            ([enriched]) => {
+                                setMessages((prev) => {
+                                    const exists = prev.some(
+                                        (m) => m.id === enriched.id,
+                                    );
+                                    if (exists) return prev;
+                                    return [...prev, enriched];
+                                });
+                            },
+                        );
                     }
                 )
                 .on(
@@ -118,9 +168,22 @@ export function useStreamChat(streamId: string, chatModeration = false) {
 
         const { data: userProfile } = await supabase
             .from('users')
-            .select('name, avatar')
+            .select('name, avatar, email')
             .eq('id', user.id)
             .single();
+
+        const authorName = resolveChatMessageDisplay({
+            authorName: null,
+            authorAvatar: userProfile?.avatar,
+            userId: user.id,
+            profile: userProfile
+                ? {
+                      name: userProfile.name,
+                      avatar: userProfile.avatar,
+                      email: userProfile.email ?? user.email,
+                  }
+                : null,
+        }).authorName;
 
         const optimisticId = `optimistic-${Date.now()}`;
         const optimistic: ChatMessage = {
@@ -129,7 +192,7 @@ export function useStreamChat(streamId: string, chatModeration = false) {
             user_id: user.id,
             message,
             type,
-            author_name: userProfile?.name || user.email?.split('@')[0] || 'User',
+            author_name: authorName,
             author_avatar: userProfile?.avatar || undefined,
             is_approved: isAdmin || !chatModeration,
             is_pinned: false,

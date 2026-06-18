@@ -101,6 +101,11 @@ export interface YtcnPlayerOptions {
    * When true, the hook skips thumbnail phase and goes straight to loading.
    */
   thumbnailFailed?: boolean;
+  /**
+   * When set, overlays a forensic viewer ID watermark on the video.
+   * Cycles visible/hidden on a 30s interval to trace leaked recordings.
+   */
+  forensicUserId?: string;
 }
 
 /* ================================================================ */

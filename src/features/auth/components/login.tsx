@@ -14,7 +14,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { createClient } from "@/utils/supabase/client";
 import { useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, MonitorSmartphone } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -49,6 +50,8 @@ export function LoginCard() {
   const [isCheckingSession, setIsCheckingSession] = React.useState<boolean>(true);
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirectUrl") || searchParams.get("next") || "/dashboard";
+  const authError = searchParams.get("error");
+  const blockReason = searchParams.get("reason");
 
   React.useEffect(() => {
     const checkSessionAndRedirect = async () => {
@@ -122,6 +125,39 @@ export function LoginCard() {
         </CardHeader>
 
         <CardContent className="space-y-5">
+          {(blockReason === "active_session" || authError) && (
+            <Alert
+              variant={blockReason === "active_session" ? "default" : "destructive"}
+              className={
+                blockReason === "active_session"
+                  ? "border-amber-500/30 bg-amber-500/5 text-foreground"
+                  : undefined
+              }
+            >
+              {blockReason === "active_session" ? (
+                <MonitorSmartphone className="size-4 text-amber-600 dark:text-amber-400" />
+              ) : null}
+              <AlertTitle className="text-sm font-semibold">
+                {blockReason === "active_session"
+                  ? "Account already in use"
+                  : "Sign-in failed"}
+              </AlertTitle>
+              <AlertDescription className="text-xs leading-relaxed">
+                {blockReason === "active_session"
+                  ? "This Google account is active on another device or browser. Sign out there first, then try again."
+                  : authError}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/30 px-3.5 py-3">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              For your security, each Google account can only be signed in on{" "}
+              <span className="font-medium text-foreground">one device at a time</span>.
+            </p>
+          </div>
+
           {/* Google sign-in button */}
           <Button
             id="google-sign-in-btn"

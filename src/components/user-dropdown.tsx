@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useUserSession } from "@/features/auth/store/use-user-session";
-import { createClient } from "@/utils/supabase/client";
+import { signOutUser } from "@/features/auth/lib/sign-out";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -38,9 +38,7 @@ export function UserDropdown() {
   }, []);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.reload();
+    await signOutUser("/");
   };
 
   // Generate user initials for avatar fallback
