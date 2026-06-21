@@ -110,5 +110,25 @@ export function useFullscreen(
     };
   }, [isFallbackFullscreen]);
 
+  // Lock orientation to landscape on mobile when native fullscreen is active
+  useEffect(() => {
+    const orientation = window.screen?.orientation as any;
+    if (isFullscreen) {
+      if (window.innerWidth < 768 && orientation && typeof orientation.lock === "function") {
+        orientation.lock("landscape").catch((err: any) => {
+          console.warn("Screen orientation lock failed:", err);
+        });
+      }
+    } else {
+      if (orientation && typeof orientation.unlock === "function") {
+        try {
+          orientation.unlock();
+        } catch (err) {
+          console.warn("Screen orientation unlock failed:", err);
+        }
+      }
+    }
+  }, [isFullscreen]);
+
   return { isFullscreen: activeFullscreen, toggle, enter, exit };
 }

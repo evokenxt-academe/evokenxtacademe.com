@@ -1,4 +1,5 @@
 "use client";
+import * as React from "react";
 import Image from "next/image";
 import {
   SidebarGroupContent,
@@ -23,7 +24,9 @@ import {
   IconCertificate,
   IconClipboardList,
   IconCreditCard,
+  IconDeviceDesktop,
   IconLayoutDashboard,
+  IconLogout,
   IconMessage2,
   IconSchool,
   IconTrophy,
@@ -59,6 +62,11 @@ const ADMIN_SIDEBAR_SECTIONS = [
         title: "Enrollments",
         href: "/admin/enrollments",
         icon: IconCertificate,
+      },
+      {
+        title: "Sessions",
+        href: "/admin/sessions",
+        icon: IconDeviceDesktop,
       },
     ],
   },
@@ -162,14 +170,41 @@ export function AdminSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="px-4 pb-4">
-        <Button variant={"outline"} className="w-full" asChild>
+      <SidebarFooter className="space-y-2 px-4 pb-4">
+        <Button variant="outline" className="w-full" asChild>
           <Link href="/">
             <IconArrowBackUp />
             <span>Back to Site</span>
           </Link>
         </Button>
+        <AdminLogoutButton />
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function AdminLogoutButton() {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleLogout = async () => {
+    setIsLoading(true);
+    try {
+      const { signOutUser } = await import("@/features/auth/lib/sign-out");
+      await signOutUser("/");
+    } catch {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+      onClick={handleLogout}
+      disabled={isLoading}
+    >
+      <IconLogout className="size-4" />
+      <span>{isLoading ? "Signing out…" : "Log out"}</span>
+    </Button>
   );
 }

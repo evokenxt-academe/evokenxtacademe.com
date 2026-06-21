@@ -56,6 +56,7 @@ export async function createLiveBroadcast(
     enableDvr?: boolean;
     enableChat?: boolean;
     resolution?: string;
+    enableEmbed?: boolean;
   } = {}
 ): Promise<{
   broadcastId: string;
@@ -68,7 +69,7 @@ export async function createLiveBroadcast(
   const accessToken = await getAccessToken();
 
   // Step 1: Create broadcast
-  const broadcastRes = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
+  let broadcastRes = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -85,7 +86,8 @@ export async function createLiveBroadcast(
       },
       contentDetails: {
         enableDvr: options.enableDvr !== false,
-        enableEmbed: true,
+        // Only set enableEmbed if explicitly specified, otherwise omit to let YouTube default based on channel status
+        ...(options.enableEmbed !== undefined ? { enableEmbed: options.enableEmbed } : {}),
         enableAutoStart: true,
         enableAutoStop: true,
         recordFromStart: true,
@@ -98,10 +100,51 @@ export async function createLiveBroadcast(
     const error = await broadcastRes.json();
     const reason = error.error?.errors?.[0]?.reason || '';
     const msg = error.error?.message || 'Failed to create broadcast';
-    const err = new Error(`Failed to create broadcast: ${msg}`);
-    (err as any).reason = reason;
-    (err as any).statusCode = broadcastRes.status;
-    throw err;
+
+    // If embedding is not allowed, retry with enableEmbed: false
+    if (reason === 'invalidEmbedSetting' && options.enableEmbed !== false) {
+      console.warn('YouTube live broadcast creation failed with invalidEmbedSetting. Retrying with enableEmbed: false...');
+      broadcastRes = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          snippet: {
+            title,
+            description,
+            scheduledStartTime,
+          },
+          status: {
+            privacyStatus: options.privacy || 'unlisted',
+          },
+          contentDetails: {
+            enableDvr: options.enableDvr !== false,
+            enableEmbed: false,
+            enableAutoStart: true,
+            enableAutoStop: true,
+            recordFromStart: true,
+            enableMonitorStream: false,
+          },
+        }),
+      });
+
+      if (!broadcastRes.ok) {
+        const retryError = await broadcastRes.json();
+        const retryReason = retryError.error?.errors?.[0]?.reason || '';
+        const retryMsg = retryError.error?.message || 'Failed to create broadcast';
+        const err = new Error(`Failed to create broadcast: ${retryMsg}`);
+        (err as any).reason = retryReason;
+        (err as any).statusCode = broadcastRes.status;
+        throw err;
+      }
+    } else {
+      const err = new Error(`Failed to create broadcast: ${msg}`);
+      (err as any).reason = reason;
+      (err as any).statusCode = broadcastRes.status;
+      throw err;
+    }
   }
 
   const broadcast: LiveBroadcast = await broadcastRes.json();

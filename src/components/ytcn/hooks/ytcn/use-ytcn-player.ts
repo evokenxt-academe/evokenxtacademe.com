@@ -53,6 +53,7 @@ function createInitialState(
     isAtLiveEdge: false,
     currentQuality: "auto",
     availableQualities: [],
+    errorCode: null,
   };
 }
 
@@ -394,6 +395,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                   isPlaying: true,
                   isLoading: false,
                   isCued: false,
+                  errorCode: null,
                   duration: player.getDuration() || prev.duration,
                   availableQualities: (player as any).getAvailableQualityLevels() || prev.availableQualities,
                   currentQuality: (player as any).getPlaybackQuality() || prev.currentQuality,
@@ -419,6 +421,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                     : prev.phase === "loading" ? "ready" : prev.phase,
                   isLoading: true,
                   isCued: false,
+                  errorCode: null,
                 }));
                 break;
 
@@ -445,7 +448,13 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
 
           onError: (event: any) => {
             if (!mountedRef.current) return;
-            setState((prev) => ({ ...prev, isLoading: false }));
+            const errCode = event.data;
+            setState((prev) => ({ ...prev, isLoading: false, errorCode: errCode }));
+
+            // If embedding is disabled (101 or 150), do not retry — it's non-recoverable.
+            if (errCode === 101 || errCode === 150) {
+              return;
+            }
 
             if (!isLiveRef.current || liveRetryRef.current >= 15) {
               return;
@@ -530,6 +539,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       currentQuality: "auto",
       availableQualities: [],
       isMuted: shouldStartMuted,
+      errorCode: null,
     }));
 
     if (isLive && autoplay) {

@@ -232,7 +232,9 @@ export function LearnPageClient({
   if (!course || flatLectures.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-background min-h-screen px-4">
-        <p className="text-lg font-medium text-foreground">No lectures available</p>
+        <p className="text-lg font-medium text-foreground">
+          No lectures available
+        </p>
         <p className="mt-1 text-sm text-muted-foreground">
           This course does not have any lectures yet.
         </p>
@@ -261,33 +263,52 @@ export function LearnPageClient({
       <CourseLiveBanner courseId={courseId} courseSlug={courseSlug} />
 
       <div className="flex w-full flex-col lg:h-[calc(100vh-65px)] lg:flex-row">
-        <div ref={scrollContainerRef} className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-          
+        <div
+          ref={scrollContainerRef}
+          className="flex min-w-0 flex-1 flex-col overflow-y-auto"
+        >
           {/* Unified Title Bar */}
           <div className="sticky top-0 z-20 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-xs sm:px-6">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <div className="min-w-0">
-                <h1 className="text-sm font-semibold text-foreground sm:text-base sm:truncate">{displayTitle}</h1>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm font-semibold text-foreground sm:text-base truncate">
+                  {displayTitle}
+                </h1>
                 <p className="hidden sm:block text-[11px] text-muted-foreground/80 mt-0.5">
                   LMS Learning Studio
                 </p>
               </div>
-              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 w-full sm:w-auto">
-                <Badge variant="outline" className="text-xs font-mono font-medium tabular-nums py-0.5 bg-muted/40">
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge
+                  variant="outline"
+                  className="hidden sm:inline-flex text-xs font-mono font-medium tabular-nums py-0.5 bg-muted/40"
+                >
                   {completedCount} of {flatLectures.length} completed
                 </Badge>
-                
+
                 {/* Mobile Curriculum Trigger Sheet */}
-                <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+                <Sheet
+                  open={isMobileSidebarOpen}
+                  onOpenChange={setIsMobileSidebarOpen}
+                >
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="lg:hidden h-8 text-xs font-medium">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="lg:hidden h-8 text-xs font-medium"
+                    >
                       <IconList className="mr-1.5 size-3.5" />
                       Curriculum
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-full sm:max-w-md p-0 overflow-hidden flex flex-col h-full">
+                  <SheetContent
+                    side="right"
+                    className="w-full sm:max-w-md p-0 overflow-hidden flex flex-col h-full"
+                  >
                     <SheetHeader className="px-4 py-3 border-b shrink-0">
-                      <SheetTitle className="text-sm font-semibold">Course Curriculum</SheetTitle>
+                      <SheetTitle className="text-sm font-semibold">
+                        Course Curriculum
+                      </SheetTitle>
                     </SheetHeader>
                     <div className="flex-1 overflow-hidden">
                       {sidebarContent}
@@ -325,11 +346,15 @@ export function LearnPageClient({
               {currentLecture && (
                 <div className="flex flex-col gap-2 bg-muted/[0.02] border border-border/60 rounded-xl p-4 sm:p-5 shadow-2xs">
                   <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground/80">
-                    <span className="truncate max-w-[180px] sm:max-w-xs">{currentFlat?.chapterTitle}</span>
+                    <span className="truncate max-w-[180px] sm:max-w-xs">
+                      {currentFlat?.chapterTitle}
+                    </span>
                     <span className="size-1 rounded-full bg-muted-foreground/30 shrink-0" />
-                    <span className="text-primary font-semibold">Lecture {currentFlatIndex + 1}</span>
+                    <span className="text-primary font-semibold">
+                      Lecture {currentFlatIndex + 1}
+                    </span>
                   </div>
-                  
+
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                     <div className="space-y-1.5 min-w-0">
                       <h2 className="text-base font-semibold leading-tight text-foreground sm:text-lg">
@@ -360,7 +385,10 @@ export function LearnPageClient({
                           disabled={!handlePrevious}
                           onClick={handlePrevious ?? undefined}
                         >
-                          <IconChevronLeft className="mr-1 size-3.5" stroke={2} />
+                          <IconChevronLeft
+                            className="mr-1 size-3.5"
+                            stroke={2}
+                          />
                           Prev
                         </Button>
                         <Button
@@ -371,7 +399,10 @@ export function LearnPageClient({
                           onClick={handleNext ?? undefined}
                         >
                           Next
-                          <IconChevronRight className="ml-1 size-3.5" stroke={2} />
+                          <IconChevronRight
+                            className="ml-1 size-3.5"
+                            stroke={2}
+                          />
                         </Button>
                       </div>
 
@@ -385,9 +416,14 @@ export function LearnPageClient({
                           {updateProgress.isPending ? (
                             <IconLoader2 className="mr-1.5 size-3.5 animate-spin" />
                           ) : (
-                            <IconCheck className="mr-1.5 size-3.5" stroke={2.5} />
+                            <IconCheck
+                              className="mr-1.5 size-3.5"
+                              stroke={2.5}
+                            />
                           )}
-                          {updateProgress.isPending ? "Saving..." : "Mark Complete"}
+                          {updateProgress.isPending
+                            ? "Saving..."
+                            : "Mark Complete"}
                         </Button>
                       ) : (
                         <Button

@@ -32,7 +32,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { signOutUser } from "@/features/auth/lib/sign-out";
+
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
@@ -117,9 +117,7 @@ export function DashboardNavbar({
 
   const pageTitle = getPageTitle(pathname);
 
-  const handleLogout = async () => {
-    await signOutUser("/");
-  };
+
 
   return (
     <>
@@ -234,16 +232,7 @@ export function DashboardNavbar({
               >
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/help")}>
-                Help
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleLogout}
-                className="text-destructive focus:text-destructive"
-              >
-                Logout
-              </DropdownMenuItem>
+
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

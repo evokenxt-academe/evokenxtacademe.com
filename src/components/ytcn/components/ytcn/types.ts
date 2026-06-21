@@ -73,6 +73,8 @@ export interface PlayerState {
   currentQuality: string;
   /** Available quality levels (YouTube internal strings) */
   availableQualities: string[];
+  /** Error code if playback failed (e.g. 101 or 150 for embed disabled) */
+  errorCode: number | null;
 }
 
 /* ================================================================ */

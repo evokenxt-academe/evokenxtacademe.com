@@ -5,6 +5,7 @@ import {
     HEARTBEAT_INTERVAL_MS,
     LMS_HEARTBEAT_COOKIE,
     LMS_SESSION_COOKIE,
+    isSingleSessionEnforced,
 } from "./lib/auth/single-session";
 
 const AUTH_EXEMPT_PATHS = new Set([
@@ -30,7 +31,9 @@ export async function proxy(req: NextRequest) {
             .eq("id", user.id)
             .single();
 
-        if (dbUser?.current_session_id && cookieSessionId !== dbUser.current_session_id) {
+        const enforceSingleSession = isSingleSessionEnforced(dbUser?.role);
+
+        if (enforceSingleSession && dbUser?.current_session_id && cookieSessionId !== dbUser.current_session_id) {
             const expiredUrl = new URL("/auth/session-expired", req.url);
             const response = NextResponse.redirect(expiredUrl);
             response.cookies.delete(LMS_SESSION_COOKIE);

@@ -11,7 +11,6 @@ import {
   Award,
   Compass,
   Settings2,
-  LogOut,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -27,7 +26,7 @@ import {
   SidebarGroupContent,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { signOutUser } from "@/features/auth/lib/sign-out";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,9 +82,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
     return pathname === href;
   };
 
-  const handleLogout = async () => {
-    await signOutUser("/");
-  };
+
 
   const initials = user?.name
     ? user.name
@@ -179,16 +176,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleLogout}
-              tooltip="Log out"
-              className="rounded-xl text-destructive hover:text-destructive"
-            >
-              <LogOut />
-              <span>Log out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+
           <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
             <Tooltip>
               <TooltipTrigger asChild>

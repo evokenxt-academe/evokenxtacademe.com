@@ -12,7 +12,7 @@ import type {
 import { YtcnControls } from "./ytcn-controls";
 import { VideoForensicWatermark } from "./video-forensic-watermark";
 import { useIdleControls } from "@/components/ytcn/hooks/ytcn/use-idle-controls";
-import { IconPlayerPlayFilled, IconLoader2 } from "@tabler/icons-react";
+import { IconPlayerPlayFilled, IconLoader2, IconBrandYoutube, IconAlertCircle } from "@tabler/icons-react";
 
 /* ================================================================ */
 /*  Props                                                            */
@@ -74,6 +74,17 @@ export function YtcnPlayer({
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [hasPlayed, setHasPlayed] = useState(false);
+
+  useEffect(() => {
+    if (state.isPlaying) {
+      setHasPlayed(true);
+    }
+  }, [state.isPlaying]);
+
+  useEffect(() => {
+    setHasPlayed(false);
+  }, [videoId]);
 
   const { controlsVisible, showControls } = useIdleControls({
     isPlaying: state.isPlaying,
@@ -126,7 +137,7 @@ export function YtcnPlayer({
         state.isFullscreen && !controlsVisible && "cursor-none",
         state.isFullscreen
           ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
-          : "aspect-video rounded-lg group",
+          : "aspect-video rounded-none sm:rounded-lg group",
         className
       )}
       onMouseEnter={() => {
@@ -186,7 +197,7 @@ export function YtcnPlayer({
         <div
           className={cn(
             "absolute inset-0 z-20 transition-opacity duration-500",
-            state.phase === "ready" ? "opacity-0 pointer-events-none" : "opacity-100"
+            (state.phase === "ready" && hasPlayed) ? "opacity-0 pointer-events-none" : "opacity-100"
           )}
         >
           <img
@@ -207,80 +218,64 @@ export function YtcnPlayer({
       )}
 
       {/* ═══════════════════════════════════════════════════════════════
-       *  z-40 — Loading spinner (shown during thumbnail + loading phases)
+       *  z-40 — Loading spinner (shown during loading phase)
        *
-       *  Visible in both "thumbnail" (while thumbnail fetches) and "loading"
-       *  (while iframe initializes). pointer-events-none so clicks pass
-       *  through to the play button below.
+       *  Visible in "loading" (while iframe initializes).
+       *  pointer-events-none so click/touch passes through.
        * ═══════════════════════════════════════════════════════════════ */}
       {state.phase === "loading" && (
-        <div
-          className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
-          aria-label="Loading video"
-        >
-          <IconLoader2 className="h-10 w-10 animate-spin text-white/80" />
-        </div>
+        <>
+          <div className="absolute inset-0 z-21 bg-black/50 pointer-events-none" aria-hidden="true" />
+          <div
+            className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+            aria-label="Loading video"
+          >
+            <IconLoader2 className="h-10 w-10 animate-spin text-white/80" />
+          </div>
+        </>
       )}
 
-      {(state.phase === "loading" ||
-        (state.phase === "ready" && !state.isPlaying && (state.isCued || state.isLive))) && (
+      {/* Centered Play Button Overlay */}
+      {(state.phase === "thumbnail" && thumbnailLoaded) && (
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             showControls();
-            controls.play();
+            if (state.phase === "thumbnail") {
+              controls.handleThumbnailClick();
+            } else {
+              controls.play();
+            }
           }}
           onTouchEnd={(e) => {
             e.preventDefault();
             showControls();
-            controls.play();
+            if (state.phase === "thumbnail") {
+              controls.handleThumbnailClick();
+            } else {
+              controls.play();
+            }
           }}
-          className="absolute inset-0 z-45 flex flex-col items-center justify-center gap-3 bg-transparent border-0 cursor-pointer touch-manipulation"
-          aria-label={state.isLive ? "Play live stream" : "Play video"}
-        >
-          <div
-            className={cn(
-              "flex items-center justify-center",
-              "h-16 w-16 rounded-full",
-              "bg-black/60 text-white",
-              "transition-transform duration-200",
-              "hover:scale-110",
-            )}
-          >
-            <IconPlayerPlayFilled className="h-8 w-8 translate-x-0.5" fill="currentColor" />
-          </div>
-          {state.isLive && state.isMuted ? (
-            <span className="rounded-full bg-black/70 px-3 py-1 text-xs text-white/90">
-              Tap to play with sound
-            </span>
-          ) : null}
-        </button>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════
-       *  z-40 — Thumbnail play button (thumbnail phase only)
-       * ═══════════════════════════════════════════════════════════════ */}
-      {state.phase === "thumbnail" && thumbnailLoaded && (
-        <button
-          onClick={controls.handleThumbnailClick}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            controls.handleThumbnailClick();
-          }}
-          className="absolute inset-0 z-40 flex items-center justify-center group/play bg-transparent border-0 cursor-pointer touch-manipulation"
+          className="absolute inset-0 z-30 flex items-center justify-center bg-transparent border-0 cursor-pointer touch-manipulation group/center-play"
           aria-label="Play video"
         >
           <div
             className={cn(
               "flex items-center justify-center",
               "h-16 w-16 rounded-full",
-              "bg-black/60 text-white",
+              "bg-black/60 text-white shadow-xl ring-1 ring-white/10",
               "transition-transform duration-200",
-              "group-hover/play:scale-110"
+              "group-hover/center-play:scale-110",
             )}
           >
             <IconPlayerPlayFilled className="h-8 w-8 translate-x-0.5" fill="currentColor" />
           </div>
+          {state.isLive && state.isMuted ? (
+            <span className="absolute bottom-4 rounded-full bg-black/70 px-3 py-1 text-xs text-white/90">
+              Tap to play with sound
+            </span>
+          ) : null}
         </button>
       )}
 
@@ -337,23 +332,7 @@ export function YtcnPlayer({
             role="button"
             tabIndex={-1}
           />
-          {isTouchDevice && state.phase === "ready" && !state.isPlaying && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                showControls();
-                setMobileSurfaceActive(true);
-                controls.togglePlay();
-              }}
-              className="absolute inset-0 z-27 flex items-center justify-center"
-              aria-label="Play video"
-            >
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-black/70 text-white shadow-xl ring-1 ring-white/20">
-                <IconPlayerPlayFilled className="h-8 w-8 translate-x-px" fill="currentColor" />
-              </span>
-            </button>
-          )}
+          {/* Touch device and paused buttons are handled by the unified centered overlay */}
           <YtcnControls
             state={state}
             onTogglePlay={controls.togglePlay}
@@ -371,6 +350,47 @@ export function YtcnPlayer({
             isTouchDevice={isTouchDevice}
           />
         </>
+      )}
+
+      {state.errorCode !== null && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950/95 p-6 text-center select-text">
+          <div className="mb-4 rounded-full bg-red-500/10 p-3 ring-1 ring-red-500/20">
+            <IconBrandYoutube className="h-8 w-8 text-red-500 animate-pulse" />
+          </div>
+          <h3 className="mb-2 text-lg font-semibold text-zinc-100 tracking-tight">
+            {state.errorCode === 101 || state.errorCode === 150
+              ? "YouTube Playback Restricted"
+              : "Video Playback Error"}
+          </h3>
+          <p className="mb-6 max-w-md text-sm text-zinc-400 leading-relaxed">
+            {state.errorCode === 101 || state.errorCode === 150
+              ? "YouTube has restricted playback on external websites for this video/stream. You can watch it directly on YouTube."
+              : "YouTube encountered an error playing this video. It may be private, deleted, or restricted."}
+            {isLive && (
+              <span className="block mt-2.5 text-xs text-zinc-500 font-medium">
+                You can watch the stream on YouTube and keep this tab open to participate in the live chat and mark your attendance.
+              </span>
+            )}
+            <span className="block mt-3 text-xs text-zinc-500 font-normal italic">
+              Note for host: If this is your channel, ensure "Allow embedding" is checked in your YouTube Studio stream/video settings.
+            </span>
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href={`https://www.youtube.com/watch?v=${videoId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-white",
+                "bg-red-600 hover:bg-red-700 transition-all duration-200 shadow-lg shadow-red-600/20 hover:scale-105 active:scale-95",
+                "focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-zinc-950"
+              )}
+            >
+              <IconBrandYoutube className="h-4 w-4" />
+              Watch on YouTube
+            </a>
+          </div>
+        </div>
       )}
     </div>
   );

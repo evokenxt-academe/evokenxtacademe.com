@@ -178,21 +178,6 @@ export function Navigation() {
             <div className="hidden items-center gap-2 md:flex">
               <ThemeToggle scrolled={isScrolled} hasDarkHero={hasDarkHero} />
 
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "transition-all duration-200",
-                  isScrolled
-                    ? "text-muted-foreground hover:text-foreground"
-                    : hasDarkHero
-                      ? "text-white/80 hover:bg-white/10 hover:text-white"
-                      : "text-foreground/80 hover:bg-foreground/5 hover:text-foreground dark:text-white/80 dark:hover:bg-white/10 dark:hover:text-white",
-                )}
-                asChild
-              >
-                <Link href="/auth/login">Sign in</Link>
-              </Button>
 
               <Button
                 size="sm"
@@ -276,14 +261,7 @@ export function Navigation() {
 
           {/* CTA Buttons */}
           <div className="mt-40 flex flex-col gap-3">
-            <Button
-              variant="outline"
-              className="h-12 w-full text-base"
-              onClick={() => setIsMobileMenuOpen(false)}
-              asChild
-            >
-              <Link href="/auth/login">Sign in</Link>
-            </Button>
+
             <Button
               className="h-12 w-full text-base"
               onClick={() => setIsMobileMenuOpen(false)}
