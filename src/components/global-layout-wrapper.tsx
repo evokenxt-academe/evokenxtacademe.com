@@ -27,6 +27,7 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
     !pathname?.startsWith("/auth/") &&
     !pathname?.startsWith("/my-courses") &&
     !pathname?.startsWith("/learn") &&
+    !pathname?.startsWith("/courses") &&
     !pathname?.startsWith("/offline") &&
     !pathname?.startsWith("/debugger");
 
@@ -94,11 +95,15 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navigation />
+      <div className={pathname?.startsWith("/courses") ? "hidden md:block" : undefined}>
+        <Navigation />
+      </div>
       <div className="flex-1">
         {children}
       </div>
-      <FooterSection />
+      <div className={pathname?.startsWith("/courses") ? "hidden md:block" : undefined}>
+        <FooterSection />
+      </div>
     </div>
   );
 }

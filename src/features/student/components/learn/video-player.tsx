@@ -60,7 +60,7 @@ export function VideoPlayer({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border shadow-xs transition-shadow duration-300 hover:shadow-md bg-black">
+    <div className="overflow-hidden rounded-none sm:rounded-xl border-x-0 border-t-0 sm:border border-b border-border shadow-xs transition-shadow duration-300 hover:shadow-md bg-black">
       <YtcnPlayer
         key={lecture.id}
         videoId={videoId}

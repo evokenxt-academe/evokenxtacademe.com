@@ -97,8 +97,18 @@ export function YouTubeLivePlayer({
 
   if (error) {
     return (
-      <div className={`flex aspect-video items-center justify-center rounded-lg bg-muted ${className}`}>
-        <p className="text-sm text-muted-foreground">{error}</p>
+      <div className={`flex aspect-video flex-col items-center justify-center gap-3 rounded-lg bg-muted p-4 text-center ${className}`}>
+        <p className="text-sm font-medium text-muted-foreground">{error}</p>
+        {videoId && (
+          <a
+            href={`https://www.youtube.com/watch?v=${videoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition-colors"
+          >
+            Watch on YouTube
+          </a>
+        )}
       </div>
     );
   }
