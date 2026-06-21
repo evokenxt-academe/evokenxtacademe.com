@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useYtcnPlayer } from "@/components/ytcn/hooks/ytcn/use-ytcn-player";
 import { useKeyboardShortcuts } from "@/components/ytcn/hooks/ytcn/use-keyboard-shortcuts";
@@ -12,7 +12,18 @@ import type {
 import { YtcnControls } from "./ytcn-controls";
 import { VideoForensicWatermark } from "./video-forensic-watermark";
 import { useIdleControls } from "@/components/ytcn/hooks/ytcn/use-idle-controls";
-import { IconPlayerPlayFilled, IconLoader2, IconBrandYoutube, IconAlertCircle } from "@tabler/icons-react";
+import { 
+  IconPlayerPlayFilled, 
+  IconPlayerPauseFilled,
+  IconLoader2, 
+  IconBrandYoutube, 
+  IconAlertCircle,
+  IconRewindBackward10,
+  IconRewindForward10,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronsRight
+} from "@tabler/icons-react";
 
 /* ================================================================ */
 /*  Props                                                            */
@@ -86,7 +97,7 @@ export function YtcnPlayer({
     setHasPlayed(false);
   }, [videoId]);
 
-  const { controlsVisible, showControls } = useIdleControls({
+  const { controlsVisible, showControls, toggleControls } = useIdleControls({
     isPlaying: state.isPlaying,
     isFullscreen: state.isFullscreen,
     isSettingsOpen,
@@ -94,8 +105,17 @@ export function YtcnPlayer({
 
   // Controls visibility — handled by useIdleControls and group-hover
   const [isHovering, setIsHovering] = useState(false);
-  const [mobileSurfaceActive, setMobileSurfaceActive] = useState(false);
   const [lastTouchTs, setLastTouchTs] = useState(0);
+
+  // States & Refs for Mobile Touch Gestures
+  const [isHolding2x, setIsHolding2x] = useState(false);
+  const [activeRipple, setActiveRipple] = useState<"left" | "right" | null>(null);
+
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const preHoldRateRef = useRef<number | null>(null);
+  const isHoldActiveRef = useRef(false);
 
   useEffect(() => {
     const media = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -105,12 +125,13 @@ export function YtcnPlayer({
     return () => media.removeEventListener("change", apply);
   }, []);
 
+  // Cleanup timeouts on unmount
   useEffect(() => {
-    if (!isTouchDevice || !mobileSurfaceActive) return;
-    if (!state.isPlaying) return;
-    const timeout = window.setTimeout(() => setMobileSurfaceActive(false), 2500);
-    return () => window.clearTimeout(timeout);
-  }, [isTouchDevice, mobileSurfaceActive, state.isPlaying, state.currentTime]);
+    return () => {
+      if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
+      if (rippleTimeoutRef.current) clearTimeout(rippleTimeoutRef.current);
+    };
+  }, []);
 
   // Keyboard shortcuts — only active during "ready" phase
   useKeyboardShortcuts({
@@ -151,9 +172,6 @@ export function YtcnPlayer({
       }}
       onTouchStart={() => {
         showControls();
-        if (isTouchDevice) {
-          setMobileSurfaceActive(true);
-        }
       }}
     >
       {/* ═══════════════════════════════════════════════════════════════
@@ -298,8 +316,60 @@ export function YtcnPlayer({
               e.preventDefault();
               controls.toggleFullscreen();
             }}
+            onTouchStart={(e) => {
+              showControls();
+              
+              if (state.isPlaying) {
+                const touch = e.touches[0];
+                touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+                isHoldActiveRef.current = false;
+
+                if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
+                
+                holdTimeoutRef.current = setTimeout(() => {
+                  isHoldActiveRef.current = true;
+                  setIsHolding2x(true);
+                  preHoldRateRef.current = state.playbackRate;
+                  controls.setSpeed(2); // Set speed to 2x
+                  
+                  if (typeof navigator !== "undefined" && navigator.vibrate) {
+                    try {
+                      navigator.vibrate(60);
+                    } catch (err) {}
+                  }
+                }, 350); // 350ms hold detection
+              }
+            }}
+            onTouchMove={(e) => {
+              if (!touchStartRef.current) return;
+              const touch = e.touches[0];
+              const diffX = Math.abs(touch.clientX - touchStartRef.current.x);
+              const diffY = Math.abs(touch.clientY - touchStartRef.current.y);
+              
+              if (diffX > 15 || diffY > 15) {
+                if (holdTimeoutRef.current) {
+                  clearTimeout(holdTimeoutRef.current);
+                  holdTimeoutRef.current = null;
+                }
+              }
+            }}
             onTouchEnd={(e) => {
               e.preventDefault();
+              
+              if (holdTimeoutRef.current) {
+                clearTimeout(holdTimeoutRef.current);
+                holdTimeoutRef.current = null;
+              }
+
+              if (isHolding2x || isHoldActiveRef.current) {
+                const prevSpeed = preHoldRateRef.current ?? 1;
+                controls.setSpeed(prevSpeed as any);
+                setIsHolding2x(false);
+                isHoldActiveRef.current = false;
+                touchStartRef.current = null;
+                return;
+              }
+
               const now = Date.now();
               const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
               const touch = e.changedTouches[0];
@@ -308,31 +378,138 @@ export function YtcnPlayer({
               const isDoubleTap = now - lastTouchTs < 280;
 
               setLastTouchTs(now);
-              showControls();
-              if (isTouchDevice) setMobileSurfaceActive(true);
 
-              if (isTouchDevice && isDoubleTap) {
+              if (isDoubleTap) {
                 if (zone === "left" && !state.isLive) {
                   controls.seekRelative(-10);
+                  setActiveRipple("left");
+                  if (rippleTimeoutRef.current) clearTimeout(rippleTimeoutRef.current);
+                  rippleTimeoutRef.current = setTimeout(() => setActiveRipple(null), 600);
+                  showControls();
                   return;
                 }
                 if (zone === "right" && !state.isLive) {
                   controls.seekRelative(10);
+                  setActiveRipple("right");
+                  if (rippleTimeoutRef.current) clearTimeout(rippleTimeoutRef.current);
+                  rippleTimeoutRef.current = setTimeout(() => setActiveRipple(null), 600);
+                  showControls();
                   return;
                 }
               }
 
-              if (isTouchDevice && !controlsVisible) {
-                return;
+              if (isTouchDevice) {
+                toggleControls();
+              } else {
+                controls.togglePlay();
               }
-
-              controls.togglePlay();
             }}
-            aria-label="Toggle playback"
+            onTouchCancel={() => {
+              if (holdTimeoutRef.current) {
+                clearTimeout(holdTimeoutRef.current);
+                holdTimeoutRef.current = null;
+              }
+              if (isHolding2x || isHoldActiveRef.current) {
+                const prevSpeed = preHoldRateRef.current ?? 1;
+                controls.setSpeed(prevSpeed as any);
+                setIsHolding2x(false);
+                isHoldActiveRef.current = false;
+              }
+              touchStartRef.current = null;
+            }}
+            aria-label="Toggle playback or controls"
             role="button"
             tabIndex={-1}
           />
-          {/* Touch device and paused buttons are handled by the unified centered overlay */}
+
+          {/* Double Tap Ripple Overlays */}
+          {activeRipple === "left" && (
+            <div className="absolute inset-y-0 left-0 w-1/3 bg-white/5 rounded-r-full pointer-events-none flex flex-col items-center justify-center z-26 overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 rounded-r-full scale-0 animate-yt-ripple origin-left" />
+              <div className="relative z-10 flex flex-col items-center gap-1 text-white/95">
+                <div className="flex gap-0.5">
+                  <IconChevronLeft className="size-5 animate-bounce-left" />
+                  <IconChevronLeft className="size-5 animate-bounce-left [animation-delay:75ms]" />
+                  <IconChevronLeft className="size-5 animate-bounce-left [animation-delay:150ms]" />
+                </div>
+                <span className="text-xs font-semibold tracking-wider">-10s</span>
+              </div>
+            </div>
+          )}
+
+          {activeRipple === "right" && (
+            <div className="absolute inset-y-0 right-0 w-1/3 bg-white/5 rounded-l-full pointer-events-none flex flex-col items-center justify-center z-26 overflow-hidden">
+              <div className="absolute inset-0 bg-white/10 rounded-l-full scale-0 animate-yt-ripple origin-right" />
+              <div className="relative z-10 flex flex-col items-center gap-1 text-white/95">
+                <div className="flex gap-0.5">
+                  <IconChevronRight className="size-5 animate-bounce-right" />
+                  <IconChevronRight className="size-5 animate-bounce-right [animation-delay:75ms]" />
+                  <IconChevronRight className="size-5 animate-bounce-right [animation-delay:150ms]" />
+                </div>
+                <span className="text-xs font-semibold tracking-wider">+10s</span>
+              </div>
+            </div>
+          )}
+
+          {/* Centered Controls Overlay (Play/Pause, Rewind, Fast Forward) */}
+          <div
+            className={cn(
+              "absolute inset-0 z-30 flex items-center justify-center gap-8 pointer-events-none transition-opacity duration-300",
+              (isTouchDevice && controlsVisible) ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+          >
+            {/* Center Rewind 10s */}
+            {!state.isLive && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  controls.seekRelative(-10);
+                  showControls();
+                }}
+                className="pointer-events-auto flex items-center justify-center h-12 w-12 rounded-full bg-black/50 text-white shadow-lg border border-white/10 transition-all duration-200 hover:bg-black/70 hover:scale-110 active:scale-95"
+                aria-label="Rewind 10 seconds"
+              >
+                <IconRewindBackward10 className="size-6" />
+              </button>
+            )}
+
+            {/* Center Play/Pause */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                controls.togglePlay();
+                showControls();
+              }}
+              className="pointer-events-auto flex items-center justify-center h-16 w-16 rounded-full bg-black/60 text-white shadow-xl border border-white/15 transition-all duration-200 hover:bg-black/80 hover:scale-115 active:scale-90"
+              aria-label={state.isPlaying ? "Pause" : "Play"}
+            >
+              {state.isPlaying ? (
+                <IconPlayerPauseFilled className="size-8" />
+              ) : (
+                <IconPlayerPlayFilled className="size-8 translate-x-0.5" />
+              )}
+            </button>
+
+            {/* Center Forward 10s */}
+            {!state.isLive && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  controls.seekRelative(10);
+                  showControls();
+                }}
+                className="pointer-events-auto flex items-center justify-center h-12 w-12 rounded-full bg-black/50 text-white shadow-lg border border-white/10 transition-all duration-200 hover:bg-black/70 hover:scale-110 active:scale-95"
+                aria-label="Forward 10 seconds"
+              >
+                <IconRewindForward10 className="size-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Bottom Controls Bar */}
           <YtcnControls
             state={state}
             onTogglePlay={controls.togglePlay}
@@ -343,13 +520,27 @@ export function YtcnPlayer({
             onQualityChange={controls.setQuality}
             onToggleFullscreen={controls.toggleFullscreen}
             onSeekToLive={controls.seekToLive}
-            visible={isTouchDevice ? controlsVisible || mobileSurfaceActive : controlsVisible}
+            visible={controlsVisible}
             containerRef={containerRef}
             onSettingsOpenChange={setIsSettingsOpen}
             onInteraction={showControls}
             isTouchDevice={isTouchDevice}
           />
         </>
+      )}
+
+      {/* 2X Speed Hold Overlay Pill */}
+      {isHolding2x && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[45] pointer-events-none transition-all duration-200 ease-out animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-1.5 rounded-full bg-black/75 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-white shadow-xl ring-1 ring-white/10 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+            <IconChevronsRight className="size-3.5 text-red-500 animate-pulse" />
+            <span>2X SPEED</span>
+          </div>
+        </div>
       )}
 
       {state.errorCode !== null && (

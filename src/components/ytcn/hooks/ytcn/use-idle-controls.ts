@@ -20,6 +20,8 @@ export interface UseIdleControlsReturn {
   controlsVisible: boolean;
   /** Call to reset the idle timer and show controls */
   showControls: () => void;
+  /** Call to toggle controls visibility manually */
+  toggleControls: () => void;
 }
 
 /* ================================================================ */
@@ -31,54 +33,59 @@ export interface UseIdleControlsReturn {
  *
  * Rules:
  *   - Controls never hide when paused
- *   - Controls never hide when not in fullscreen
  *   - Controls never hide when a popover/dropdown is open
  *   - Calling showControls() resets the 3s timer
+ *   - Calling toggleControls() toggles visibility and manages the timer
  */
 export function useIdleControls({
   isPlaying,
-  isFullscreen,
+  isFullscreen, // Accepted for backward compatibility
   isSettingsOpen,
 }: UseIdleControlsOptions): UseIdleControlsReturn {
   const [controlsVisible, setControlsVisible] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    setIsMobile(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
-
   const showControls = useCallback(() => {
     setControlsVisible(true);
     if (timerRef.current) clearTimeout(timerRef.current);
 
-    // Only auto-hide in fullscreen AND while playing AND settings closed AND not mobile
-    if (isFullscreen && isPlaying && !isSettingsOpen && !isMobile) {
+    // Auto-hide controls when playing and settings are closed
+    if (isPlaying && !isSettingsOpen) {
       timerRef.current = setTimeout(() => {
         setControlsVisible(false);
       }, 3000);
     }
-  }, [isFullscreen, isPlaying, isSettingsOpen, isMobile]);
+  }, [isPlaying, isSettingsOpen]);
 
-  // Reset timer when play state / fullscreen / settings changes
+  const toggleControls = useCallback(() => {
+    setControlsVisible((prev) => {
+      const next = !prev;
+      if (timerRef.current) clearTimeout(timerRef.current);
+
+      if (next && isPlaying && !isSettingsOpen) {
+        timerRef.current = setTimeout(() => {
+          setControlsVisible(false);
+        }, 3000);
+      }
+      return next;
+    });
+  }, [isPlaying, isSettingsOpen]);
+
+  // Reset timer when play state / settings changes
   useEffect(() => {
     showControls();
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isPlaying, isFullscreen, isSettingsOpen, isMobile, showControls]);
+  }, [isPlaying, isSettingsOpen, showControls]);
 
-  // Always show controls when paused, not fullscreen, or on mobile
+  // Always show controls when paused
   useEffect(() => {
-    if (!isPlaying || !isFullscreen || isMobile) {
+    if (!isPlaying) {
       setControlsVisible(true);
       if (timerRef.current) clearTimeout(timerRef.current);
     }
-  }, [isPlaying, isFullscreen, isMobile]);
+  }, [isPlaying]);
 
-  return { controlsVisible, showControls };
+  return { controlsVisible, showControls, toggleControls };
 }

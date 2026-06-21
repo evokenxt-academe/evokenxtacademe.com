@@ -172,4 +172,37 @@
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  @keyframes yt-ripple {
+    0% {
+      transform: scale(0.3);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.15);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bounce-left {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-6px); }
+  }
+
+  @keyframes bounce-right {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(6px); }
+  }
+
+  .animate-yt-ripple {
+    animation: yt-ripple 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  }
+
+  .animate-bounce-left {
+    animation: bounce-left 0.8s infinite;
+  }
+
+  .animate-bounce-right {
+    animation: bounce-right 0.8s infinite;
+  }
 }
