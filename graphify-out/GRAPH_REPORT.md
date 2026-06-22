@@ -1,7 +1,7 @@
 # Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-06-22)
 
 ## Corpus Check
-- 738 files · ~592,559 words
+- 738 files · ~592,343 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -2969,11 +2969,11 @@ Nodes (1): Vercel Logo
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Select()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 13`, `Community 16`, `Community 17`, `Community 20`, `Community 22`?**
-  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+  _High betweenness centrality (0.158) - this node is a cross-community bridge._
 - **Why does `POST()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 35`, `Community 5`, `Community 7`, `Community 8`, `Community 9`, `Community 20`, `Community 22`?**
-  _High betweenness centrality (0.076) - this node is a cross-community bridge._
-- **Why does `createClient()` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 9`, `Community 10`, `Community 13`, `Community 20`?**
-  _High betweenness centrality (0.049) - this node is a cross-community bridge._
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+- **Why does `String()` connect `Community 5` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 11`?**
+  _High betweenness centrality (0.051) - this node is a cross-community bridge._
 - **Are the 227 inferred relationships involving `Select()` (e.g. with `run()` and `run()`) actually correct?**
   _`Select()` has 227 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 37 inferred relationships involving `POST()` (e.g. with `requireAdmin()` and `syncChapterFromPlaylist()`) actually correct?**

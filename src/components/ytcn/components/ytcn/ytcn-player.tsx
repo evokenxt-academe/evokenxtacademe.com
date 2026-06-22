@@ -111,6 +111,8 @@ export function YtcnPlayer({
   const [isHolding2x, setIsHolding2x] = useState(false);
   const [activeRipple, setActiveRipple] = useState<"left" | "right" | null>(null);
 
+  const finalControlsVisible = controlsVisible && !isHolding2x;
+
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const holdTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -155,7 +157,7 @@ export function YtcnPlayer({
       aria-label="Video player"
       className={cn(
         "relative w-full bg-black select-none overflow-hidden",
-        state.isFullscreen && !controlsVisible && "cursor-none",
+        state.isFullscreen && !finalControlsVisible && "cursor-none",
         state.isFullscreen
           ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
           : "aspect-video rounded-none sm:rounded-lg group",
@@ -168,9 +170,6 @@ export function YtcnPlayer({
       onMouseLeave={() => setIsHovering(false)}
       onMouseMove={() => {
         if (!isHovering) setIsHovering(true);
-        showControls();
-      }}
-      onTouchStart={() => {
         showControls();
       }}
     >
@@ -317,8 +316,6 @@ export function YtcnPlayer({
               controls.toggleFullscreen();
             }}
             onTouchStart={(e) => {
-              showControls();
-              
               if (state.isPlaying) {
                 const touch = e.touches[0];
                 touchStartRef.current = { x: touch.clientX, y: touch.clientY };
@@ -455,7 +452,7 @@ export function YtcnPlayer({
           <div
             className={cn(
               "absolute inset-0 z-30 flex items-center justify-center gap-8 pointer-events-none transition-opacity duration-300",
-              (isTouchDevice && controlsVisible) ? "opacity-100" : "opacity-0 pointer-events-none"
+              (isTouchDevice && finalControlsVisible) ? "opacity-100" : "opacity-0 pointer-events-none"
             )}
           >
             {/* Center Rewind 10s */}
@@ -520,7 +517,7 @@ export function YtcnPlayer({
             onQualityChange={controls.setQuality}
             onToggleFullscreen={controls.toggleFullscreen}
             onSeekToLive={controls.seekToLive}
-            visible={controlsVisible}
+            visible={finalControlsVisible}
             containerRef={containerRef}
             onSettingsOpenChange={setIsSettingsOpen}
             onInteraction={showControls}
