@@ -84,6 +84,7 @@ export function YtcnControls({
     <div
       onMouseEnter={onInteraction}
       onMouseMove={onInteraction}
+      onTouchStart={onInteraction}
       className={cn(
         "absolute inset-x-0 bottom-0 z-30 flex flex-col transition-opacity duration-300",
         state.isFullscreen || isTouchDevice

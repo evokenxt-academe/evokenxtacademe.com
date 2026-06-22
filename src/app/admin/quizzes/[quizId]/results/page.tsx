@@ -2,15 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuiz, useQuizRanking } from "@/hooks/useQuizzes";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import Link from "next/link";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -55,35 +47,6 @@ export default function QuizResultsPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6 md:p-10 p-4">
       <div className="flex flex-col gap-4">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/admin">Admin</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/admin/quizzes">Quizzes</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              {quizLoading ? (
-                <Skeleton className="h-4 w-24" />
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link href={`/admin/quizzes/${quizId}`}>{quiz?.title}</Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Results & Ranking</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
 
         <div className="flex items-center gap-4">
           <Button

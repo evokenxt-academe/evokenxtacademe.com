@@ -33,14 +33,90 @@ export function AdminHeader() {
   // Register FCM token + listen for foreground notifications
   useNotifications(userId);
 
-  // Generate breadcrumb items from pathname
+  // Generate breadcrumb items from pathname — skip UUIDs, use smart labels
   const breadcrumbItems = useMemo(() => {
     const segments = pathname.split("/").filter(Boolean);
+    const isUUID = (s: string) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
-    return segments.map((segment, index) => ({
-      label: segment.charAt(0).toUpperCase() + segment.slice(1),
-      href: `/${segments.slice(0, index + 1).join("/")}`,
-      isLast: index === segments.length - 1,
+    /** Human-readable labels for known route slugs */
+    const LABEL_MAP: Record<string, string> = {
+      admin: "Dashboard",
+      courses: "Courses",
+      "live-streams": "Live Streams",
+      control: "Control Room",
+      analytics: "Analytics",
+      edit: "Edit",
+      new: "New",
+      content: "Content",
+      bank: "Question Bank",
+      import: "Import",
+      quizzes: "Quizzes",
+      builder: "Builder",
+      preview: "Preview",
+      results: "Results",
+      enrollments: "Enrollments",
+      students: "Students",
+      payments: "Payments",
+      reviews: "Reviews",
+      notifications: "Notifications",
+      sessions: "Sessions",
+      certificates: "Certificates",
+      "total-user": "Users",
+      "live-chat": "Live Chat",
+      streams: "Streams",
+      instructor: "Instructor",
+      tests: "Tests",
+      youtube: "YouTube",
+      chat: "Chat",
+    };
+
+    /** Context-aware labels — when a slug follows a UUID, append context */
+    const CONTEXTUAL_SUFFIX: Record<string, string> = {
+      edit: "Edit",
+      control: "Control Room",
+      analytics: "Analytics",
+      content: "Content",
+      builder: "Builder",
+      preview: "Preview",
+      results: "Results",
+      chat: "Chat",
+    };
+
+    const items: { label: string; href: string }[] = [];
+
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+
+      // Skip UUID segments — they shouldn't appear in the breadcrumb
+      if (isUUID(segment)) continue;
+
+      const href = `/${segments.slice(0, i + 1).join("/")}`;
+      let label = LABEL_MAP[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+
+      // If this slug directly follows a UUID, check for contextual label
+      if (i > 0 && isUUID(segments[i - 1]) && CONTEXTUAL_SUFFIX[segment]) {
+        // Find what the UUID refers to by looking at the segment before it
+        const parentSlug = i >= 2 ? segments[i - 2] : "";
+        const parentLabel =
+          parentSlug === "courses"
+            ? "Course"
+            : parentSlug === "live-streams"
+              ? "Stream"
+              : parentSlug === "quizzes"
+                ? "Quiz"
+                : "";
+        if (parentLabel && CONTEXTUAL_SUFFIX[segment]) {
+          label = `${CONTEXTUAL_SUFFIX[segment]}${parentLabel ? ` ${parentLabel}` : ""}`;
+        }
+      }
+
+      items.push({ label, href });
+    }
+
+    return items.map((item, index) => ({
+      ...item,
+      isLast: index === items.length - 1,
     }));
   }, [pathname]);
 
@@ -52,19 +128,19 @@ export function AdminHeader() {
         <div className="hidden min-w-0 lg:block">
           <Breadcrumb>
             <BreadcrumbList>
-              {breadcrumbItems.map((item, index) => (
+              {breadcrumbItems.map((item) => (
                 <Fragment key={item.href}>
                   <BreadcrumbItem>
                     {item.isLast ? (
                       <BreadcrumbPage className="font-medium">
-                        {index === 0 ? "Dashboard" : item.label}
+                        {item.label}
                       </BreadcrumbPage>
                     ) : (
                       <BreadcrumbLink
                         href={item.href}
                         className="text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        {index === 0 ? "Dashboard" : item.label}
+                        {item.label}
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>

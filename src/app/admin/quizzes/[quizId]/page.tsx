@@ -17,16 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 import { Save, Layers, ArrowLeft } from "lucide-react";
 import type { QuizType, ShowAnswersAfter } from "@/types/quiz";
@@ -134,25 +127,6 @@ export default function EditQuizPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 md:py-10 py-4 ">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/admin">Admin</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/admin/quizzes">Quizzes</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{quiz.title}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

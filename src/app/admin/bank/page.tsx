@@ -36,15 +36,7 @@ import {
   RefreshCw,
   Layers,
 } from "lucide-react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 import { useInView } from "react-intersection-observer";
 import { useEffect } from "react";
@@ -106,19 +98,6 @@ export default function QuestionBankPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/admin">Admin</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Question Bank</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
 
       <div className="flex items-center justify-between">
         <div>

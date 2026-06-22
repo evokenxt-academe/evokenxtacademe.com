@@ -1,14 +1,7 @@
 import { QuizBuilderLayoutWithProvider } from "@/components/quiz/builder/QuizBuilderLayoutWithProvider";
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+
 import Link from "next/link";
 import { LiveIndicator } from "@/components/quiz/LiveIndicator";
 import { Button } from "@/components/ui/button";
@@ -44,33 +37,6 @@ export default async function BuilderPage({
   return (
     <div className="mx-auto max-w-[1400px] space-y-4 p-4 md:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Breadcrumb className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <BreadcrumbList className="flex-nowrap">
-            <BreadcrumbItem className="hidden sm:inline-flex">
-              <BreadcrumbLink asChild>
-                <Link href="/admin">Admin</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator className="hidden sm:inline-flex" />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/admin/quizzes">Quizzes</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={`/admin/quizzes/${quiz.id}`} className="max-w-[140px] truncate sm:max-w-none">
-                  {quiz.title}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Builder</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
 
         <div className="flex items-center gap-2">
           <LiveIndicator table={`quiz-builder-${quizId}`} />
