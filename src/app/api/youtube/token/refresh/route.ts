@@ -12,7 +12,9 @@ export async function POST() {
   if ('error' in auth) return auth.error;
 
   try {
-    const accessToken = await getAccessTokenForUser(auth.userId);
+    // Resolve the token for the main YouTube admin user (rather than the current admin session user ID)
+    // to keep it consistent with status/disconnect API routes
+    const accessToken = await getAccessTokenForUser();
     return NextResponse.json({ access_token: accessToken, success: true });
   } catch (error) {
     console.error('Token refresh error:', error);

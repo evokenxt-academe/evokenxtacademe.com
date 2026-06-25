@@ -33,7 +33,7 @@ export async function proxy(req: NextRequest) {
 
         const enforceSingleSession = isSingleSessionEnforced(dbUser?.role);
 
-        if (enforceSingleSession && dbUser?.current_session_id && cookieSessionId !== dbUser.current_session_id) {
+        if (enforceSingleSession && (!dbUser?.current_session_id || cookieSessionId !== dbUser.current_session_id)) {
             const expiredUrl = new URL("/auth/session-expired", req.url);
             const response = NextResponse.redirect(expiredUrl);
             response.cookies.delete(LMS_SESSION_COOKIE);
@@ -41,33 +41,27 @@ export async function proxy(req: NextRequest) {
             return response;
         }
 
-        // Heartbeat: keep session_last_seen_at fresh for single-session enforcement
-        if (
-            dbUser?.current_session_id &&
-            cookieSessionId === dbUser.current_session_id &&
-            (dbUser.role === "student" || !dbUser.role)
-        ) {
-            const lastHeartbeat = Number(req.cookies.get(LMS_HEARTBEAT_COOKIE)?.value ?? 0);
-            const now = Date.now();
+        // Heartbeat: keep session_last_seen_at fresh
+        const lastHeartbeat = Number(req.cookies.get(LMS_HEARTBEAT_COOKIE)?.value ?? 0);
+        const now = Date.now();
 
-            if (!lastHeartbeat || now - lastHeartbeat > HEARTBEAT_INTERVAL_MS) {
-                try {
-                    const adminClient = createAdminClient();
-                    await adminClient
-                        .from("users")
-                        .update({ session_last_seen_at: new Date().toISOString() })
-                        .eq("id", user.id);
+        if (!lastHeartbeat || now - lastHeartbeat > HEARTBEAT_INTERVAL_MS) {
+            try {
+                const adminClient = createAdminClient();
+                await adminClient
+                    .from("users")
+                    .update({ session_last_seen_at: new Date().toISOString() })
+                    .eq("id", user.id);
 
-                    supabaseResponse.cookies.set(LMS_HEARTBEAT_COOKIE, String(now), {
-                        path: "/",
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === "production",
-                        sameSite: "lax",
-                        maxAge: 60 * 60,
-                    });
-                } catch (err) {
-                    console.error("Session heartbeat update failed:", err);
-                }
+                supabaseResponse.cookies.set(LMS_HEARTBEAT_COOKIE, String(now), {
+                    path: "/",
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === "production",
+                    sameSite: "lax",
+                    maxAge: 60 * 60,
+                });
+            } catch (err) {
+                console.error("Session heartbeat update failed:", err);
             }
         }
     }

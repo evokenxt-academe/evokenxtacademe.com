@@ -124,6 +124,11 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      // Clean up quality enforcement timer
+      if (qualityEnforceTimerRef.current) {
+        clearTimeout(qualityEnforceTimerRef.current);
+        qualityEnforceTimerRef.current = null;
+      }
     };
   }, []);
 
@@ -136,6 +141,10 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   const shouldStartMuted = autoplay && isLive;
   const isMutedRef = useRef(shouldStartMuted);
   const playbackSpeedRef = useRef<PlaybackSpeed>(defaultSpeed);
+  const preferredQualityRef = useRef<string | null>(null);
+  const qualityEnforceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const qualityEnforceCountRef = useRef(0);
+  const skipQualityEventRef = useRef(false);
   const autoplayAttemptRef = useRef(0);
   const liveRetryRef = useRef(0);
   const isLiveRef = useRef(isLive);
@@ -215,6 +224,65 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       (player as any).setOption("cc", "track", {});
     } catch {
       /* player may be in a transitional state */
+    }
+  }, []);
+
+  /**
+   * enforceQuality — Forces the YouTube player to use the preferred quality.
+   *
+   * YouTube's `setPlaybackQuality()` is a "suggestion" that YouTube often
+   * ignores. The only reliable way to force a quality change is:
+   *   1. Call `setPlaybackQuality(quality)` to suggest the level.
+   *   2. If `setPlaybackQualityRange` exists, lock min=max.
+   *   3. Micro-seek to the current position — this forces YouTube to
+   *      re-buffer and re-evaluate quality at the suggested level.
+   *
+   * An enforcement counter prevents infinite loops: if we've tried 3+
+   * times and YouTube keeps overriding, we accept its choice (it may
+   * not have that quality available at the current bitrate/connection).
+   *
+   * @param withSeek  If true, performs a micro-seek to force re-buffering.
+   *                  Set false for "soft" enforcement (e.g., PLAYING state)
+   *                  to avoid visible playback disruption.
+   */
+  const enforceQuality = useCallback((
+    player: YT.Player,
+    quality: string,
+    withSeek: boolean = false,
+  ): void => {
+    if (!quality || quality === "auto" || quality === "default") return;
+    try {
+      const anyPlayer = player as any;
+
+      // Set the skip flag so onPlaybackQualityChange doesn't fight us
+      skipQualityEventRef.current = true;
+
+      // 1. Suggest the quality level
+      if (typeof anyPlayer.setPlaybackQuality === "function") {
+        anyPlayer.setPlaybackQuality(quality);
+      }
+
+      // 2. If available, lock the quality range min=max
+      if (typeof anyPlayer.setPlaybackQualityRange === "function") {
+        anyPlayer.setPlaybackQualityRange(quality, quality);
+      }
+
+      // 3. Micro-seek to force YouTube to re-buffer at the suggested quality.
+      //    This is the key operation — without it, YouTube ignores the suggestion.
+      if (withSeek) {
+        const currentTime = anyPlayer.getCurrentTime();
+        if (currentTime !== undefined && currentTime >= 0) {
+          anyPlayer.seekTo(currentTime, true);
+        }
+      }
+
+      // Clear the skip flag after a tick so the next real quality event is handled
+      setTimeout(() => {
+        skipQualityEventRef.current = false;
+      }, 200);
+    } catch {
+      skipQualityEventRef.current = false;
+      /* player may not be ready */
     }
   }, []);
 
@@ -306,6 +374,23 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
               /* player may reject these calls during initialization */
             }
 
+            // Auto-set highest available quality on ready
+            try {
+              const availableQualities: string[] = (player as any).getAvailableQualityLevels() || [];
+              if (availableQualities.length > 0) {
+                // YouTube returns qualities sorted highest-first
+                // e.g., ["hd1080", "hd720", "large", "medium", "small", "tiny", "auto"]
+                const highestQuality = availableQualities.find((q: string) => q !== "auto" && q !== "default") || availableQualities[0];
+                if (highestQuality && highestQuality !== "auto" && highestQuality !== "default") {
+                  preferredQualityRef.current = highestQuality;
+                  qualityEnforceCountRef.current = 0;
+                  enforceQuality(player, highestQuality, false);
+                }
+              }
+            } catch {
+              /* quality APIs may not be available yet */
+            }
+
             const attemptId = ++autoplayAttemptRef.current;
             window.setTimeout(() => {
               if (!mountedRef.current || attemptId !== autoplayAttemptRef.current) return;
@@ -343,13 +428,15 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             }, 1800);
 
             if (!mountedRef.current) return;
+            const readyQualities: string[] = (player as any).getAvailableQualityLevels() || [];
+            const readyCurrentQuality: string = preferredQualityRef.current || (player as any).getPlaybackQuality() || "auto";
             setState((prev) => ({
               ...prev,
               isLoading: false,
               isMuted: shouldStartMuted,
               duration: player.getDuration() || prev.duration,
-              availableQualities: (player as any).getAvailableQualityLevels() || [],
-              currentQuality: (player as any).getPlaybackQuality() || "auto",
+              availableQualities: readyQualities,
+              currentQuality: readyCurrentQuality,
             }));
           },
 
@@ -387,8 +474,15 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                 suppressCaptions(player);
                 liveRetryRef.current = 0;
 
+                // Re-enforce preferred quality on every PLAYING transition.
+                // YouTube often downgrades quality after buffering/seeking.
+                if (preferredQualityRef.current) {
+                  enforceQuality(player, preferredQualityRef.current);
+                }
+
                 if (!mountedRef.current) return;
                 // Phase transition: loading → ready (thumbnail fades out)
+                const playingQualities: string[] = (player as any).getAvailableQualityLevels() || [];
                 setState((prev) => ({
                   ...prev,
                   phase: "ready",
@@ -397,8 +491,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                   isCued: false,
                   errorCode: null,
                   duration: player.getDuration() || prev.duration,
-                  availableQualities: (player as any).getAvailableQualityLevels() || prev.availableQualities,
-                  currentQuality: (player as any).getPlaybackQuality() || prev.currentQuality,
+                  availableQualities: playingQualities.length > 0 ? playingQualities : prev.availableQualities,
+                  currentQuality: preferredQualityRef.current || (player as any).getPlaybackQuality() || prev.currentQuality,
                 }));
                 break;
               }
@@ -442,7 +536,42 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
 
           onPlaybackQualityChange: (event: any) => {
             if (!mountedRef.current) return;
+
+            // Skip events triggered by our own enforceQuality calls
+            if (skipQualityEventRef.current) return;
+
             const nextQuality = event.data || "auto";
+            const preferred = preferredQualityRef.current;
+
+            // Detect YouTube-initiated quality downgrade.
+            // If the user has locked a quality and YouTube tries to switch
+            // to something different, attempt to re-enforce — but only up
+            // to 3 times to prevent infinite loops (YouTube may not support
+            // the requested quality at the current connection/bitrate).
+            if (
+              preferred &&
+              preferred !== "auto" &&
+              preferred !== "default" &&
+              nextQuality !== preferred &&
+              qualityEnforceCountRef.current < 3
+            ) {
+              qualityEnforceCountRef.current += 1;
+              const player = playerRef.current;
+              if (player) {
+                if (qualityEnforceTimerRef.current) {
+                  clearTimeout(qualityEnforceTimerRef.current);
+                }
+                qualityEnforceTimerRef.current = setTimeout(() => {
+                  if (!mountedRef.current || !playerRef.current) return;
+                  enforceQuality(playerRef.current, preferred, true);
+                }, 400);
+              }
+              // Don't update state to the downgraded quality yet
+              return;
+            }
+
+            // Quality matched our preference, or we've given up enforcing
+            qualityEnforceCountRef.current = 0;
             setState((prev) => ({ ...prev, currentQuality: nextQuality }));
           },
 
@@ -490,7 +619,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     // videoId and suppressCaptions are the only true dependencies.
     // All other values (volumeRef, isMutedRef, etc.) are accessed via refs
     // to avoid stale closures, so they don't need to be in the dep array.
-    [videoId, isLive, shouldStartMuted, suppressCaptions]
+    [videoId, isLive, shouldStartMuted, suppressCaptions, enforceQuality]
   );
 
   const beginPlayback = useCallback(async () => {
@@ -516,6 +645,13 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     if (!videoId) return;
 
     liveRetryRef.current = 0;
+    preferredQualityRef.current = null;
+    qualityEnforceCountRef.current = 0;
+    skipQualityEventRef.current = false;
+    if (qualityEnforceTimerRef.current) {
+      clearTimeout(qualityEnforceTimerRef.current);
+      qualityEnforceTimerRef.current = null;
+    }
 
     try {
       playerRef.current?.destroy();
@@ -737,10 +873,41 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, playbackRate: rate }));
       }
+
+      // Re-enforce quality after speed change.
+      // YouTube's adaptive bitrate algorithm downgrades quality when
+      // speed increases (especially at 2x) to reduce decoding load.
+      const preferred = preferredQualityRef.current;
+      if (preferred && preferred !== "auto" && preferred !== "default") {
+        // Reset enforcement counter — new speed is a new context
+        qualityEnforceCountRef.current = 0;
+
+        // Soft enforcement first (no seek — avoids visible stutter)
+        enforceQuality(player, preferred, false);
+
+        // Delayed hard enforcement with micro-seek: YouTube sometimes
+        // downgrades quality asynchronously ~300-500ms after a speed change.
+        // The seek forces it to re-buffer at our preferred quality.
+        if (qualityEnforceTimerRef.current) {
+          clearTimeout(qualityEnforceTimerRef.current);
+        }
+        qualityEnforceTimerRef.current = setTimeout(() => {
+          if (!mountedRef.current || !playerRef.current) return;
+          // Only hard-enforce if YouTube actually downgraded
+          try {
+            const currentQ = (playerRef.current as any).getPlaybackQuality();
+            if (currentQ !== preferred) {
+              enforceQuality(playerRef.current, preferred, true);
+            }
+          } catch {
+            /* noop */
+          }
+        }, 600);
+      }
     } catch {
       /* noop — player may not be ready */
     }
-  }, []);
+  }, [enforceQuality]);
 
   const seekToLive = useCallback((): void => {
     if (!isLive) return;
@@ -763,19 +930,36 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     try {
       const normalized = normalizeQualityValue(quality, state.availableQualities);
 
-      if (normalized === "auto") {
-        (player as any).setPlaybackQuality("default");
-      } else {
-        (player as any).setPlaybackQuality(normalized);
-        // Ask YouTube to prefer this range when supported.
-        if (typeof (player as any).setPlaybackQualityRange === "function") {
-          (player as any).setPlaybackQualityRange(normalized);
-        }
+      // Clear any pending quality enforcement timers
+      if (qualityEnforceTimerRef.current) {
+        clearTimeout(qualityEnforceTimerRef.current);
+        qualityEnforceTimerRef.current = null;
       }
 
-      // Force quality re-evaluation at current position.
-      const currentTime = player.getCurrentTime();
-      player.seekTo(currentTime, true);
+      if (normalized === "auto" || normalized === "default") {
+        // "Auto" mode: let YouTube manage quality adaptively
+        preferredQualityRef.current = null;
+        try {
+          const anyPlayer = player as any;
+          if (typeof anyPlayer.setPlaybackQualityRange === "function") {
+            // Set range from lowest to highest to allow full adaptive range
+            const qualities = anyPlayer.getAvailableQualityLevels() || [];
+            if (qualities.length > 1) {
+              const lowest = qualities[qualities.length - 1];
+              const highest = qualities[0];
+              anyPlayer.setPlaybackQualityRange(lowest, highest);
+            }
+          }
+          anyPlayer.setPlaybackQuality("default");
+        } catch {
+          /* noop */
+        }
+      } else {
+        // Locked quality mode: persist preference and enforce it with seek
+        preferredQualityRef.current = normalized;
+        qualityEnforceCountRef.current = 0;
+        enforceQuality(player, normalized, true);
+      }
 
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, currentQuality: normalized }));
@@ -783,7 +967,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     } catch {
       /* noop */
     }
-  }, [state.availableQualities]);
+  }, [state.availableQualities, enforceQuality]);
 
   // ── Compose controls object ──
   const controls: PlayerControls = {
