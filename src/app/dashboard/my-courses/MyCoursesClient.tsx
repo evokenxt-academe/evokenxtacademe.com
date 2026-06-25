@@ -170,68 +170,72 @@ export function MyCoursesClient({ rows: initialRows }: { rows: MyCourseRow[] }) 
             const pct = total > 0 ? Math.round((c.completed_lectures / total) * 100) : 0;
             const isDone = total > 0 && c.completed_lectures === total;
             return (
-              <Card
+              <Link
                 key={c.enrollment_id}
-                className={cn(
-                  "overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-xl",
-                )}
+                href={`/learn/${c.slug}`}
+                className="block group"
               >
-                <div className="relative aspect-video bg-muted">
-                  {c.thumbnail_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.thumbnail_url} alt="" className="h-full w-full object-cover" />
-                  ) : null}
-                  <div className="absolute left-3 top-3 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">{c.program_body}</Badge>
-                    <Badge variant="outline">{c.subject_code}</Badge>
-                    {isDone ? <Badge variant="secondary">Certificate Ready</Badge> : null}
-                    {c.has_payment_risk ? (
-                      <Badge variant={c.overdue_instalments > 0 ? "destructive" : "secondary"}>
-                        <IconBolt data-icon="inline-start" />
-                        {c.overdue_instalments > 0 ? "Payment Overdue" : "Payment Pending"}
-                      </Badge>
+                <Card
+                  className={cn(
+                    "overflow-hidden transition-all duration-300 border border-border/85 bg-card group-hover:border-primary/30 group-hover:-translate-y-1 group-hover:shadow-lg",
+                  )}
+                >
+                  <div className="relative aspect-video bg-muted overflow-hidden">
+                    {c.thumbnail_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={c.thumbnail_url}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
                     ) : null}
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-black/70 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 p-3">
-                    <div className="font-medium text-white line-clamp-2">{c.title}</div>
-                    <div className="mt-1 text-xs text-white/75">
-                      {c.subject_name} · {c.level_label}
+                    <div className="absolute left-3 top-3 flex flex-wrap items-center gap-2 z-10">
+                      <Badge variant="secondary">{c.program_body}</Badge>
+                      <Badge variant="outline" className="bg-background/80 backdrop-blur-xs">{c.subject_code}</Badge>
+                      {isDone ? <Badge variant="secondary">Certificate Ready</Badge> : null}
+                      {c.has_payment_risk ? (
+                        <Badge variant={c.overdue_instalments > 0 ? "destructive" : "secondary"}>
+                          <IconBolt data-icon="inline-start" className="size-3" />
+                          {c.overdue_instalments > 0 ? "Payment Overdue" : "Payment Pending"}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent opacity-90 transition-opacity group-hover:opacity-95" />
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      <div className="font-semibold text-white text-base leading-snug line-clamp-2 transition-colors">
+                        {c.title}
+                      </div>
+                      <div className="mt-1 text-xs text-white/80">
+                        {c.subject_name} · {c.level_label}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <CardContent className="flex flex-col gap-3 p-4">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      {c.completed_lectures}/{c.total_lectures} lectures
-                    </span>
-                    <span className="font-mono tabular-nums">{pct}%</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-[color-mix(in_oklab,var(--chart-1),white_10%)]"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Last: {formatRelative(c.last_activity)}</span>
-                    {c.next_due_date ? <span>Due: {c.next_due_date}</span> : <span />}
-                  </div>
+                  <CardContent className="flex flex-col gap-3.5 p-4">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {c.completed_lectures}/{c.total_lectures} lectures completed
+                      </span>
+                      <span className="font-mono font-semibold tabular-nums text-foreground">{pct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-3">
+                      <span>Last: {formatRelative(c.last_activity)}</span>
+                      {c.next_due_date ? <span>Due: {c.next_due_date}</span> : <span />}
+                    </div>
 
-                  <div className="flex items-center gap-2">
-                    <Button asChild className="flex-1">
-                      <Link href={`/learn/${c.slug}`}>
-                        <IconPlayerPlay data-icon="inline-start" />
-                        Continue
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline">
-                      <Link href={`/learn/${c.slug}#quizzes`}>Quiz</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="mt-1 w-full bg-primary text-primary-foreground h-9 rounded-lg flex items-center justify-center gap-2 text-sm font-semibold transition-colors group-hover:bg-primary/90 shadow-xs">
+                      <IconPlayerPlay className="size-3.5 fill-current" />
+                      <span>Continue Learning</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

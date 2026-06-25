@@ -514,7 +514,6 @@ export function YtcnPlayer({
             onVolumeChange={controls.setVolume}
             onToggleMute={controls.toggleMute}
             onSpeedChange={controls.setSpeed}
-            onQualityChange={controls.setQuality}
             onToggleFullscreen={controls.toggleFullscreen}
             onSeekToLive={controls.seekToLive}
             visible={finalControlsVisible}

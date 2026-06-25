@@ -11,7 +11,6 @@ import type { PlayerState, PlaybackSpeed } from "./types";
 import { YtcnProgress } from "./ytcn-progress";
 import { YtcnVolume } from "./ytcn-volume";
 import { YtcnSpeed } from "./ytcn-speed";
-import { YtcnQuality } from "./ytcn-quality";
 import { YtcnFullscreen } from "./ytcn-fullscreen";
 
 /* ================================================================ */
@@ -31,8 +30,7 @@ export interface YtcnControlsProps {
   onToggleMute: () => void;
   /** Set playback speed */
   onSpeedChange: (rate: PlaybackSpeed) => void;
-  /** Change playback quality */
-  onQualityChange: (quality: string) => void;
+
   /** Toggle fullscreen */
   onToggleFullscreen: () => void;
   /** Seek to live edge (live mode only) */
@@ -71,7 +69,6 @@ export function YtcnControls({
   onVolumeChange,
   onToggleMute,
   onSpeedChange,
-  onQualityChange,
   onToggleFullscreen,
   onSeekToLive,
   visible,
@@ -178,13 +175,6 @@ export function YtcnControls({
           <YtcnSpeed
             playbackRate={state.playbackRate}
             onSpeedChange={onSpeedChange}
-            containerRef={containerRef}
-            onOpenChange={onSettingsOpenChange}
-          />
-          <YtcnQuality
-            currentQuality={state.currentQuality}
-            availableQualities={state.availableQualities}
-            onQualityChange={onQualityChange}
             containerRef={containerRef}
             onOpenChange={onSettingsOpenChange}
           />
