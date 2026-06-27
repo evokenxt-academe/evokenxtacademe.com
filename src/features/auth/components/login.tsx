@@ -79,17 +79,93 @@ export function LoginCard() {
   const handleSignInWithGoogle = async () => {
     setIsLoading(true);
 
-    const { error } = await createClient().auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectUrl)}`,
-        scopes: "email profile",
-      },
-    });
+    const isStandalone =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as any).standalone === true);
 
-    if (error) {
-      toast.error(error.message);
-      setIsLoading(false);
+    if (isStandalone) {
+      // PWA Popup Flow to prevent redirecting out of the app
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectUrl)}&pwa=1`;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://tvyakrbmfqeylgkqwkdu.supabase.co";
+      const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&scopes=email+profile`;
+
+      // Open a popup window centered
+      const width = 500;
+      const height = 650;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+
+      const popup = window.open(
+        authUrl,
+        "Google Sign In",
+        `width=${width},height=${height},top=${top},left=${left},status=no,resizable=yes,scrollbars=yes`
+      );
+
+      if (!popup) {
+        toast.error("Popup blocked! Please allow popups for this site.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Listen for message from the popup
+      const handleMessage = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+
+        if (event.data?.type === "AUTH_SUCCESS") {
+          window.removeEventListener("message", handleMessage);
+          popup.close();
+
+          // Successfully logged in! Retrieve session and redirect
+          const supabase = createClient() as any;
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { data: profile } = await supabase
+              .from("users")
+              .select("role")
+              .eq("id", session.user.id)
+              .maybeSingle();
+
+            if (profile?.role === "admin" || profile?.role === "instructor") {
+              window.location.replace("/admin");
+            } else {
+              window.location.replace("/dashboard");
+            }
+          } else {
+            window.location.replace(redirectUrl);
+          }
+        } else if (event.data?.type === "AUTH_ERROR") {
+          window.removeEventListener("message", handleMessage);
+          popup.close();
+          toast.error(event.data.message || "Authentication failed");
+          setIsLoading(false);
+        }
+      };
+
+      window.addEventListener("message", handleMessage);
+
+      // Monitor if popup is closed manually by user
+      const timer = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(timer);
+          setIsLoading(false);
+          window.removeEventListener("message", handleMessage);
+        }
+      }, 1000);
+    } else {
+      // Standard Flow
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectUrl)}`,
+          scopes: "email profile",
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+      }
     }
   };
 

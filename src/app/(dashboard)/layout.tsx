@@ -34,6 +34,7 @@ export default async function DashboardLayout({
     name: sidebarUser.name,
     email: sidebarUser.email,
     avatar: sidebarUser.avatar,
+    role: sidebarUser.role,
   };
 
   return (
