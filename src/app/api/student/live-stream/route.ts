@@ -6,6 +6,7 @@ import {
     fetchChatAuthorProfiles,
     resolveChatAuthorName,
     resolveChatMessageDisplay,
+    extractYoutubeVideoId,
 } from "@/features/live-stream/lib"
 import type { LiveChatMessage, LiveStreamSummary } from "@/features/live-stream/types"
 
@@ -20,8 +21,9 @@ type CourseLookup = {
 /**
  * GET /api/student/live-stream?courseId=xxx
  *
- * Returns the live stream for a course, or the most recent ended stream
- * if no live broadcast is active, along with its chat messages.
+ * Returns the active or upcoming live stream for a course along with chat
+ * messages. Recently ended streams (last 2 hours) are returned with status
+ * "ended" so the UI can show a proper ended state instead of VOD replay.
  */
 export async function GET(request: NextRequest) {
     const supabase = await createClient()
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
         )
     }
 
-    const [liveStreamResult, scheduledStreamResult, endedStreamResult] = await Promise.all([
+    const [liveStreamResult, scheduledStreamResult, recentEndedResult] = await Promise.all([
         (supabase as any)
             .from("live_streams")
             .select("id, title, course_id, yt_video_id, status, started_at, ended_at, scheduled_at")
@@ -93,15 +95,15 @@ export async function GET(request: NextRequest) {
             .select("id, title, course_id, yt_video_id, status, started_at, ended_at, scheduled_at")
             .eq("course_id", courseId)
             .eq("status", "ended")
+            .gte("ended_at", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
             .order("ended_at", { ascending: false })
-            .order("started_at", { ascending: false })
             .limit(1)
             .maybeSingle(),
     ])
 
     const stream = (liveStreamResult.data ??
         scheduledStreamResult.data ??
-        endedStreamResult.data ??
+        recentEndedResult.data ??
         null) as any
 
     if (!stream) {
@@ -143,7 +145,7 @@ export async function GET(request: NextRequest) {
         title: stream.title,
         courseId: stream.course_id,
         courseName: course.title ?? "Untitled course",
-        ytVideoId: stream.yt_video_id,
+        ytVideoId: extractYoutubeVideoId(stream.yt_video_id) || null,
         status: streamStatus,
         startedAt: stream.started_at,
         endedAt: stream.ended_at,

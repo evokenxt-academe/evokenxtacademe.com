@@ -43,7 +43,8 @@ export type YouTubeQuality =
 export function extractYouTubeId(url: string | null): string | null {
   if (!url) return null;
   const patterns = [
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /studio\.youtube\.com\/video\/([a-zA-Z0-9_-]{11})/,
     /^([a-zA-Z0-9_-]{11})$/, // bare video ID
   ];
   for (const pattern of patterns) {

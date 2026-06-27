@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 import type { EncoderSettings, ObsConnectionStatus } from "@/lib/obs/obs-client";
 import type { LiveStreamRow, PipelineStepStatus } from "@/types/live-stream";
+import { buildYoutubeStudioEditUrl } from "@/features/live-stream/lib";
 import { cn } from "@/lib/utils";
 
 type Step = {
@@ -104,6 +105,7 @@ export function StreamSetupPanel({
 
   const showPasswordForm = needsPasswordSetup(obsError, obsSettings);
   const hasIssue = Boolean(obsError || ytError || showPasswordForm);
+  const studioEditUrl = buildYoutubeStudioEditUrl(stream.yt_video_id);
 
   useEffect(() => {
     setPassword(obsSettings.obs_password);
@@ -233,7 +235,7 @@ export function StreamSetupPanel({
             <div>
               1. Open your live stream in{" "}
               <a
-                href={`https://studio.youtube.com/video/${stream.yt_video_id}/livestreaming`}
+                href={studioEditUrl ?? "https://studio.youtube.com"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-0.5"

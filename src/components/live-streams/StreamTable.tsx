@@ -27,6 +27,7 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { formatStreamDuration, getStatusBadgeClass } from "@/lib/live-stream/formatters";
+import { extractYoutubeVideoId } from "@/features/live-stream/lib";
 import {
   streamAnalyticsPath,
   streamControlPath,
@@ -53,7 +54,8 @@ export function StreamTable({
 }: StreamTableProps) {
   const thumbnailUrl = (stream: StreamListItem) => {
     if (stream.ytThumbnailUrl) return stream.ytThumbnailUrl;
-    if (stream.ytVideoId) return `https://img.youtube.com/vi/${stream.ytVideoId}/mqdefault.jpg`;
+    const videoId = extractYoutubeVideoId(stream.ytVideoId);
+    if (videoId) return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
     return null;
   };
 

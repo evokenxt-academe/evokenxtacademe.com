@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
             const resolvedVideoId =
                 typeof ytVideoId === "string" && ytVideoId.trim()
-                    ? ytVideoId.trim()
+                    ? extractYoutubeVideoId(ytVideoId) || ytVideoId.trim()
                     : typeof videoSource === "string"
                         ? extractYoutubeVideoId(videoSource)
                         : ""
@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
             }
 
             if (typeof ytVideoId === "string" && ytVideoId.trim()) {
-                updateData.yt_video_id = ytVideoId.trim()
+                updateData.yt_video_id =
+                    extractYoutubeVideoId(ytVideoId) || ytVideoId.trim()
             }
 
             const { error } = await supabase

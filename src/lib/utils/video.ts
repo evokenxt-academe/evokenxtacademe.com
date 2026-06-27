@@ -1,10 +1,12 @@
 export function extractYouTubeId(url: string): string | null {
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /studio\.youtube\.com\/video\/([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
   ];
   for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
+    const m = url.trim().match(p);
+    if (m?.[1]) return m[1];
   }
   return null;
 }

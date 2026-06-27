@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ViewerChart } from "./ViewerChart";
 import { formatStreamDuration } from "@/lib/live-stream/formatters";
+import { extractYoutubeVideoId } from "@/features/live-stream/lib";
 import type { LiveStreamRow } from "@/types/live-stream";
+import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
 import { IconBrandYoutube } from "@tabler/icons-react";
 import { Users } from "lucide-react";
 
@@ -15,6 +17,8 @@ type StreamPreviewPanelProps = {
 
 export function StreamPreviewPanel({ stream, compact = false }: StreamPreviewPanelProps) {
   const [elapsed, setElapsed] = useState(0);
+  const videoId = extractYoutubeVideoId(stream.yt_video_id);
+  const isLive = stream.status === "live";
 
   useEffect(() => {
     if (stream.status !== "live" || !stream.started_at) return;
@@ -39,13 +43,14 @@ export function StreamPreviewPanel({ stream, compact = false }: StreamPreviewPan
     <div className="flex flex-col gap-3">
       <div className="overflow-hidden rounded-xl border border-border/60 bg-black">
         <div className="relative aspect-video">
-          {stream.yt_video_id ? (
-            <iframe
-              className="absolute inset-0 size-full"
-              src={`https://www.youtube.com/embed/${stream.yt_video_id}?autoplay=0`}
-              title={stream.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+          {videoId ? (
+            <YtcnPlayer
+              key={`${stream.id}-${stream.status}-${videoId}`}
+              videoId={videoId}
+              autoplay={false}
+              isLive={isLive}
+              liveOnly={false}
+              className="absolute inset-0 size-full rounded-none border-0"
             />
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -54,9 +59,9 @@ export function StreamPreviewPanel({ stream, compact = false }: StreamPreviewPan
             </div>
           )}
 
-          <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent p-3">
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent p-3">
             <div className="flex items-center gap-2">
-              {stream.status === "live" && (
+              {isLive && (
                 <Badge className="gap-1 border-0 bg-red-600 text-white">
                   <span className="size-1.5 animate-pulse rounded-full bg-white" />
                   LIVE
@@ -79,7 +84,7 @@ export function StreamPreviewPanel({ stream, compact = false }: StreamPreviewPan
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Viewers
           </p>
-          <ViewerChart streamId={stream.id} isLive={stream.status === "live"} />
+          <ViewerChart streamId={stream.id} isLive={isLive} />
         </div>
       )}
     </div>

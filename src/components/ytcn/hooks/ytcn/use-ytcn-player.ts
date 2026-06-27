@@ -9,6 +9,10 @@ import type {
 } from "@/components/ytcn/components/ytcn/types";
 import { QUALITY_LABELS } from "@/components/ytcn/components/ytcn/types";
 import { loadYouTubeAPI, styleIframe } from "@/components/ytcn/lib/ytcn/loader";
+import {
+  isValidStreamTime,
+  sanitizeStreamTime,
+} from "@/components/ytcn/lib/ytcn/format";
 import { useFullscreen } from "./use-fullscreen";
 
 /* ================================================================ */
@@ -50,6 +54,7 @@ function createInitialState(
     isFullscreen: typeof document !== "undefined" ? !!document.fullscreenElement : false,
     playbackRate: options.defaultSpeed ?? (prev?.playbackRate ?? 1),
     isLive: options.isLive ?? false,
+    liveOnly: (options.isLive ?? false) && (options.liveOnly ?? true),
     isAtLiveEdge: false,
     currentQuality: "auto",
     availableQualities: [],
@@ -82,6 +87,54 @@ function normalizeQualityValue(requested: string, availableQualities: string[]):
   return "auto";
 }
 
+/** Seconds behind the DVR window end before we show "GO LIVE" instead of "LIVE". */
+const LIVE_EDGE_THRESHOLD_SEC = 15;
+
+function computeIsAtLiveEdge(
+  currentTime: number,
+  duration: number,
+  isLive: boolean,
+  seekingToLiveUntil: number,
+): boolean {
+  if (!isLive) return false;
+  if (Date.now() < seekingToLiveUntil) return true;
+  if (!isValidStreamTime(duration) || duration <= 0) return true;
+  if (!isValidStreamTime(currentTime)) return true;
+  return Math.max(0, duration - currentTime) <= LIVE_EDGE_THRESHOLD_SEC;
+}
+
+function readLiveTiming(player: YT.Player, prevDuration: number) {
+  const rawCurrent = (player as any).getCurrentTime?.() ?? 0;
+  const rawDuration = (player as any).getDuration?.() ?? 0;
+
+  const duration =
+    sanitizeStreamTime(rawDuration) ||
+    (isValidStreamTime(prevDuration) ? prevDuration : 0);
+
+  let currentTime = sanitizeStreamTime(rawCurrent, duration);
+
+  // YouTube can briefly return corrupt times right after a live-edge seek.
+  if (duration > 0 && !isValidStreamTime(rawCurrent)) {
+    currentTime = duration;
+  }
+
+  if (duration > 0) {
+    currentTime = Math.min(currentTime, duration);
+  }
+
+  return { currentTime, duration };
+}
+
+function getLiveDrift(player: YT.Player): number {
+  const duration = sanitizeStreamTime((player as any).getDuration?.() ?? 0);
+  const currentTime = sanitizeStreamTime(
+    (player as any).getCurrentTime?.() ?? 0,
+    duration,
+  );
+  if (duration <= 0) return 0;
+  return Math.max(0, duration - currentTime);
+}
+
 /* ================================================================ */
 /*  useYtcnPlayer — Core player lifecycle hook                       */
 /* ================================================================ */
@@ -105,6 +158,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     videoId,
     autoplay = false,
     isLive = false,
+    liveOnly: liveOnlyOption,
     defaultSpeed = 1,
     startAt = 0,
     onEnd,
@@ -112,6 +166,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     onPlaybackRateChange,
     thumbnailFailed = false,
   } = options;
+
+  const liveOnly = isLive && (liveOnlyOption ?? true);
 
   // ── DOM refs ──
   const containerRef = useRef<HTMLDivElement>(null);
@@ -148,15 +204,20 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   const autoplayAttemptRef = useRef(0);
   const liveRetryRef = useRef(0);
   const isLiveRef = useRef(isLive);
+  const liveOnlyRef = useRef(liveOnly);
+  const seekingToLiveUntilRef = useRef(0);
   const autoplayRef = useRef(autoplay);
   const videoIdRef = useRef(videoId);
+  const liveResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastLiveSeekAtRef = useRef(0);
 
   useEffect(() => {
     isLiveRef.current = isLive;
+    liveOnlyRef.current = liveOnly;
     autoplayRef.current = autoplay;
     videoIdRef.current = videoId;
     isMutedRef.current = shouldStartMuted;
-  }, [isLive, autoplay, videoId, shouldStartMuted]);
+  }, [isLive, liveOnly, autoplay, videoId, shouldStartMuted]);
 
   // Phase ref — allows async functions to read latest phase without stale closure
   const phaseRef = useRef<PlayerState["phase"]>("thumbnail");
@@ -358,17 +419,35 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
               // First caption suppression — before any frames render
               suppressCaptions(player);
               player.playVideo();
-              if (isLiveRef.current) {
+              if (isLiveRef.current && liveOnlyRef.current) {
                 window.setTimeout(() => {
+                  if (!mountedRef.current || !playerRef.current) return;
+                  const drift = getLiveDrift(player);
+                  if (drift > LIVE_EDGE_THRESHOLD_SEC) {
+                    const d = sanitizeStreamTime((player as any).getDuration?.() ?? 0);
+                    if (d > 0) {
+                      try {
+                        (player as any).seekTo(d, true);
+                        lastLiveSeekAtRef.current = Date.now();
+                      } catch {
+                        /* player may not be ready */
+                      }
+                    }
+                  }
+                }, 800);
+              } else if (isLiveRef.current) {
+                const snapLive = () => {
                   try {
-                    const duration = player.getDuration();
-                    if (duration > 0) {
-                      player.seekTo(duration, true);
+                    const d = (player as any).getDuration?.() ?? 0;
+                    if (isValidStreamTime(d) && d > 0) {
+                      (player as any).seekTo(d, true);
                     }
                   } catch {
                     /* player may not be ready */
                   }
-                }, 600);
+                };
+                snapLive();
+                window.setTimeout(snapLive, 600);
               }
             } catch {
               /* player may reject these calls during initialization */
@@ -501,6 +580,28 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                 // Suppress captions even when paused — user may have enabled them
                 suppressCaptions(player);
 
+                // Live-only: resume if YouTube pauses unexpectedly (debounced).
+                if (liveOnlyRef.current) {
+                  if (liveResumeTimerRef.current) {
+                    clearTimeout(liveResumeTimerRef.current);
+                  }
+                  liveResumeTimerRef.current = setTimeout(() => {
+                    if (!mountedRef.current || !liveOnlyRef.current) return;
+                    const activePlayer = playerRef.current;
+                    if (!activePlayer) return;
+                    const yt = getYT();
+                    const playerState = (activePlayer as any).getPlayerState?.();
+                    if (yt && playerState === yt.PlayerState.PAUSED) {
+                      try {
+                        (activePlayer as any).playVideo();
+                      } catch {
+                        /* player may not be ready */
+                      }
+                    }
+                  }, 400);
+                  return;
+                }
+
                 if (!mountedRef.current) return;
                 setState((prev) => ({ ...prev, isPlaying: false }));
                 break;
@@ -600,9 +701,12 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                   anyPlayer.loadVideoById(videoIdRef.current);
                   anyPlayer.playVideo();
                   if (isLiveRef.current) {
-                    const duration = anyPlayer.getDuration();
-                    if (duration > 0) {
-                      anyPlayer.seekTo(duration, true);
+                    const d = anyPlayer.getDuration?.() ?? 0;
+                    if (isValidStreamTime(d) && d > 0) {
+                      const drift = getLiveDrift(anyPlayer);
+                      if (drift > LIVE_EDGE_THRESHOLD_SEC) {
+                        anyPlayer.seekTo(d, true);
+                      }
                     }
                   }
                   return;
@@ -645,6 +749,12 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     if (!videoId) return;
 
     liveRetryRef.current = 0;
+    seekingToLiveUntilRef.current = 0;
+    lastLiveSeekAtRef.current = 0;
+    if (liveResumeTimerRef.current) {
+      clearTimeout(liveResumeTimerRef.current);
+      liveResumeTimerRef.current = null;
+    }
     preferredQualityRef.current = null;
     qualityEnforceCountRef.current = 0;
     skipQualityEventRef.current = false;
@@ -671,7 +781,8 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       isLoading: false,
       duration: 0,
       isLive,
-      isAtLiveEdge: false,
+      liveOnly,
+      isAtLiveEdge: liveOnly ? true : false,
       currentQuality: "auto",
       availableQualities: [],
       isMuted: shouldStartMuted,
@@ -681,12 +792,12 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     if (isLive && autoplay) {
       void beginPlayback();
     }
-  }, [videoId, isLive, shouldStartMuted, autoplay, beginPlayback]);
+  }, [videoId, isLive, liveOnly, shouldStartMuted, autoplay, beginPlayback]);
 
   useEffect(() => {
     if (!mountedRef.current) return;
-    setState((prev) => ({ ...prev, isLive, isMuted: shouldStartMuted ? prev.isMuted : prev.isMuted }));
-  }, [isLive, shouldStartMuted]);
+    setState((prev) => ({ ...prev, isLive, liveOnly, isMuted: shouldStartMuted ? prev.isMuted : prev.isMuted }));
+  }, [isLive, liveOnly, shouldStartMuted]);
 
   // Autoplay for VOD (live autoplay is handled in the reset effect above)
   useEffect(() => {
@@ -710,67 +821,170 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       // Guard: player may not have getCurrentTime during initialization
       if (!player?.getCurrentTime) return;
       try {
-        const currentTime = (player as any).getCurrentTime();
-        const duration = (player as any).getDuration();
         const loadedFraction = (player as any).getVideoLoadedFraction();
 
         if (!mountedRef.current) return;
-        // YouTube live stream playback typically runs with 15-45 seconds of latency (Normal Latency).
-        // A 60s threshold keeps the badge as "LIVE" while playing close to the live edge.
-        const isAtLiveEdge = isLive ? (duration - currentTime <= 60) : false;
 
-        setState((prev) => ({
-          ...prev,
-          currentTime,
-          duration: duration > 0 ? duration : prev.duration,
-          loadedFraction,
-          isAtLiveEdge,
-        }));
+        setState((prev) => {
+          if (liveOnlyRef.current) {
+            onTimeUpdateRef.current?.(0, 0);
+            return {
+              ...prev,
+              isAtLiveEdge: true,
+              liveOnly: true,
+              isLive: true,
+              loadedFraction,
+            };
+          }
 
-        onTimeUpdateRef.current?.(currentTime, duration);
+          const { currentTime, duration } = readLiveTiming(player, prev.duration);
+          const isAtLiveEdge = computeIsAtLiveEdge(
+            currentTime,
+            duration,
+            isLive,
+            seekingToLiveUntilRef.current,
+          );
+
+          onTimeUpdateRef.current?.(currentTime, duration);
+
+          return {
+            ...prev,
+            currentTime,
+            duration: duration > 0 ? duration : prev.duration,
+            loadedFraction,
+            isAtLiveEdge,
+          };
+        });
       } catch {
         /* player may be in a destroyed state between intervals */
       }
     }, 250);
 
     return () => clearInterval(interval);
-  }, [isLive]);
+  }, [isLive, liveOnly]);
 
   /* ================================================================ */
   /*  Controls — imperative methods exposed to consumers              */
   /* ================================================================ */
 
+  const jumpToLiveEdge = useCallback((player: YT.Player, opts?: { unmute?: boolean; force?: boolean }): void => {
+    try {
+      if (opts?.unmute && isMutedRef.current) {
+        (player as any).unMute();
+        isMutedRef.current = false;
+        if (mountedRef.current) {
+          setState((prev) => ({ ...prev, isMuted: false }));
+        }
+      }
+
+      const now = Date.now();
+      const drift = getLiveDrift(player);
+      const canSeek =
+        opts?.force ||
+        (drift > LIVE_EDGE_THRESHOLD_SEC && now - lastLiveSeekAtRef.current > 3_000);
+
+      if (canSeek) {
+        const duration = sanitizeStreamTime((player as any).getDuration?.() ?? 0);
+        if (duration > 0) {
+          (player as any).seekTo(duration, true);
+          lastLiveSeekAtRef.current = now;
+        }
+      }
+
+      (player as any).playVideo();
+    } catch {
+      /* player may not be ready */
+    }
+  }, []);
+
+  const seekToLive = useCallback((): void => {
+    if (!isLive) return;
+    const player = playerRef.current;
+    if (!player) return;
+
+    seekingToLiveUntilRef.current = Date.now() + 5_000;
+
+    jumpToLiveEdge(player);
+
+    if (mountedRef.current) {
+      setState((prev) => {
+        const duration = isValidStreamTime(prev.duration) ? prev.duration : 0;
+        return {
+          ...prev,
+          isAtLiveEdge: true,
+          isPlaying: true,
+          currentTime: duration > 0 ? duration : prev.currentTime,
+        };
+      });
+    }
+
+    // YouTube live DVR often needs follow-up seeks as the window advances.
+    for (const delay of [400, 900, 1800]) {
+      window.setTimeout(() => {
+        if (!mountedRef.current || !isLiveRef.current) return;
+        const activePlayer = playerRef.current;
+        if (!activePlayer) return;
+        jumpToLiveEdge(activePlayer);
+      }, delay);
+    }
+  }, [isLive, jumpToLiveEdge]);
+
+  // Keep live-only streams pinned to the live edge (no DVR rewind).
+  useEffect(() => {
+    if (!liveOnly) return;
+
+    const interval = setInterval(() => {
+      const player = playerRef.current;
+      if (!player || !liveOnlyRef.current) return;
+      try {
+        const yt = getYT();
+        const playerState = (player as any).getPlayerState?.();
+        if (yt && playerState !== yt.PlayerState.PLAYING && playerState !== yt.PlayerState.BUFFERING) {
+          return;
+        }
+        const drift = getLiveDrift(player);
+        if (drift > LIVE_EDGE_THRESHOLD_SEC) {
+          jumpToLiveEdge(player);
+        }
+      } catch {
+        /* noop */
+      }
+    }, 8_000);
+
+    return () => clearInterval(interval);
+  }, [liveOnly, jumpToLiveEdge]);
+
   const play = useCallback((): void => {
     const player = playerRef.current;
     if (!player) return;
     try {
-      if (isLive) {
-        if (isMutedRef.current) {
+      if (liveOnly) {
+        jumpToLiveEdge(player, { unmute: true, force: true });
+      } else {
+        if (isLive && isMutedRef.current) {
           (player as any).unMute();
           isMutedRef.current = false;
           if (mountedRef.current) {
             setState((prev) => ({ ...prev, isMuted: false }));
           }
         }
-        const duration = (player as any).getDuration();
-        if (duration > 0) {
-          (player as any).seekTo(duration, true);
-        }
+        (player as any).playVideo();
       }
-      (player as any).playVideo();
       if (mountedRef.current) {
         setState((prev) => ({
           ...prev,
           phase: prev.phase === "loading" ? "ready" : prev.phase,
           isCued: false,
+          ...(liveOnly ? { isAtLiveEdge: true, isPlaying: true } : {}),
         }));
       }
     } catch {
       /* noop — player may not be ready */
     }
-  }, [isLive]);
+  }, [isLive, liveOnly, jumpToLiveEdge]);
 
   const pause = useCallback((): void => {
+    if (liveOnlyRef.current) return;
     try {
       (playerRef.current as any)?.pauseVideo();
     } catch {
@@ -784,6 +998,15 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     try {
       const yt = getYT();
       if (!yt) return;
+
+      if (liveOnlyRef.current) {
+        jumpToLiveEdge(player, { unmute: true, force: true });
+        if (mountedRef.current) {
+          setState((prev) => ({ ...prev, isAtLiveEdge: true, isPlaying: true }));
+        }
+        return;
+      }
+
       if ((player as any).getPlayerState() === yt.PlayerState.PLAYING) {
         (player as any).pauseVideo();
       } else {
@@ -792,22 +1015,67 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     } catch {
       /* noop — player may not be ready */
     }
-  }, []);
+  }, [jumpToLiveEdge]);
 
   const seekTo = useCallback((seconds: number): void => {
+    if (liveOnly) {
+      seekToLive();
+      return;
+    }
     const player = playerRef.current;
     if (!player) return;
     try {
-      (player as any).seekTo(seconds, true);
+      const rawDuration = (player as any).getDuration?.() ?? 0;
+      const duration = sanitizeStreamTime(rawDuration);
+
+      if (isLive) {
+        seekingToLiveUntilRef.current = 0;
+
+        if (duration <= 0) {
+          seekToLive();
+          return;
+        }
+
+        const safeSeconds = sanitizeStreamTime(seconds);
+        const nearLiveEdge =
+          duration > 0 &&
+          (safeSeconds >= duration - LIVE_EDGE_THRESHOLD_SEC ||
+            safeSeconds / duration >= 0.95);
+
+        if (nearLiveEdge) {
+          seekToLive();
+          return;
+        }
+      }
+
+      const clamped =
+        duration > 0
+          ? Math.max(0, Math.min(sanitizeStreamTime(seconds), duration))
+          : Math.max(0, sanitizeStreamTime(seconds));
+
+      (player as any).seekTo(clamped, true);
+      (player as any).playVideo();
+
       if (mountedRef.current) {
-        setState((prev) => ({ ...prev, currentTime: seconds }));
+        setState((prev) => ({
+          ...prev,
+          currentTime: clamped,
+          isPlaying: true,
+          isAtLiveEdge: computeIsAtLiveEdge(
+            clamped,
+            duration || prev.duration,
+            isLive,
+            seekingToLiveUntilRef.current,
+          ),
+        }));
       }
     } catch {
       /* noop — player may not be ready */
     }
-  }, [isLive]);
+  }, [isLive, liveOnly, seekToLive]);
 
   const seekRelative = useCallback((delta: number): void => {
+    if (isLive || liveOnly) return;
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -821,7 +1089,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     } catch {
       /* noop — player may not be ready */
     }
-  }, [isLive]);
+  }, [isLive, liveOnly]);
 
   const setVolume = useCallback((vol: number): void => {
     const player = playerRef.current;
@@ -910,23 +1178,6 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
       /* noop — player may not be ready */
     }
   }, [enforceQuality]);
-
-  const seekToLive = useCallback((): void => {
-    if (!isLive) return;
-    const player = playerRef.current;
-    if (!player) return;
-    try {
-      const duration = (player as any).getDuration();
-      // Seeking past the end (e.g. 999999) is the standard way in YouTube Player API
-      // to force the stream to seek to the absolute latest live edge.
-      (player as any).seekTo(999999, true);
-      if (mountedRef.current) {
-        setState((prev) => ({ ...prev, currentTime: duration, isAtLiveEdge: true }));
-      }
-    } catch {
-      /* noop */
-    }
-  }, [isLive]);
 
   const setQuality = useCallback((quality: string): void => {
     const player = playerRef.current;

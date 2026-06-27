@@ -23,7 +23,9 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconChevronsRight,
-  IconRefresh
+  IconRefresh,
+  IconMaximize,
+  IconMinimize,
 } from "@tabler/icons-react";
 
 /* ================================================================ */
@@ -37,6 +39,10 @@ export interface YtcnPlayerProps extends Omit<YtcnPlayerOptions, "thumbnailFaile
   keyboardBindings?: KeyboardBindings;
   /** Additional CSS class for the outer container */
   className?: string;
+  /** Mobile live: landscape fullscreen with tap to exit */
+  mobileLiveFullscreen?: boolean;
+  /** Fired when fullscreen state changes */
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
 /* ================================================================ */
@@ -58,6 +64,7 @@ export function YtcnPlayer({
   videoId,
   autoplay = false,
   isLive = false,
+  liveOnly,
   defaultSpeed = 1,
   startAt = 0,
   onEnd,
@@ -67,7 +74,12 @@ export function YtcnPlayer({
   keyboardBindings,
   className,
   forensicUserId,
+  mobileLiveFullscreen = false,
+  onFullscreenChange,
 }: YtcnPlayerProps): React.JSX.Element {
+  const resolvedLiveOnly = isLive && (liveOnly ?? true);
+  const mobileLiveMode = mobileLiveFullscreen && resolvedLiveOnly;
+
   // ── Thumbnail probe — tries CDN URLs in priority order ──
   const { thumbnailUrl, thumbnailLoaded, thumbnailFailed } = useThumbnail(videoId);
 
@@ -76,6 +88,7 @@ export function YtcnPlayer({
     videoId,
     autoplay,
     isLive,
+    liveOnly: resolvedLiveOnly,
     defaultSpeed,
     startAt,
     onEnd,
@@ -119,6 +132,45 @@ export function YtcnPlayer({
   const rippleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const preHoldRateRef = useRef<number | null>(null);
   const isHoldActiveRef = useRef(false);
+  const mobileFullscreenPromptRef = useRef(false);
+
+  useEffect(() => {
+    onFullscreenChange?.(state.isFullscreen);
+  }, [state.isFullscreen, onFullscreenChange]);
+
+  const enterMobileLiveFullscreen = useCallback(() => {
+    if (!mobileLiveMode || !isTouchDevice || state.isFullscreen) return;
+    controls.toggleFullscreen();
+    showControls();
+  }, [mobileLiveMode, isTouchDevice, state.isFullscreen, controls, showControls]);
+
+  const exitMobileLiveFullscreen = useCallback(() => {
+    if (!state.isFullscreen) return;
+    controls.toggleFullscreen();
+  }, [state.isFullscreen, controls]);
+
+  const handleMobilePlayStart = useCallback(async () => {
+    showControls();
+    if (state.phase === "thumbnail") {
+      await controls.handleThumbnailClick();
+    } else {
+      controls.play();
+    }
+    if (mobileLiveMode && isTouchDevice) {
+      window.setTimeout(() => enterMobileLiveFullscreen(), 800);
+    }
+  }, [
+    state.phase,
+    controls,
+    mobileLiveMode,
+    isTouchDevice,
+    enterMobileLiveFullscreen,
+    showControls,
+  ]);
+
+  useEffect(() => {
+    mobileFullscreenPromptRef.current = false;
+  }, [videoId]);
 
   useEffect(() => {
     const media = window.matchMedia("(hover: none), (pointer: coarse)");
@@ -253,27 +305,60 @@ export function YtcnPlayer({
         </>
       )}
 
-      {/* Centered Play Button Overlay */}
-      {(state.phase === "thumbnail" && thumbnailLoaded) && (
+      {/* Live-only: tap to start or unmute when autoplay stalls */}
+      {resolvedLiveOnly && state.phase === "ready" && state.isPlaying && state.isMuted && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            controls.toggleMute();
+            showControls();
+          }}
+          className="absolute bottom-16 left-1/2 z-30 -translate-x-1/2 rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white shadow-lg ring-1 ring-white/10 touch-manipulation"
+        >
+          Tap to unmute
+        </button>
+      )}
+
+      {resolvedLiveOnly && state.phase === "ready" && !state.isPlaying && !state.isLoading && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            controls.play();
+            showControls();
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            controls.play();
+            showControls();
+          }}
+          className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-black/35 touch-manipulation"
+          aria-label={state.isMuted ? "Tap to watch live with sound" : "Tap to resume live stream"}
+        >
+          <div className="flex size-16 items-center justify-center rounded-full bg-black/70 text-white shadow-xl ring-1 ring-white/15">
+            <IconPlayerPlayFilled className="size-8 translate-x-0.5" fill="currentColor" />
+          </div>
+          <span className="rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white/90">
+            {state.isMuted ? "Tap to watch live with sound" : "Tap to resume live"}
+          </span>
+        </button>
+      )}
+
+      {/* Centered Play Button Overlay — live streams skip thumbnail */}
+      {(state.phase === "thumbnail" && thumbnailLoaded && !isLive) && (
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             showControls();
-            if (state.phase === "thumbnail") {
-              controls.handleThumbnailClick();
-            } else {
-              controls.play();
-            }
+            controls.handleThumbnailClick();
           }}
           onTouchEnd={(e) => {
             e.preventDefault();
             showControls();
-            if (state.phase === "thumbnail") {
-              controls.handleThumbnailClick();
-            } else {
-              controls.play();
-            }
+            controls.handleThumbnailClick();
           }}
           className="absolute inset-0 z-30 flex items-center justify-center bg-transparent border-0 cursor-pointer touch-manipulation group/center-play"
           aria-label="Play video"
@@ -309,6 +394,7 @@ export function YtcnPlayer({
 
       {state.phase === "ready" && (
         <>
+          {!resolvedLiveOnly ? (
           <div
             className="absolute inset-0 z-25 cursor-pointer touch-manipulation"
             onClick={controls.togglePlay}
@@ -317,26 +403,25 @@ export function YtcnPlayer({
               controls.toggleFullscreen();
             }}
             onTouchStart={(e) => {
-              if (state.isPlaying) {
-                const touch = e.touches[0];
-                touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-                isHoldActiveRef.current = false;
+              if (resolvedLiveOnly || !state.isPlaying) return;
+              const touch = e.touches[0];
+              touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+              isHoldActiveRef.current = false;
 
-                if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
-                
-                holdTimeoutRef.current = setTimeout(() => {
-                  isHoldActiveRef.current = true;
-                  setIsHolding2x(true);
-                  preHoldRateRef.current = state.playbackRate;
-                  controls.setSpeed(2); // Set speed to 2x
-                  
-                  if (typeof navigator !== "undefined" && navigator.vibrate) {
-                    try {
-                      navigator.vibrate(60);
-                    } catch (err) {}
-                  }
-                }, 350); // 350ms hold detection
-              }
+              if (holdTimeoutRef.current) clearTimeout(holdTimeoutRef.current);
+
+              holdTimeoutRef.current = setTimeout(() => {
+                isHoldActiveRef.current = true;
+                setIsHolding2x(true);
+                preHoldRateRef.current = state.playbackRate;
+                controls.setSpeed(2);
+
+                if (typeof navigator !== "undefined" && navigator.vibrate) {
+                  try {
+                    navigator.vibrate(60);
+                  } catch (err) {}
+                }
+              }, 350);
             }}
             onTouchMove={(e) => {
               if (!touchStartRef.current) return;
@@ -419,6 +504,7 @@ export function YtcnPlayer({
             role="button"
             tabIndex={-1}
           />
+          ) : null}
 
           {/* Double Tap Ripple Overlays */}
           {activeRipple === "left" && (
@@ -449,7 +535,8 @@ export function YtcnPlayer({
             </div>
           )}
 
-          {/* Centered Controls Overlay (Play/Pause, Rewind, Fast Forward) */}
+          {/* Centered Controls Overlay — hidden in live-only mode */}
+          {!resolvedLiveOnly ? (
           <div
             className={cn(
               "absolute inset-0 z-30 flex items-center justify-center gap-8 pointer-events-none transition-opacity duration-300",
@@ -506,6 +593,7 @@ export function YtcnPlayer({
               </button>
             )}
           </div>
+          ) : null}
 
           {/* Bottom Controls Bar */}
           <YtcnControls
@@ -539,6 +627,53 @@ export function YtcnPlayer({
           </div>
         </div>
       )}
+
+      {/* Mobile live: expand to landscape fullscreen */}
+      {mobileLiveMode && isTouchDevice && state.phase === "ready" && !state.isFullscreen ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            enterMobileLiveFullscreen();
+          }}
+          className="absolute top-3 right-3 z-40 flex size-10 items-center justify-center rounded-full bg-black/65 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-sm touch-manipulation active:scale-95"
+          aria-label="Enter fullscreen"
+        >
+          <IconMaximize className="size-5" />
+        </button>
+      ) : null}
+
+      {/* Mobile live fullscreen: tap to exit when controls are hidden */}
+      {mobileLiveMode && isTouchDevice && state.isFullscreen && !finalControlsVisible ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            exitMobileLiveFullscreen();
+          }}
+          className="absolute inset-0 z-28 touch-manipulation"
+          aria-label="Exit fullscreen"
+        />
+      ) : null}
+
+      {/* Mobile live fullscreen: visible exit control */}
+      {mobileLiveMode && isTouchDevice && state.isFullscreen ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            exitMobileLiveFullscreen();
+          }}
+          className={cn(
+            "absolute top-3 right-3 z-50 flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-2 text-xs font-medium text-white shadow-lg ring-1 ring-white/15 backdrop-blur-sm touch-manipulation active:scale-95",
+            finalControlsVisible ? "opacity-100" : "opacity-80",
+          )}
+          aria-label="Exit fullscreen"
+        >
+          <IconMinimize className="size-4" />
+          <span>Exit</span>
+        </button>
+      ) : null}
 
       {state.errorCode !== null && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950/95 p-6 text-center select-text">

@@ -29,6 +29,7 @@ import {
   streamAnalyticsPath,
   streamEditPath,
 } from "@/lib/live-stream/admin-paths";
+import { buildYoutubeStudioEditUrl } from "@/features/live-stream/lib";
 import type { LiveStreamRow, PipelineStepStatus } from "@/types/live-stream";
 import { cn } from "@/lib/utils";
 
@@ -129,16 +130,18 @@ export default function StreamControlRoomPage() {
     const encoderDone =
       obs.isStreaming || stream.status === "live" || stream.status === "ended";
 
+    const studioEditUrl = buildYoutubeStudioEditUrl(stream.yt_video_id);
+
     return [
       {
         id: 1,
         label: "YouTube broadcast",
         status: step(hasBroadcast),
-        extra: hasBroadcast ? (
+        extra: hasBroadcast && studioEditUrl ? (
           <span className="inline-flex items-center gap-1 text-xs">
             (
             <a
-              href={`https://studio.youtube.com/video/${stream.yt_video_id}/livestreaming`}
+              href={studioEditUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-0.5"

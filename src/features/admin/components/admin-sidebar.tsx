@@ -1,6 +1,5 @@
 "use client";
 import * as React from "react";
-import Image from "next/image";
 import {
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,6 +14,8 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { AppSidebarLogo } from "@/components/app-sidebar-logo";
 
 import {
   IconArrowBackUp,
@@ -123,16 +124,8 @@ export function AdminSidebar() {
     <Sidebar>
       <SidebarHeader className="gap-3 px-4 py-4">
         <div className="rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl shadow-sm">
-              <Image
-                src="/logo.jpg"
-                alt="Evoke LMS"
-                width={40}
-                height={40}
-                className="size-full object-contain"
-              />
-            </div>
+          <Link href="/admin" className="flex items-center gap-3">
+            <AppSidebarLogo size={40} className="rounded-xl shadow-sm" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-foreground">
                 Evoke LMS Admin
@@ -141,7 +134,7 @@ export function AdminSidebar() {
                 Operations control center
               </p>
             </div>
-          </div>
+          </Link>
         </div>
       </SidebarHeader>
       <SidebarContent>

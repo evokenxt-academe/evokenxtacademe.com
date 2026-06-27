@@ -4,7 +4,7 @@ import * as React from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { createClient } from "@/utils/supabase/client"
-import type { LiveStreamPayload } from "@/features/live-stream/types"
+import type { LiveStreamPayload, LiveChatMessage } from "@/features/live-stream/types"
 
 async function fetchLiveStream(courseId: string): Promise<LiveStreamPayload> {
     const response = await fetch(
@@ -24,6 +24,8 @@ async function fetchLiveStream(courseId: string): Promise<LiveStreamPayload> {
 
     return response.json() as Promise<LiveStreamPayload>
 }
+
+const EMPTY_MESSAGES: LiveChatMessage[] = []
 
 export function useLiveStream(courseId: string) {
     const queryClient = useQueryClient()
@@ -86,7 +88,7 @@ export function useLiveStream(courseId: string) {
     return {
         ...query,
         currentStream,
-        initialMessages: query.data?.messages ?? [],
+        initialMessages: query.data?.messages ?? EMPTY_MESSAGES,
         wentLive,
     }
 }

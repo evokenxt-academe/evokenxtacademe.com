@@ -2,8 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 const YOUTUBE_ID_PATTERN = /^[a-zA-Z0-9_-]{11}$/
 
-export function extractYoutubeVideoId(input: string) {
-    const value = input.trim()
+/** Extract an 11-char YouTube video ID from a bare ID or any common YouTube / Studio URL. */
+export function extractYoutubeVideoId(input: string | null | undefined) {
+    const value = (input ?? "").trim()
 
     if (!value) {
         return ""
@@ -18,11 +19,19 @@ export function extractYoutubeVideoId(input: string) {
         const host = url.hostname.replace(/^www\./, "")
 
         if (host === "youtu.be") {
-            return url.pathname.replace("/", "").slice(0, 11)
+            const id = url.pathname.replace(/^\//, "").slice(0, 11)
+            return YOUTUBE_ID_PATTERN.test(id) ? id : ""
+        }
+
+        if (host === "studio.youtube.com") {
+            const studioMatch = url.pathname.match(/\/video\/([a-zA-Z0-9_-]{11})/)
+            if (studioMatch?.[1]) {
+                return studioMatch[1]
+            }
         }
 
         if (host === "youtube.com" || host === "m.youtube.com" || host === "youtube-nocookie.com") {
-            const embedMatch = url.pathname.match(/\/(embed|shorts|live)\/([a-zA-Z0-9_-]{11})/)
+            const embedMatch = url.pathname.match(/\/(embed|shorts|live|v)\/([a-zA-Z0-9_-]{11})/)
             if (embedMatch?.[2]) {
                 return embedMatch[2]
             }
@@ -33,11 +42,25 @@ export function extractYoutubeVideoId(input: string) {
             }
         }
     } catch {
-        return ""
+        // fall through to regex fallback
     }
 
-    const fallbackMatch = value.match(/([a-zA-Z0-9_-]{11})/)
-    return fallbackMatch?.[1] ?? ""
+    const fallbackMatch = value.match(/(?:^|[/?=&])([a-zA-Z0-9_-]{11})(?:[/?&#]|$)/)
+    return fallbackMatch?.[1] && YOUTUBE_ID_PATTERN.test(fallbackMatch[1])
+        ? fallbackMatch[1]
+        : ""
+}
+
+/** YouTube Studio edit page for a stream/video (accepts bare ID or any supported URL). */
+export function buildYoutubeStudioEditUrl(input: string | null | undefined) {
+    const videoId = extractYoutubeVideoId(input)
+    return videoId ? `https://studio.youtube.com/video/${videoId}/edit` : null
+}
+
+/** YouTube Studio live control page for a stream/video. */
+export function buildYoutubeStudioLiveUrl(input: string | null | undefined) {
+    const videoId = extractYoutubeVideoId(input)
+    return videoId ? `https://studio.youtube.com/video/${videoId}/livestreaming` : null
 }
 
 export function buildYoutubeEmbedUrl(videoId: string) {

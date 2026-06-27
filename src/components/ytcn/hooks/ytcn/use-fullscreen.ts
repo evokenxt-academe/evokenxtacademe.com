@@ -110,25 +110,26 @@ export function useFullscreen(
     };
   }, [isFallbackFullscreen]);
 
-  // Lock orientation to landscape on mobile when native fullscreen is active
+  // Lock orientation to landscape on mobile when fullscreen is active (native or fallback)
   useEffect(() => {
-    const orientation = window.screen?.orientation as any;
-    if (isFullscreen) {
-      if (window.innerWidth < 768 && orientation && typeof orientation.lock === "function") {
-        orientation.lock("landscape").catch((err: any) => {
-          console.warn("Screen orientation lock failed:", err);
-        });
-      }
-    } else {
-      if (orientation && typeof orientation.unlock === "function") {
-        try {
-          orientation.unlock();
-        } catch (err) {
-          console.warn("Screen orientation unlock failed:", err);
-        }
+    const orientation = window.screen?.orientation as ScreenOrientation & {
+      lock?: (orientation: string) => Promise<void>;
+      unlock?: () => void;
+    };
+    const isMobile = window.innerWidth < 768;
+
+    if (activeFullscreen && isMobile && orientation?.lock) {
+      orientation.lock("landscape").catch(() => {
+        /* orientation lock requires fullscreen on many browsers */
+      });
+    } else if (!activeFullscreen && orientation?.unlock) {
+      try {
+        orientation.unlock();
+      } catch {
+        /* noop */
       }
     }
-  }, [isFullscreen]);
+  }, [activeFullscreen]);
 
   return { isFullscreen: activeFullscreen, toggle, enter, exit };
 }

@@ -15,7 +15,7 @@ export default function ActiveSessionPage() {
               <div className="relative size-12">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/evoke-logo.svg"
+                  src="/icons/icon-192x192.png"
                   alt="Evoke EduGlobal Logo"
                   className="rounded-lg object-contain"
                 />

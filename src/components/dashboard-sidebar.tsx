@@ -36,6 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { AppSidebarLogo } from "@/components/app-sidebar-logo";
 import type { StudentProfile } from "@/features/student/lib/lms-data";
 
 const navItems = [
@@ -103,12 +104,10 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="EvokeNXT Home">
-              <Link href="/dashboard">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">
-                  E
-                </div>
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <AppSidebarLogo size={32} className="rounded-xl" />
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-bold">EvokeNXT</span>
+                  <span className="truncate font-bold">EvokeNxt Academe</span>
                   <span className="truncate text-xs text-muted-foreground">
                     Student LMS
                   </span>

@@ -50,9 +50,24 @@ export function useChatMessages(
 ) {
     const [messages, setMessages] = React.useState<LiveChatMessage[]>(initialMessages)
 
+    const initialMessagesKey = initialMessages
+        .map((message) => `${message.id}:${message.createdAt}`)
+        .join("|")
+
     React.useEffect(() => {
-        setMessages(initialMessages)
-    }, [streamId, initialMessages])
+        setMessages((current) => {
+            if (
+                current.length === initialMessages.length &&
+                current.every(
+                    (message, index) => message.id === initialMessages[index]?.id,
+                )
+            ) {
+                return current
+            }
+            return initialMessages
+        })
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- initialMessages read when key changes
+    }, [streamId, initialMessagesKey])
 
     React.useEffect(() => {
         if (!streamId) {
