@@ -33,7 +33,7 @@ export default function SessionExpiredPage() {
             <Link href="/" className="mb-2">
               <div className="relative size-12">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/evoke-logo.svg" alt="Evoke EduGlobal Logo" className="rounded-lg object-contain" />
+                <img src="/icons/icon-192x192.png" alt="Evoke EduGlobal Logo" className="rounded-lg object-contain" />
               </div>
             </Link>
 

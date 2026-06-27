@@ -67,6 +67,8 @@ export interface PlayerState {
   playbackRate: PlaybackSpeed;
   /** True when player is rendering a live stream */
   isLive: boolean;
+  /** True when DVR/rewind is disabled (live edge only) */
+  liveOnly: boolean;
   /** True when playback position is within 5s of the live edge (live mode only) */
   isAtLiveEdge: boolean;
   /** Currently active quality level (YouTube internal string) */
@@ -88,6 +90,8 @@ export interface YtcnPlayerOptions {
   autoplay?: boolean;
   /** Enables live mode controls and UI */
   isLive?: boolean;
+  /** Live-only: no DVR timeline, no rewind, always pinned to live edge */
+  liveOnly?: boolean;
   /** Initial playback rate */
   defaultSpeed?: PlaybackSpeed;
   /** Resume from this timestamp (seconds) */
@@ -103,6 +107,12 @@ export interface YtcnPlayerOptions {
    * When true, the hook skips thumbnail phase and goes straight to loading.
    */
   thumbnailFailed?: boolean;
+  /**
+   * Mobile live: tap to enter landscape fullscreen; tap again to return to page layout.
+   */
+  mobileLiveFullscreen?: boolean;
+  /** Fired when fullscreen state changes */
+  onFullscreenChange?: (isFullscreen: boolean) => void;
   /**
    * When set, overlays a forensic viewer ID watermark on the video.
    * Cycles visible/hidden on a 30s interval to trace leaked recordings.

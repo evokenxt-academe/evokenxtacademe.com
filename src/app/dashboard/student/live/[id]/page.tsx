@@ -129,6 +129,7 @@ export default function WatchStreamPage() {
                   videoId={liveVideoId}
                   autoplay={isLive}
                   isLive={isLive}
+                  liveOnly={isLive}
                   className="size-full"
                 />
                 {showEndedOverlay && (

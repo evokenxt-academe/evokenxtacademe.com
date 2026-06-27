@@ -18,6 +18,8 @@ import { LiveVideoPanel } from "@/components/live/live-video-panel";
 import { useChatMessages } from "@/hooks/live/use-chat-messages";
 import { useLiveStream } from "@/hooks/live/use-live-stream";
 import { useSendMessage } from "@/hooks/live/use-send-message";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 import { IconBroadcast, IconMessages } from "@tabler/icons-react";
 import { toast } from "sonner";
 
@@ -35,8 +37,13 @@ export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
   );
   const { sendMessage, isSending } = useSendMessage();
   const [inputMessage, setInputMessage] = React.useState("");
+  const [isPlayerFullscreen, setIsPlayerFullscreen] = React.useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const endedToastShownRef = React.useRef(false);
 
   const canChat = Boolean(currentStream && currentStream.status === "live");
+  const isEnded = currentStream?.status === "ended";
+  const hideChatOnMobile = isMobile && isPlayerFullscreen;
 
   React.useEffect(() => {
     if (wentLive) {
@@ -45,6 +52,18 @@ export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
       });
     }
   }, [wentLive]);
+
+  React.useEffect(() => {
+    if (isEnded && !endedToastShownRef.current) {
+      endedToastShownRef.current = true;
+      toast.info("This live class has ended", {
+        description: "Check your course curriculum for the recording.",
+      });
+    }
+    if (!isEnded) {
+      endedToastShownRef.current = false;
+    }
+  }, [isEnded]);
 
   const handleSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
@@ -132,9 +151,20 @@ export function LiveStreamRoom({ courseId, courseName }: LiveStreamRoomProps) {
     currentStream.status === "scheduled" || !currentStream.ytVideoId;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
-      <LiveVideoPanel stream={currentStream} courseName={courseName} />
-      <div className="xl:sticky xl:top-20">
+    <div className="grid gap-6 max-md:gap-4 xl:grid-cols-[minmax(0,1fr)_400px] xl:items-start">
+      <LiveVideoPanel
+        stream={currentStream}
+        courseName={courseName}
+        wentLive={wentLive}
+        onFullscreenChange={setIsPlayerFullscreen}
+      />
+      <div
+        className={cn(
+          "xl:sticky xl:top-20",
+          hideChatOnMobile && "max-md:hidden",
+          !hideChatOnMobile && "max-md:px-4 max-md:pb-4",
+        )}
+      >
         <LiveChatPanel
           className="h-[min(720px,calc(100dvh-9rem))]"
           streamId={currentStream.id}

@@ -73,7 +73,7 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
           <div className="relative size-16 p-2 rounded-2xl bg-card border shadow-sm animate-pulse">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/evoke-logo.svg"
+              src="/icons/icon-192x192.png"
               alt="Evoke EduGlobal Logo"
               className="w-full h-full object-contain"
             />

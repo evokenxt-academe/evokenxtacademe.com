@@ -119,7 +119,7 @@ export function Navigation() {
             >
               <div className="relative size-10">
                 <img
-                  src="/evoke-logo.svg"
+                  src="/icons/icon-192x192.png"
                   alt="EvokeNxt Academe Logo"
                   className="rounded-lg object-contain"
                 />

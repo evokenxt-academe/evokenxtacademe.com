@@ -48,7 +48,7 @@ export default async function CourseLivePage({ params }: LivePageProps) {
     <div className="flex min-h-screen flex-col bg-muted/20">
       <DashboardNavbar user={navbarUser} minimal={true} backUrl={`/learn/${slug}`} />
 
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 lg:px-8">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 max-md:px-0 max-md:py-0 lg:px-8">
         <LiveStreamRoom courseId={course.id} courseName={course.title} />
       </main>
     </div>

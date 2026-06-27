@@ -7,6 +7,8 @@ export interface UseTimelineOptions {
   duration: number;
   /** Called with the target time in seconds on click or drag */
   onSeek: (seconds: number) => void;
+  /** Live streams: click-to-seek only (no drag scrubbing) */
+  clickOnly?: boolean;
 }
 
 export interface UseTimelineReturn {
@@ -34,7 +36,7 @@ export interface UseTimelineReturn {
  * Returns a barRef to attach to the progress bar container, reactive
  * state (isDragging, hoverTime), and event handlers.
  */
-export function useTimeline({ duration, onSeek }: UseTimelineOptions): UseTimelineReturn {
+export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimelineOptions): UseTimelineReturn {
   const barRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -65,13 +67,15 @@ export function useTimeline({ duration, onSeek }: UseTimelineOptions): UseTimeli
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setIsDragging(true);
       const time = getTimeFromPosition(e.clientX);
       const fraction = getFractionFromPosition(e.clientX);
       setHoverFraction(fraction);
       onSeek(time);
+      if (!clickOnly) {
+        setIsDragging(true);
+      }
     },
-    [getTimeFromPosition, getFractionFromPosition, onSeek]
+    [clickOnly, getTimeFromPosition, getFractionFromPosition, onSeek]
   );
 
   const onMouseMove = useCallback(
@@ -96,15 +100,17 @@ export function useTimeline({ duration, onSeek }: UseTimelineOptions): UseTimeli
   const onTouchStart = useCallback(
     (e: React.TouchEvent) => {
       e.stopPropagation();
-      setIsDragging(true);
       const touch = e.touches[0];
       if (!touch) return;
       const time = getTimeFromPosition(touch.clientX);
       const fraction = getFractionFromPosition(touch.clientX);
       setHoverFraction(fraction);
       onSeek(time);
+      if (!clickOnly) {
+        setIsDragging(true);
+      }
     },
-    [getTimeFromPosition, getFractionFromPosition, onSeek]
+    [clickOnly, getTimeFromPosition, getFractionFromPosition, onSeek]
   );
 
   const onTouchMove = useCallback(
