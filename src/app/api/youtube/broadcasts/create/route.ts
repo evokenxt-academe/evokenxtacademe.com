@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       streamKey,
       videoId,
       liveChatId,
+      embedDisabled,
     } = await createLiveBroadcast(
       stream.title,
       stream.description || '',
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest) {
         privacy: stream.visibility || 'unlisted',
         enableDvr: stream.enable_dvr !== false,
         enableChat: stream.enable_chat !== false,
+        enableEmbed: stream.enable_embed !== false,
         resolution: stream.max_quality || '1080p',
       },
     );
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest) {
         yt_rtmp_url: rtmpUrl,
         yt_stream_key: streamKey,
         yt_live_chat_id: liveChatId ?? null,
+        ...(embedDisabled ? { enable_embed: false } : {}),
       })
       .eq('id', streamId);
 
@@ -93,6 +96,7 @@ export async function POST(req: NextRequest) {
       rtmpUrl,
       streamKey,
       liveChatId,
+      embedDisabled,
     });
   } catch (error: any) {
     console.error('Create broadcast error:', error);

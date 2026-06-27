@@ -715,7 +715,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
         const loadedFraction = (player as any).getVideoLoadedFraction();
 
         if (!mountedRef.current) return;
-        const isAtLiveEdge = isLive ? (duration - currentTime <= 5) : false;
+        // YouTube live stream playback typically runs with 15-45 seconds of latency (Normal Latency).
+        // A 60s threshold keeps the badge as "LIVE" while playing close to the live edge.
+        const isAtLiveEdge = isLive ? (duration - currentTime <= 60) : false;
 
         setState((prev) => ({
           ...prev,
@@ -915,7 +917,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     if (!player) return;
     try {
       const duration = (player as any).getDuration();
-      (player as any).seekTo(duration, true);
+      // Seeking past the end (e.g. 999999) is the standard way in YouTube Player API
+      // to force the stream to seek to the absolute latest live edge.
+      (player as any).seekTo(999999, true);
       if (mountedRef.current) {
         setState((prev) => ({ ...prev, currentTime: duration, isAtLiveEdge: true }));
       }

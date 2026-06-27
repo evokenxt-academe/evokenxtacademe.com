@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         const { action } = body
 
         if (action === "create") {
-            const { title, courseId, ytVideoId, videoSource } = body
+            const { title, courseId, ytVideoId, videoSource, enableEmbed } = body
 
             if (!title || !courseId) {
                 return NextResponse.json(
@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
                     status: "live",
                     started_at: new Date().toISOString(),
                     ended_at: null,
+                    enable_embed: enableEmbed !== false,
                 })
                 .select("id")
                 .single()

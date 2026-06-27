@@ -22,7 +22,8 @@ import {
   IconRewindForward10,
   IconChevronLeft,
   IconChevronRight,
-  IconChevronsRight
+  IconChevronsRight,
+  IconRefresh
 } from "@tabler/icons-react";
 
 /* ================================================================ */
@@ -576,6 +577,18 @@ export function YtcnPlayer({
               <IconBrandYoutube className="h-4 w-4" />
               Watch on YouTube
             </a>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-zinc-200",
+                "bg-zinc-800 hover:bg-zinc-700 transition-all duration-200 hover:scale-105 active:scale-95",
+                "focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-950"
+              )}
+            >
+              <IconRefresh className="h-4 w-4" />
+              Reload Player
+            </button>
           </div>
         </div>
       )}

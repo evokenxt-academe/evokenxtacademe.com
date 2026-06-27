@@ -1,64 +1,23 @@
 "use client";
 
-
-
 import * as React from "react";
-
-
-
-import { Badge } from "@/components/ui/badge";
-
-import { Button } from "@/components/ui/button";
-
 import {
-
   Card,
-
   CardContent,
-
-  CardDescription,
-
   CardHeader,
-
   CardTitle,
-
 } from "@/components/ui/card";
-
-import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
-
-import {
-
-  extractYoutubeVideoId,
-
-  formatLiveDateTime,
-
-} from "@/features/live-stream/lib";
-
+import { extractYoutubeVideoId } from "@/features/live-stream/lib";
 import type { LiveStreamSummary } from "@/features/live-stream/types";
-
 import {
-
   IconBroadcast,
-
   IconLoader2,
-
-  IconPlayerPauseFilled,
-
-  IconRefresh,
-
 } from "@tabler/icons-react";
 
-
-
 type LiveVideoPanelProps = {
-
   stream: LiveStreamSummary;
-
   courseName: string;
-
 };
-
-
 
 export function LiveVideoPanel({ stream, courseName }: LiveVideoPanelProps) {
 
@@ -70,7 +29,7 @@ export function LiveVideoPanel({ stream, courseName }: LiveVideoPanelProps) {
 
   const playerKey = `${stream.id}-${stream.status}-${videoId || "pending"}`;
 
-  const [reloadToken, setReloadToken] = React.useState(0);
+  const [reloadToken] = React.useState(0);
 
 
 
@@ -78,53 +37,13 @@ export function LiveVideoPanel({ stream, courseName }: LiveVideoPanelProps) {
 
     <Card className="overflow-hidden border-border/70 shadow-sm">
 
-      <CardHeader className="space-y-3 border-b border-border/60 bg-muted/20">
+      <CardHeader className="border-b border-border/60 bg-muted/20 py-3.5 px-4 sm:px-5">
 
-        <div className="flex flex-wrap items-center gap-2">
+        <CardTitle className="text-lg font-semibold tracking-tight md:text-xl">
 
-          <Badge
+          {stream.title}
 
-            variant={isLive ? "destructive" : isScheduled ? "secondary" : "outline"}
-
-            className="rounded-full px-2.5 py-0.5 uppercase tracking-[0.18em]"
-
-          >
-
-            {isLive ? "Live" : isScheduled ? "Starting soon" : "Ended"}
-
-          </Badge>
-
-          <Badge variant="secondary" className="rounded-full px-2.5 py-0.5">
-
-            {courseName}
-
-          </Badge>
-
-        </div>
-
-        <div className="space-y-1">
-
-          <CardTitle className="text-xl leading-tight md:text-2xl">
-
-            {stream.title}
-
-          </CardTitle>
-
-          <CardDescription>
-
-            {isLive
-
-              ? "The broadcast is live now. Watch below and join the class chat."
-
-              : isScheduled
-
-                ? "Your instructor is preparing the broadcast. The player will start automatically when the stream goes live."
-
-                : `This stream ended at ${formatLiveDateTime(stream.endedAt || stream.startedAt)}`}
-
-          </CardDescription>
-
-        </div>
+        </CardTitle>
 
       </CardHeader>
 
@@ -166,85 +85,27 @@ export function LiveVideoPanel({ stream, courseName }: LiveVideoPanelProps) {
 
         ) : videoId ? (
 
-          <div className="relative aspect-video bg-black">
+          <div className="relative aspect-video bg-black overflow-hidden select-none">
 
-            <YtcnPlayer
+            <iframe
 
               key={`${playerKey}-${reloadToken}`}
 
-              videoId={videoId}
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=${isLive ? 1 : 0}&rel=0&modestbranding=1&playsinline=1`}
 
-              autoplay={isLive}
+              title="Live stream player"
 
-              isLive={isLive}
+              className="size-full border-0"
 
-              className="size-full rounded-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+
+              sandbox="allow-scripts allow-same-origin allow-presentation"
+
+              allowFullScreen
 
             />
 
-            <div className="pointer-events-none absolute left-3 top-3 z-50">
 
-              <Badge
-
-                variant={isLive ? "destructive" : "secondary"}
-
-                className="rounded-full px-2.5 py-0.5 shadow-sm"
-
-              >
-
-                {isLive ? (
-
-                  <>
-
-                    <IconBroadcast data-icon="inline-start" />
-
-                    Live
-
-                  </>
-
-                ) : (
-
-                  <>
-
-                    <IconPlayerPauseFilled data-icon="inline-start" />
-
-                    Recording
-
-                  </>
-
-                )}
-
-              </Badge>
-
-            </div>
-
-            {isLive ? (
-
-              <div className="absolute right-3 top-3 z-50">
-
-                <Button
-
-                  type="button"
-
-                  size="sm"
-
-                  variant="secondary"
-
-                  className="h-8 gap-1.5 rounded-full bg-black/60 text-white hover:bg-black/80"
-
-                  onClick={() => setReloadToken((value) => value + 1)}
-
-                >
-
-                  <IconRefresh className="size-3.5" />
-
-                  Reload stream
-
-                </Button>
-
-              </div>
-
-            ) : null}
 
           </div>
 

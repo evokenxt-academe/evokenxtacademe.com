@@ -133,7 +133,16 @@ export function StreamSetupPanel({
           if (!silent) toast.error(data.error ?? "Failed to create broadcast");
           return;
         }
-        if (!silent) toast.success("YouTube broadcast ready");
+        if (!silent) {
+          if (data.embedDisabled) {
+            toast.warning(
+              "YouTube broadcast ready, but embedding is disabled. Enable it in YouTube Studio.",
+              { duration: 8000 }
+            );
+          } else {
+            toast.success("YouTube broadcast ready");
+          }
+        }
         onBroadcastCreated();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to create broadcast";
@@ -206,6 +215,42 @@ export function StreamSetupPanel({
   return (
     <div className="flex flex-col gap-5 rounded-xl border border-border/60 bg-card p-4 sm:p-5">
       {primaryAction}
+
+      {stream.enable_embed === false && stream.yt_broadcast_id && (
+        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-950/40 dark:bg-amber-950/10">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="mt-0.5 size-4 text-amber-600 dark:text-amber-500 shrink-0" />
+            <div className="flex flex-col gap-1">
+              <h4 className="text-xs font-semibold text-amber-900 dark:text-amber-400">
+                YouTube Embedding Disabled
+              </h4>
+              <p className="text-[11px] leading-relaxed text-amber-700/90 dark:text-amber-500/90">
+                YouTube has disabled video embedding for this stream. To play this live stream directly inside the LMS, you must manually enable embedding in YouTube Studio:
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5 rounded-md bg-white/60 p-3 text-[11px] border border-amber-100/50 dark:bg-zinc-900/50 dark:border-zinc-800/40">
+            <div>
+              1. Open your live stream in{" "}
+              <a
+                href={`https://studio.youtube.com/video/${stream.yt_video_id}/livestreaming`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-0.5"
+              >
+                YouTube Studio <ExternalLink className="size-3" />
+              </a>
+            </div>
+            <div>2. Click **Edit** (pencil icon) on the top right.</div>
+            <div>3. Scroll down, click **SHOW MORE**, and scroll to the **License** section.</div>
+            <div>4. Check the box for **Allow embedding**.</div>
+            <div>5. Click **Save** in YouTube Studio.</div>
+          </div>
+          <p className="text-[10px] text-amber-600/80 dark:text-amber-500/80 italic">
+            * Note: Once enabled in YouTube Studio, the player will start working for students immediately.
+          </p>
+        </div>
+      )}
 
       {goLiveStep && (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">

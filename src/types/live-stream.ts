@@ -55,6 +55,7 @@ export type LiveStreamRow = {
   category_id: number | null;
   enable_dvr: boolean;
   enable_chat: boolean;
+  enable_embed: boolean;
   chat_moderation: boolean;
   concurrent_viewers: number;
   peak_viewers: number;
