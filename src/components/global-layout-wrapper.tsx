@@ -35,11 +35,10 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
     setMounted(true);
 
     const checkDevice = () => {
-      const isMobileWidth = window.innerWidth < 768;
       const isStandalone =
         window.matchMedia("(display-mode: standalone)").matches ||
         (window.navigator as any).standalone === true;
-      return isMobileWidth || isStandalone;
+      return isStandalone;
     };
 
     if (checkDevice() && isMarketingRoute) {

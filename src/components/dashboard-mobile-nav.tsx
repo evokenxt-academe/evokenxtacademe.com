@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Compass, ClipboardList, User } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useUserSession } from "@/features/auth/store/use-user-session";
 
 const mobileNavItems = [
   { title: "Home", href: "/dashboard", icon: Home },
@@ -18,6 +20,13 @@ const mobileNavItems = [
 export function DashboardMobileNav() {
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width: 767px)");
+  const { user, isLoading, getSession } = useUserSession();
+
+  useEffect(() => {
+    if (!user && !isLoading) {
+      getSession();
+    }
+  }, []);
 
   const isDashboardRoute =
     pathname?.startsWith("/dashboard") ||
@@ -26,6 +35,10 @@ export function DashboardMobileNav() {
     pathname?.startsWith("/courses");
 
   if (!isMobile || !isDashboardRoute) {
+    return null;
+  }
+
+  if (isLoading || !user) {
     return null;
   }
 

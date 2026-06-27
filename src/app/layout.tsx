@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   applicationName: "Evokenxt",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Evokenxt",
   },
   other: {

@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
   const authErrorDescription = searchParams.get('error_description')
+  const isPwa = searchParams.get('pwa') === '1'
 
   if (code) {
     const supabase = await createClient()
@@ -115,7 +116,9 @@ export async function GET(request: Request) {
       }
 
       const separator = redirectDestination.includes('?') ? '&' : '?';
-      const redirectUrl = `${origin}${redirectDestination}${separator}pwa_install=1`
+      const redirectUrl = isPwa
+        ? `${origin}/auth/pwa-callback?status=success`
+        : `${origin}${redirectDestination}${separator}pwa_install=1`;
       const response = NextResponse.redirect(redirectUrl)
 
       response.cookies.set(LMS_SESSION_COOKIE, newSessionId, buildSessionCookieOptions())
@@ -124,13 +127,22 @@ export async function GET(request: Request) {
     }
 
     const message = error?.message ?? 'Could not authenticate user'
+    if (isPwa) {
+      return NextResponse.redirect(`${origin}/auth/pwa-callback?status=error&error=${encodeURIComponent(message)}`)
+    }
     return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(message)}`)
   }
 
   if (authErrorDescription) {
+    if (isPwa) {
+      return NextResponse.redirect(`${origin}/auth/pwa-callback?status=error&error=${encodeURIComponent(authErrorDescription)}`)
+    }
     return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(authErrorDescription)}`)
   }
 
   // return the user to an error page with some instructions
+  if (isPwa) {
+    return NextResponse.redirect(`${origin}/auth/pwa-callback?status=error&error=Could%20not%20authenticate%20user`)
+  }
   return NextResponse.redirect(`${origin}/auth/login?error=Could not authenticate user`)
 }

@@ -35,6 +35,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import NotificationBell from "@/components/notifications/NotificationBell";
 import { useNotifications } from "@/hooks/useNotifications";
+import { signOutUser } from "@/features/auth/lib/sign-out";
 import {
   DashboardSearchCommand,
   type DashboardSearchItem,
@@ -232,6 +233,19 @@ export function DashboardNavbar({
               >
                 Settings
               </DropdownMenuItem>
+              {(user?.role === "admin" || user?.role === "instructor") && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await signOutUser("/");
+                    }}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    Log out
+                  </DropdownMenuItem>
+                </>
+              )}
 
             </DropdownMenuContent>
           </DropdownMenu>
