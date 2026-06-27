@@ -65,8 +65,10 @@ export async function createLiveBroadcast(
   streamKey: string;
   videoId?: string;
   liveChatId?: string;
+  embedDisabled?: boolean;
 }> {
   const accessToken = await getAccessToken();
+  let embedDisabled = false;
 
   // Step 1: Create broadcast
   let broadcastRes = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
@@ -83,11 +85,14 @@ export async function createLiveBroadcast(
       },
       status: {
         privacyStatus: options.privacy || 'unlisted',
+        selfDeclaredMadeForKids: false,
       },
       contentDetails: {
         enableDvr: options.enableDvr !== false,
-        // Only set enableEmbed if explicitly specified, otherwise omit to let YouTube default based on channel status
-        ...(options.enableEmbed !== undefined ? { enableEmbed: options.enableEmbed } : {}),
+        // Only set enableEmbed if it is explicitly false.
+        // Setting it to true requires AdSense linking and will fail with invalidEmbedSetting for non-monetized channels,
+        // but omitting it allows YouTube to default to true (enabled) anyway.
+        ...(options.enableEmbed === false ? { enableEmbed: false } : {}),
         enableAutoStart: true,
         enableAutoStop: true,
         recordFromStart: true,
@@ -104,6 +109,7 @@ export async function createLiveBroadcast(
     // If embedding is not allowed, retry with enableEmbed: false
     if (reason === 'invalidEmbedSetting' && options.enableEmbed !== false) {
       console.warn('YouTube live broadcast creation failed with invalidEmbedSetting. Retrying with enableEmbed: false...');
+      embedDisabled = true;
       broadcastRes = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
         method: 'POST',
         headers: {
@@ -118,6 +124,7 @@ export async function createLiveBroadcast(
           },
           status: {
             privacyStatus: options.privacy || 'unlisted',
+            selfDeclaredMadeForKids: false,
           },
           contentDetails: {
             enableDvr: options.enableDvr !== false,
@@ -223,6 +230,7 @@ export async function createLiveBroadcast(
     streamKey: stream.cdn.ingestionInfo.streamName,
     videoId,
     liveChatId,
+    embedDisabled,
   };
 }
 
@@ -337,6 +345,9 @@ async function waitForEncoderSignal(
     }
 
     if (streamStatus === 'active' && (lifecycle === 'ready' || lifecycle === 'created')) {
+      // YouTube takes a few seconds to internalize the active state before allowing a transition.
+      // A 3-second stabilization delay prevents the subsequent transitionToLive call from throwing a transition invalid error.
+      await sleep(3000);
       return lifecycle;
     }
 

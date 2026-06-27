@@ -61,29 +61,44 @@ export async function runGoLiveSequence(
   onStep?.("Preparing YouTube broadcast…");
   const { rtmpUrl, streamKey } = await ensureYouTubeBroadcast(streamId);
 
-  onStep?.("Connecting to OBS…");
-  await obs.ensureConnected();
-
-  onStep?.("Preparing OBS encoder…");
-  const alreadyConfigured = await isObsConfiguredForStream(rtmpUrl, streamKey);
-  const { isStreaming: obsAlreadyLive } = await getObsStreamStatus().catch(() => ({
-    isStreaming: false,
-  }));
-
-  if (!alreadyConfigured || !obsAlreadyLive) {
-    try {
-      await obs.stopStreaming();
-    } catch {
-      /* OBS may already be stopped */
-    }
+  let obsAvailable = true;
+  try {
+    onStep?.("Connecting to OBS…");
+    await obs.ensureConnected();
+  } catch (err) {
+    console.warn("OBS connection failed, proceeding with manual OBS mode:", err);
+    obsAvailable = false;
   }
 
-  onStep?.("Configuring OBS stream…");
-  await obs.pushRtmp(rtmpUrl, streamKey);
-  await wait(500);
+  if (obsAvailable) {
+    try {
+      onStep?.("Preparing OBS encoder…");
+      const alreadyConfigured = await isObsConfiguredForStream(rtmpUrl, streamKey);
+      const { isStreaming: obsAlreadyLive } = await getObsStreamStatus().catch(() => ({
+        isStreaming: false,
+      }));
 
-  onStep?.("Starting OBS encoder…");
-  await obs.startStreaming();
+      if (!alreadyConfigured || !obsAlreadyLive) {
+        try {
+          await obs.stopStreaming();
+        } catch {
+          /* OBS may already be stopped */
+        }
+      }
+
+      onStep?.("Configuring OBS stream…");
+      await obs.pushRtmp(rtmpUrl, streamKey);
+      await wait(500);
+
+      onStep?.("Starting OBS encoder…");
+      await obs.startStreaming();
+    } catch (obsErr) {
+      console.warn("Failed OBS automation steps, proceeding manually:", obsErr);
+    }
+  } else {
+    onStep?.("Bypassing OBS automation. Please ensure you have started streaming in OBS manually.");
+    await wait(3000);
+  }
 
   onStep?.("Waiting for YouTube to receive encoder signal…");
   await transitionYouTubeLive(streamId);

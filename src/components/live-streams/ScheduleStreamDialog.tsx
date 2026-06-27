@@ -85,6 +85,7 @@ export function ScheduleStreamDialog({
     scheduledTime: "",
     enableDvr: true,
     enableChat: true,
+    enableEmbed: true,
     chatModeration: false,
     maxQuality: "1080p" as StreamQuality,
     categoryId: "27",
@@ -175,6 +176,7 @@ export function ScheduleStreamDialog({
           tags: [],
           enable_dvr: form.enableDvr,
           enable_chat: form.enableChat,
+          enable_embed: form.enableEmbed,
           chat_moderation: form.chatModeration,
           max_quality: form.maxQuality,
           category_id: parseInt(form.categoryId, 10),
@@ -198,6 +200,14 @@ export function ScheduleStreamDialog({
           (data.error as string) ??
             "Stream created, but YouTube setup failed. Fix it in the Control Room.",
         );
+      } else {
+        const data = await broadcastRes.json().catch(() => ({}));
+        if (data.embedDisabled) {
+          toast.warning(
+            "Stream created, but YouTube embedding is disabled. Please enable 'Allow embedding' in YouTube Studio.",
+            { duration: 8000 }
+          );
+        }
       }
 
       toast.success(`Stream created (ID: ${stream.id.slice(0, 8)}…)`);
@@ -297,6 +307,8 @@ export function ScheduleStreamDialog({
           />
         </div>
       </div>
+
+
 
       <Button onClick={handleSubmit} disabled={loading} className="w-full">
         {loading ? (

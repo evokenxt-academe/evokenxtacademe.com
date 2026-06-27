@@ -8,6 +8,7 @@ type Step = {
   id: number;
   label: string;
   status: PipelineStepStatus;
+  extra?: React.ReactNode;
 };
 
 type PipelineStatusProps = {
@@ -68,17 +69,20 @@ export function PipelineStatus({ steps }: PipelineStatusProps) {
         {steps.map((step) => (
           <li key={step.id} className="flex items-center gap-2.5">
             <StepIcon status={step.status} />
-            <span
-              className={cn(
-                "text-sm",
-                step.status === "done" && "text-muted-foreground",
-                step.status === "in_progress" && "font-medium text-foreground",
-                step.status === "pending" && "text-muted-foreground/70",
-                step.status === "error" && "font-medium text-destructive",
-              )}
-            >
-              {step.label}
-            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className={cn(
+                  "text-sm",
+                  step.status === "done" && "text-muted-foreground",
+                  step.status === "in_progress" && "font-medium text-foreground",
+                  step.status === "pending" && "text-muted-foreground/70",
+                  step.status === "error" && "font-medium text-destructive",
+                )}
+              >
+                {step.label}
+              </span>
+              {step.extra}
+            </div>
           </li>
         ))}
       </ol>

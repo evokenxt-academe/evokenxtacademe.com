@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   BarChart3,
   Edit,
+  ExternalLink,
   MessageCircle,
   Settings2,
   Video,
@@ -129,7 +130,25 @@ export default function StreamControlRoomPage() {
       obs.isStreaming || stream.status === "live" || stream.status === "ended";
 
     return [
-      { id: 1, label: "YouTube broadcast", status: step(hasBroadcast) },
+      {
+        id: 1,
+        label: "YouTube broadcast",
+        status: step(hasBroadcast),
+        extra: hasBroadcast ? (
+          <span className="inline-flex items-center gap-1 text-xs">
+            (
+            <a
+              href={`https://studio.youtube.com/video/${stream.yt_video_id}/livestreaming`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-0.5"
+            >
+              YouTube Studio <ExternalLink className="size-3" strokeWidth={2.5} />
+            </a>
+            )
+          </span>
+        ) : undefined,
+      },
       { id: 2, label: "Stream credentials", status: step(hasRtmp) },
       { id: 3, label: "OBS connected", status: step(obsConnected, obsConnecting) },
       { id: 4, label: "Encoder streaming", status: step(encoderDone, encoderStarting) },

@@ -312,6 +312,7 @@ export interface Database {
           scheduled_at: string | null
           started_at: string | null
           ended_at: string | null
+          enable_embed: boolean
         }
         Insert: {
           id?: string
@@ -323,6 +324,7 @@ export interface Database {
           scheduled_at?: string | null
           started_at?: string | null
           ended_at?: string | null
+          enable_embed?: boolean
         }
         Update: {
           id?: string
@@ -334,6 +336,7 @@ export interface Database {
           scheduled_at?: string | null
           started_at?: string | null
           ended_at?: string | null
+          enable_embed?: boolean
         }
       }
       chat_messages: {

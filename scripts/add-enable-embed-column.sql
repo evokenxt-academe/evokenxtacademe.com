@@ -1,0 +1,1 @@
+ALTER TABLE public.live_streams ADD COLUMN IF NOT EXISTS enable_embed BOOLEAN NOT NULL DEFAULT TRUE;
