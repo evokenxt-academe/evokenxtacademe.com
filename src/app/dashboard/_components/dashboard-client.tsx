@@ -631,7 +631,7 @@ export function DashboardClient({ data }: { data: DashboardViewModel }) {
                           onClick={!isLive ? () => void handleReminder(session.id) : undefined}
                         >
                           {isLive ? (
-                            <Link href={`/dashboard/student/live/${session.id}`}>Join</Link>
+                            <Link href={`/learn/${session.courseSlug}/live`}>Join</Link>
                           ) : (
                             <span className="flex items-center gap-2">
                               {pendingAction === session.id ? <Spinner /> : null}

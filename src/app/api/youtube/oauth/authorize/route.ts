@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/youtube.upload',
     'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/drive.readonly',
   ];
 
   // Build the redirect URI dynamically for production vs local

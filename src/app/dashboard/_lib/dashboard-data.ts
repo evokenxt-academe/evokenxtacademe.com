@@ -85,6 +85,7 @@ export type UpcomingLiveStream = {
   concurrent_viewers: number | null;
   course_title: string;
   course_id: string;
+  course_slug: string;
   instructor_name: string;
   instructor_avatar: string | null;
 };
@@ -251,7 +252,7 @@ export async function fetchStudentDashboardV21(
       .from("live_streams")
       .select(
         `id, title, description, status, scheduled_at, started_at, yt_video_id, concurrent_viewers,
-         course:courses!inner(title, id),
+         course:courses!inner(title, id, slug),
          instructor:users!inner(name, avatar)`,
       )
       .in("status", ["scheduled", "live"])
@@ -534,7 +535,7 @@ export async function fetchStudentDashboardV21(
     started_at: string | null;
     yt_video_id: string | null;
     concurrent_viewers: number | null;
-    course: { title: string; id: string };
+    course: { title: string; id: string; slug: string };
     instructor: { name: string | null; avatar: string | null };
   }>;
 
@@ -553,6 +554,7 @@ export async function fetchStudentDashboardV21(
       concurrent_viewers: s.concurrent_viewers,
       course_title: s.course.title,
       course_id: s.course.id,
+      course_slug: s.course.slug,
       instructor_name: s.instructor.name ?? "Instructor",
       instructor_avatar: s.instructor.avatar ?? null,
     }));

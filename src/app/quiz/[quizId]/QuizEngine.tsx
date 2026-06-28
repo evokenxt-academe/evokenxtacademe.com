@@ -436,31 +436,63 @@ export function QuizEngine({
               <CardTitle className="text-base">Previous attempts</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
-              {attempts.slice(0, 5).map((a) => (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">
-                      Attempt #{a.attempt_number}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {a.submitted_at
-                        ? new Date(a.submitted_at).toLocaleString()
-                        : "In progress"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={a.passed ? "default" : "secondary"}>
-                      {a.passed ? "Passed" : "—"}
-                    </Badge>
-                    <span className="font-mono text-sm tabular-nums">
-                      {a.score ?? 0}/{a.total_marks ?? quiz.total_marks}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              {attempts.slice(0, 5).map((a) => {
+                const isInProgress = a.status === "in_progress" || !a.submitted_at;
+
+                if (isInProgress) {
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={handleStart}
+                      disabled={isStarting}
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">
+                          Attempt #{a.attempt_number}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          In progress — Click to resume
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          Resume
+                        </Badge>
+                        <IconArrowRight className="size-4 text-muted-foreground" />
+                      </div>
+                    </button>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={a.id}
+                    href={`/dashboard/tests/result/${a.id}`}
+                    className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">
+                        Attempt #{a.attempt_number}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {a.submitted_at
+                          ? new Date(a.submitted_at).toLocaleString()
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={a.passed ? "default" : "secondary"}>
+                        {a.passed ? "Passed" : "—"}
+                      </Badge>
+                      <span className="font-mono text-sm tabular-nums">
+                        {a.score ?? 0}/{a.total_marks ?? quiz.total_marks}
+                      </span>
+                      <IconArrowRight className="size-4 text-muted-foreground" />
+                    </div>
+                  </Link>
+                );
+              })}
             </CardContent>
           </Card>
         ) : null}

@@ -87,8 +87,28 @@ export function LoginCard() {
     if (isStandalone) {
       // PWA Popup Flow to prevent redirecting out of the app
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectUrl)}&pwa=1`;
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://tvyakrbmfqeylgkqwkdu.supabase.co";
-      const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}&scopes=email+profile`;
+
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+          scopes: "email profile",
+        },
+      });
+
+      if (error) {
+        toast.error(error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data?.url) {
+        toast.error("Failed to initialize Google login.");
+        setIsLoading(false);
+        return;
+      }
 
       // Open a popup window centered
       const width = 500;
@@ -97,7 +117,7 @@ export function LoginCard() {
       const top = window.screen.height / 2 - height / 2;
 
       const popup = window.open(
-        authUrl,
+        data.url,
         "Google Sign In",
         `width=${width},height=${height},top=${top},left=${left},status=no,resizable=yes,scrollbars=yes`
       );

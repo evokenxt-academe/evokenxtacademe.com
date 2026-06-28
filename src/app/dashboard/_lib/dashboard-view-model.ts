@@ -156,7 +156,7 @@ export function buildDashboardViewModel(data: DashboardData): DashboardViewModel
       id: `live-${s.id}`,
       title: s.title,
       subtitle: s.course_title,
-      href: `/dashboard/student/live/${s.id}`,
+      href: `/learn/${s.course_slug}/live`,
       type: "live" as const,
     })),
   ];
@@ -211,6 +211,7 @@ export function buildDashboardViewModel(data: DashboardData): DashboardViewModel
       startedAt: s.started_at,
       courseTitle: s.course_title,
       courseId: s.course_id,
+      courseSlug: s.course_slug,
       instructorName: s.instructor_name,
       instructorAvatar: s.instructor_avatar,
     })),
