@@ -110,26 +110,8 @@ export function useFullscreen(
     };
   }, [isFallbackFullscreen]);
 
-  // Lock orientation to landscape on mobile when fullscreen is active (native or fallback)
-  useEffect(() => {
-    const orientation = window.screen?.orientation as ScreenOrientation & {
-      lock?: (orientation: string) => Promise<void>;
-      unlock?: () => void;
-    };
-    const isMobile = window.innerWidth < 768;
-
-    if (activeFullscreen && isMobile && orientation?.lock) {
-      orientation.lock("landscape").catch(() => {
-        /* orientation lock requires fullscreen on many browsers */
-      });
-    } else if (!activeFullscreen && orientation?.unlock) {
-      try {
-        orientation.unlock();
-      } catch {
-        /* noop */
-      }
-    }
-  }, [activeFullscreen]);
+  // Programmatic orientation lock is removed to prevent browser fullscreen exit bugs.
+  // Instead, landscape orientation in fullscreen is handled via CSS rotation for mobile/touch devices.
 
   return { isFullscreen: activeFullscreen, toggle, enter, exit };
 }

@@ -205,4 +205,17 @@
   .animate-bounce-right {
     animation: bounce-right 0.8s infinite;
   }
+
+  @media (orientation: portrait) {
+    .ytcn-mobile-fullscreen-rotate {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      width: 100vh !important;
+      height: 100vw !important;
+      transform: translate(-50%, -50%) rotate(90deg) !important;
+      transform-origin: center !important;
+      z-index: 99999 !important;
+    }
+  }
 }
