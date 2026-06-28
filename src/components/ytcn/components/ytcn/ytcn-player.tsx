@@ -195,10 +195,10 @@ export function YtcnPlayer({
     onMute: controls.toggleMute,
     onFullscreen: controls.toggleFullscreen,
     onSeekBack: () => {
-      if (!state.isLive) controls.seekRelative(-10);
+      if (!state.liveOnly) controls.seekRelative(-10);
     },
     onSeekForward: () => {
-      if (!state.isLive) controls.seekRelative(10);
+      if (!state.liveOnly) controls.seekRelative(10);
     },
     bindings: keyboardBindings,
   });
@@ -347,7 +347,7 @@ export function YtcnPlayer({
       )}
 
       {/* Centered Play Button Overlay — live streams skip thumbnail */}
-      {(state.phase === "thumbnail" && thumbnailLoaded && !isLive) && (
+      {(state.phase === "thumbnail" && thumbnailLoaded && (!isLive || !autoplay)) && (
         <button
           type="button"
           onClick={(e) => {
@@ -463,7 +463,7 @@ export function YtcnPlayer({
               setLastTouchTs(now);
 
               if (isDoubleTap) {
-                if (zone === "left" && !state.isLive) {
+                if (zone === "left" && !state.liveOnly) {
                   controls.seekRelative(-10);
                   setActiveRipple("left");
                   if (rippleTimeoutRef.current) clearTimeout(rippleTimeoutRef.current);
@@ -471,7 +471,7 @@ export function YtcnPlayer({
                   showControls();
                   return;
                 }
-                if (zone === "right" && !state.isLive) {
+                if (zone === "right" && !state.liveOnly) {
                   controls.seekRelative(10);
                   setActiveRipple("right");
                   if (rippleTimeoutRef.current) clearTimeout(rippleTimeoutRef.current);
@@ -544,7 +544,7 @@ export function YtcnPlayer({
             )}
           >
             {/* Center Rewind 10s */}
-            {!state.isLive && (
+            {!state.liveOnly && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -578,7 +578,7 @@ export function YtcnPlayer({
             </button>
 
             {/* Center Forward 10s */}
-            {!state.isLive && (
+            {!state.liveOnly && (
               <button
                 type="button"
                 onClick={(e) => {

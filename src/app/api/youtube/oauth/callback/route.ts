@@ -110,10 +110,7 @@ export async function GET(req: NextRequest) {
     console.log('[YouTube OAuth] Granted scopes from Google:', grantedScopes);
     console.log('[YouTube OAuth] Refresh token received:', !!tokenData.refresh_token);
 
-    // Store the REQUESTED scopes (what we asked for) since Google may return a shortened format
-    // Google sometimes returns "email profile openid https://..." instead of full scope URIs
-    // We trust that if the user consented, all requested scopes were granted
-    const requestedScopes = 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/userinfo.email';
+    const requestedScopes = 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.force-ssl https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.readonly';
 
     // Delete existing to avoid upsert complexities if not perfectly configured
     await supabase.from('youtube_tokens').delete().eq('user_id', adminUser.id);
@@ -131,6 +128,12 @@ export async function GET(req: NextRequest) {
     if (insertError) {
       console.error('Failed to save token to database:', insertError);
       return NextResponse.redirect(getRedirectUrl({ error: 'db_save_failed' }));
+    }
+
+    if (state && state.startsWith('/admin/courses/')) {
+      const redirectTarget = new URL(state, origin);
+      redirectTarget.searchParams.set('google_success', 'true');
+      return NextResponse.redirect(redirectTarget.toString());
     }
 
     return NextResponse.redirect(getRedirectUrl({ success: 'youtube_connected' }));

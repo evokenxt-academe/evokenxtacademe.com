@@ -90,6 +90,27 @@ function normalizeQualityValue(requested: string, availableQualities: string[]):
 /** Seconds behind the DVR window end before we show "GO LIVE" instead of "LIVE". */
 const LIVE_EDGE_THRESHOLD_SEC = 15;
 
+/**
+ * Preferred quality key for 1080p (highest HD tier).
+ * "highres" covers 4K/1440p; we fall back through the list to get the
+ * best available up to 1080p (hd1080).
+ */
+const PREFERRED_1080P_QUALITIES = ["highres", "hd1080"] as const;
+
+/**
+ * Resolve the best 1080p-or-higher quality key from the available list.
+ * Returns the first match from PREFERRED_1080P_QUALITIES, or falls back
+ * to the highest non-auto quality available.
+ */
+function resolve1080pQuality(availableQualities: string[]): string | null {
+  for (const preferred of PREFERRED_1080P_QUALITIES) {
+    if (availableQualities.includes(preferred)) return preferred;
+  }
+  // Fall back: pick highest available (YouTube returns sorted highest-first)
+  const highest = availableQualities.find((q) => q !== "auto" && q !== "default");
+  return highest ?? null;
+}
+
 function computeIsAtLiveEdge(
   currentTime: number,
   duration: number,
@@ -453,21 +474,41 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
               /* player may reject these calls during initialization */
             }
 
-            // Auto-set highest available quality on ready
-            try {
-              const availableQualities: string[] = (player as any).getAvailableQualityLevels() || [];
-              if (availableQualities.length > 0) {
-                // YouTube returns qualities sorted highest-first
-                // e.g., ["hd1080", "hd720", "large", "medium", "small", "tiny", "auto"]
-                const highestQuality = availableQualities.find((q: string) => q !== "auto" && q !== "default") || availableQualities[0];
-                if (highestQuality && highestQuality !== "auto" && highestQuality !== "default") {
-                  preferredQualityRef.current = highestQuality;
+            // Auto-set 1080p quality on ready (force-locks HD for both VOD and live)
+            const tryEnforce1080p = (withSeek: boolean) => {
+              try {
+                const anyPlayer = player as any;
+                const availableQualities: string[] = anyPlayer.getAvailableQualityLevels?.() || [];
+                const target = resolve1080pQuality(availableQualities);
+                if (target) {
+                  preferredQualityRef.current = target;
                   qualityEnforceCountRef.current = 0;
-                  enforceQuality(player, highestQuality, false);
+                  enforceQuality(player, target, withSeek);
+                  return true;
                 }
+              } catch {
+                /* quality APIs may not be available yet */
               }
-            } catch {
-              /* quality APIs may not be available yet */
+              return false;
+            };
+
+            // First attempt immediately on ready (soft — no seek disruption)
+            const immediate1080p = tryEnforce1080p(false);
+
+            // For live streams, YouTube often doesn't populate quality levels
+            // until a few seconds after onReady. Schedule retries to catch this.
+            if (!immediate1080p || isLiveRef.current) {
+              for (const delay of [800, 1800, 3500, 6000]) {
+                window.setTimeout(() => {
+                  if (!mountedRef.current || !playerRef.current) return;
+                  // Only re-enforce if we don't have a user-overridden quality locked
+                  const current = preferredQualityRef.current;
+                  const isAlready1080p = current === "hd1080" || current === "highres";
+                  if (!isAlready1080p) {
+                    tryEnforce1080p(delay >= 1800);
+                  }
+                }, delay);
+              }
             }
 
             const attemptId = ++autoplayAttemptRef.current;
@@ -557,6 +598,20 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
                 // YouTube often downgrades quality after buffering/seeking.
                 if (preferredQualityRef.current) {
                   enforceQuality(player, preferredQualityRef.current);
+                } else {
+                  // No preferred quality yet (e.g. live stream first PLAYING event) —
+                  // try to resolve and lock 1080p now that qualities may be available.
+                  try {
+                    const liveQualities: string[] = (player as any).getAvailableQualityLevels?.() || [];
+                    const target = resolve1080pQuality(liveQualities);
+                    if (target) {
+                      preferredQualityRef.current = target;
+                      qualityEnforceCountRef.current = 0;
+                      enforceQuality(player, target, false);
+                    }
+                  } catch {
+                    /* quality APIs may not be available yet */
+                  }
                 }
 
                 if (!mountedRef.current) return;
@@ -645,16 +700,15 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             const preferred = preferredQualityRef.current;
 
             // Detect YouTube-initiated quality downgrade.
-            // If the user has locked a quality and YouTube tries to switch
+            // If the player has locked a quality and YouTube tries to switch
             // to something different, attempt to re-enforce — but only up
-            // to 3 times to prevent infinite loops (YouTube may not support
-            // the requested quality at the current connection/bitrate).
+            // to 6 times to allow persistent enforcement for live streams.
             if (
               preferred &&
               preferred !== "auto" &&
               preferred !== "default" &&
               nextQuality !== preferred &&
-              qualityEnforceCountRef.current < 3
+              qualityEnforceCountRef.current < 6
             ) {
               qualityEnforceCountRef.current += 1;
               const player = playerRef.current;
@@ -1075,7 +1129,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   }, [isLive, liveOnly, seekToLive]);
 
   const seekRelative = useCallback((delta: number): void => {
-    if (isLive || liveOnly) return;
+    if (liveOnly) return;
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -1089,7 +1143,7 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
     } catch {
       /* noop — player may not be ready */
     }
-  }, [isLive, liveOnly]);
+  }, [liveOnly]);
 
   const setVolume = useCallback((vol: number): void => {
     const player = playerRef.current;

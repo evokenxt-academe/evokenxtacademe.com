@@ -4398,7 +4398,7 @@ ADD COLUMN IF NOT EXISTS yt_sync_error TEXT;
 
 COMMENT ON COLUMN public.chapters.youtube_playlist_id IS 'YouTube playlist ID (PLxxx). Lectures sync from this playlist.';
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_chapters_youtube_playlist_id
+CREATE INDEX IF NOT EXISTS idx_chapters_youtube_playlist_id
 ON public.chapters (youtube_playlist_id)
 WHERE youtube_playlist_id IS NOT NULL;
 

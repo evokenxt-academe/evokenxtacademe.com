@@ -65,6 +65,7 @@ export interface LiveSession {
   durationMinutes?: number | null;
   courseTitle: string;
   courseId: string;
+  courseSlug: string;
   instructorName: string;
   instructorAvatar: string | null;
 }

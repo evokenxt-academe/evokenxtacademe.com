@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ViewerChart } from "./ViewerChart";
 import { formatStreamDuration } from "@/lib/live-stream/formatters";
 import { extractYoutubeVideoId } from "@/features/live-stream/lib";
 import type { LiveStreamRow } from "@/types/live-stream";
-import { YtcnPlayer } from "@/components/ytcn/components/ytcn/ytcn-player";
+
 import { IconBrandYoutube } from "@tabler/icons-react";
 import { Users } from "lucide-react";
 
@@ -37,20 +36,17 @@ export function StreamPreviewPanel({ stream, compact = false }: StreamPreviewPan
       ? formatStreamDuration(elapsed)
       : formatStreamDuration(stream.duration_sec);
 
-  const showChart = stream.status === "live" || (stream.duration_sec ?? 0) > 0;
-
   return (
     <div className="flex flex-col gap-3">
       <div className="overflow-hidden rounded-xl border border-border/60 bg-black">
         <div className="relative aspect-video">
           {videoId ? (
-            <YtcnPlayer
-              key={`${stream.id}-${stream.status}-${videoId}`}
-              videoId={videoId}
-              autoplay={false}
-              isLive={isLive}
-              liveOnly={false}
-              className="absolute inset-0 size-full rounded-none border-0"
+            <iframe
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`}
+              title="YouTube stream preview"
+              className="absolute inset-0 size-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
             />
           ) : (
             <div className="flex size-full flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -79,14 +75,6 @@ export function StreamPreviewPanel({ stream, compact = false }: StreamPreviewPan
         </div>
       </div>
 
-      {showChart && !compact && (
-        <div className="rounded-xl border border-border/60 bg-card p-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Viewers
-          </p>
-          <ViewerChart streamId={stream.id} isLive={isLive} />
-        </div>
-      )}
     </div>
   );
 }

@@ -36,6 +36,14 @@ import { cn } from "@/lib/utils";
 
 type MessageType = "message" | "announcement" | "system";
 
+const SHORTCUT_MESSAGES = [
+  "Any doubt?",
+  "Am I audible?",
+  "Yes or No?",
+  "Quality fine?",
+  "Network issue? Check your network.",
+];
+
 type AdminChatPanelProps = {
   streamId: string;
   chatModeration?: boolean;
@@ -115,6 +123,18 @@ export function AdminChatPanel({
       await sendMessage(messageInput, messageType, true);
       setMessageInput("");
       if (inputRef.current) inputRef.current.style.height = "auto";
+    } catch {
+      toast.error("Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendShortcut = async (text: string) => {
+    setSending(true);
+    try {
+      await sendMessage(text, messageType, true);
+      toast.success(`Sent: "${text}"`);
     } catch {
       toast.error("Failed to send message");
     } finally {
@@ -321,6 +341,23 @@ export function AdminChatPanel({
             >
               <Icon className="size-3" />
               {label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="mb-2.5 flex flex-wrap gap-1.5">
+          {SHORTCUT_MESSAGES.map((msg, i) => (
+            <Button
+              key={msg}
+              id={`chat-shortcut-${i}`}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 rounded-full px-2.5 text-[10px] font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground hover:scale-105 active:scale-95"
+              onClick={() => handleSendShortcut(msg)}
+              disabled={sending}
+            >
+              {msg}
             </Button>
           ))}
         </div>
