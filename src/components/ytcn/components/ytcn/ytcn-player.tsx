@@ -212,7 +212,10 @@ export function YtcnPlayer({
         "relative w-full bg-black select-none overflow-hidden",
         state.isFullscreen && !finalControlsVisible && "cursor-none",
         state.isFullscreen
-          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
+          ? cn(
+              "fixed inset-0 z-[9999] w-screen h-screen bg-black",
+              isTouchDevice && "ytcn-mobile-fullscreen-rotate"
+            )
           : "aspect-video rounded-none sm:rounded-lg group",
         className
       )}

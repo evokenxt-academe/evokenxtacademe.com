@@ -372,7 +372,7 @@ export function ChatPanel({
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-auto px-4 py-3"
         >
           <div className="space-y-3 pb-4">
             {loading ? (

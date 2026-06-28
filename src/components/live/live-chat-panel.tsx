@@ -127,7 +127,7 @@ export function LiveChatPanel({
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3"
+          className="min-h-0 flex-1 overflow-y-auto overscroll-y-auto px-4 py-3"
         >
           {messages.length > 0 ? (
             <div className="space-y-1">
