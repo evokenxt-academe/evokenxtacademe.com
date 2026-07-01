@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuiz, useQuizRanking } from "@/hooks/useQuizzes";
+import { useState } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,6 +20,7 @@ import { Trophy, Clock, Target, Users, ChevronLeft } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { StudentQuizDetailSheet } from "@/features/admin/components/StudentQuizDetailSheet";
 
 interface RankingRow {
   rank: number;
@@ -40,6 +42,14 @@ export default function QuizResultsPage() {
   const { data: quiz, isLoading: quizLoading } = useQuiz(quizId);
   const { data: rankingData, isLoading: rankingLoading } =
     useQuizRanking(quizId);
+
+  const [selectedStudent, setSelectedStudent] = useState<{
+    userId: string;
+    name: string;
+    email: string;
+    avatar: string | null;
+    initials: string;
+  } | null>(null);
 
   const isLoading = quizLoading || rankingLoading;
   const rankings: RankingRow[] = rankingData?.ranking || [];
@@ -185,7 +195,19 @@ export default function QuizResultsPage() {
                 </TableRow>
               ) : (
                 rankings.map((row) => (
-                  <TableRow key={row.userId}>
+                  <TableRow
+                    key={row.userId}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() =>
+                      setSelectedStudent({
+                        userId: row.userId,
+                        name: row.name,
+                        email: row.email,
+                        avatar: row.avatar,
+                        initials: row.initials,
+                      })
+                    }
+                  >
                     <TableCell className="text-center font-bold">
                       {row.rank === 1
                         ? "🥇"
@@ -202,7 +224,9 @@ export default function QuizResultsPage() {
                           <AvatarFallback>{row.initials}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="font-medium">{row.name}</span>
+                          <span className="font-medium hover:text-primary transition-colors">
+                            {row.name}
+                          </span>
                           <span className="text-xs text-muted-foreground">
                             {row.email}
                           </span>
@@ -249,6 +273,14 @@ export default function QuizResultsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <StudentQuizDetailSheet
+        open={!!selectedStudent}
+        onOpenChange={(open) => !open && setSelectedStudent(null)}
+        quizId={quizId}
+        student={selectedStudent}
+      />
     </div>
   );
 }
+

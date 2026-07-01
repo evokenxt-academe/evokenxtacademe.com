@@ -64,6 +64,11 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// A fetch handler is required for Chrome/Edge PWA installability.
+self.addEventListener('fetch', (event) => {
+  // Pass-through fetch listener
+});
 `;
 
   return new NextResponse(body, {

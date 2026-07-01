@@ -27,13 +27,38 @@ export default async function CourseLivePage({ params }: LivePageProps) {
   if (!courseData) redirect("/dashboard");
   const course = courseData as unknown as { id: string; title: string; slug: string };
 
-  const { data: enrollment } = await supabase
+  let { data: enrollment } = await (supabase as any)
     .from("enrollments")
     .select("id")
     .eq("user_id", user.id)
     .eq("course_id", course.id)
     .eq("status", "active")
     .maybeSingle();
+
+  if (!enrollment) {
+    const { data: userProfile } = await (supabase as any)
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if ((userProfile as any)?.role === "admin" || (userProfile as any)?.role === "instructor") {
+      const { data: newEnrollment } = await (supabase as any)
+        .from("enrollments")
+        .upsert({
+          user_id: user.id,
+          course_id: course.id,
+          status: "active",
+          enrolled_at: new Date().toISOString(),
+        }, { onConflict: "user_id,course_id" })
+        .select("id")
+        .single();
+
+      if (newEnrollment) {
+        enrollment = newEnrollment;
+      }
+    }
+  }
 
   if (!enrollment) redirect("/courses");
 

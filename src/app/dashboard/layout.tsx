@@ -6,6 +6,8 @@ import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 import { DashboardSearchProvider } from "@/components/dashboard-search-context";
 import { createClient } from "@/utils/supabase/server";
 import { fetchStudentShellProfile } from "@/features/student/lib/student-shell";
+import { autoEnrollUserInAllCourses } from "@/lib/auth/enrollment-sync";
+
 
 export default async function DashboardRouteLayout({
   children,
@@ -22,6 +24,11 @@ export default async function DashboardRouteLayout({
   }
 
   const profile = await fetchStudentShellProfile(supabase, user.id);
+
+  if (profile?.role === "admin" || profile?.role === "instructor") {
+    await autoEnrollUserInAllCourses(user.id, profile.role);
+  }
+
 
   const sidebarUser = profile ?? {
     id: user.id,

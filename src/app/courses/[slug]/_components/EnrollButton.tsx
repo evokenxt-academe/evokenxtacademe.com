@@ -52,9 +52,40 @@ export function EnrollButton({ course }: EnrollButtonProps) {
           .eq("status", "active")
           .maybeSingle();
 
-        if (!cancelled) {
-          setIsEnrolled(data !== null);
-          setIsLoading(false);
+        if (data !== null) {
+          if (!cancelled) {
+            setIsEnrolled(true);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // Fallback: check if the user is an admin or instructor to auto-enroll
+        const { data: profile } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profile?.role === "admin" || profile?.role === "instructor") {
+          await supabase
+            .from("enrollments")
+            .upsert({
+              user_id: user.id,
+              course_id: course.id,
+              status: "active",
+              enrolled_at: new Date().toISOString(),
+            }, { onConflict: "user_id,course_id" });
+
+          if (!cancelled) {
+            setIsEnrolled(true);
+            setIsLoading(false);
+          }
+        } else {
+          if (!cancelled) {
+            setIsEnrolled(false);
+            setIsLoading(false);
+          }
         }
       } catch {
         if (!cancelled) setIsLoading(false);

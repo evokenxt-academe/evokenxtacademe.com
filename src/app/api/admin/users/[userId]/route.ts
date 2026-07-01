@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/features/admin/lib/admin-route";
+import { autoEnrollUserInAllCourses } from "@/lib/auth/enrollment-sync";
 
 export async function PATCH(
     request: Request,
@@ -27,6 +28,10 @@ export async function PATCH(
 
         if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+
+        if (role === "instructor" || role === "admin") {
+            await autoEnrollUserInAllCourses(userId, role);
         }
 
         return NextResponse.json({ success: true, role });
