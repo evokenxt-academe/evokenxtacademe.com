@@ -8,6 +8,7 @@ import {
   isSingleSessionEnforced,
   LMS_SESSION_COOKIE,
 } from '@/lib/auth/single-session'
+import { autoEnrollUserInAllCourses } from '@/lib/auth/enrollment-sync'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -31,6 +32,11 @@ export async function GET(request: Request) {
         .maybeSingle()
 
       const userRole = existingProfile?.role ?? null
+
+      if (userRole === 'admin' || userRole === 'instructor') {
+        await autoEnrollUserInAllCourses(session.user.id, userRole)
+      }
+
       const enforceSingleSession = isSingleSessionEnforced(userRole)
 
       if (enforceSingleSession) {

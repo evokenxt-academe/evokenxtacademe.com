@@ -41,7 +41,9 @@ export function useFullscreen(
 
     const handleChange = (): void => {
       if (mounted.current) {
-        setIsFullscreen(!!document.fullscreenElement);
+        setIsFullscreen(
+          !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
+        );
       }
     };
 
@@ -53,6 +55,57 @@ export function useFullscreen(
       document.removeEventListener("webkitfullscreenchange", handleChange);
     };
   }, []);
+
+  // Handle mobile screen orientation locking/unlocking based on fullscreen state
+  useEffect(() => {
+    if (isFullscreen) {
+      if (
+        typeof window !== "undefined" &&
+        window.screen &&
+        window.screen.orientation &&
+        typeof (window.screen.orientation as any).lock === "function"
+      ) {
+        // Detect mobile viewport width or touch device
+        const isMobile = window.innerWidth <= 1024 ||
+                         window.matchMedia("(max-width: 1024px)").matches ||
+                         window.matchMedia("(hover: none), (pointer: coarse)").matches;
+        if (isMobile) {
+          (window.screen.orientation as any).lock("landscape").catch((err: any) => {
+            console.warn("Screen orientation lock failed:", err);
+          });
+        }
+      }
+    } else {
+      if (
+        typeof window !== "undefined" &&
+        window.screen &&
+        window.screen.orientation &&
+        typeof (window.screen.orientation as any).unlock === "function"
+      ) {
+        try {
+          (window.screen.orientation as any).unlock();
+        } catch (err) {
+          console.warn("Screen orientation unlock failed:", err);
+        }
+      }
+    }
+
+    return () => {
+      // Unlock orientation on unmount to restore user setting
+      if (
+        typeof window !== "undefined" &&
+        window.screen &&
+        window.screen.orientation &&
+        typeof (window.screen.orientation as any).unlock === "function"
+      ) {
+        try {
+          (window.screen.orientation as any).unlock();
+        } catch (err) {
+          /* noop */
+        }
+      }
+    };
+  }, [isFullscreen]);
 
   const enter = useCallback((): void => {
     try {

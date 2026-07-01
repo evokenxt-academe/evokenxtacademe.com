@@ -44,13 +44,38 @@ export default async function LearnPage({ params, searchParams }: Props) {
     (course as unknown as { title?: string } | null)?.title ?? "Course";
   if (courseError || !courseId) redirect("/dashboard");
 
-  const { data: enrollment } = await supabase
+  let { data: enrollment } = await (supabase as any)
     .from("enrollments")
     .select("id")
     .eq("user_id", user.id)
     .eq("course_id", courseId)
     .eq("status", "active")
     .maybeSingle();
+
+  if (!enrollment) {
+    const { data: userProfile } = await (supabase as any)
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if ((userProfile as any)?.role === "admin" || (userProfile as any)?.role === "instructor") {
+      const { data: newEnrollment } = await (supabase as any)
+        .from("enrollments")
+        .upsert({
+          user_id: user.id,
+          course_id: courseId,
+          status: "active",
+          enrolled_at: new Date().toISOString(),
+        }, { onConflict: "user_id,course_id" })
+        .select("id")
+        .single();
+
+      if (newEnrollment) {
+        enrollment = newEnrollment;
+      }
+    }
+  }
 
   if (!enrollment) redirect("/courses");
 

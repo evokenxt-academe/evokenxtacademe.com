@@ -54,6 +54,18 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   }, [deferredPrompt]);
 
   useEffect(() => {
+    // Register service worker immediately on mount to trigger PWA installability
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/firebase-messaging-sw.js", { scope: "/" })
+        .then((reg) => {
+          console.log("[PWA] Service worker registered successfully:", reg.scope);
+        })
+        .catch((err) => {
+          console.error("[PWA] Service worker registration failed:", err);
+        });
+    }
+
     // Check if already in standalone mode
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||

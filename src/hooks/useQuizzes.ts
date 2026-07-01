@@ -185,3 +185,16 @@ export function useDailyQuizAttempts() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
+
+export function useStudentQuizResult(quizId: string, userId: string | null) {
+  return useQuery({
+    queryKey: ["student-quiz-result", quizId, userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/admin/tests/${quizId}/student-result?userId=${userId}`);
+      if (!res.ok) throw new Error("Failed to fetch student quiz result");
+      return res.json();
+    },
+    enabled: !!quizId && !!userId,
+  });
+}
+

@@ -23,7 +23,12 @@ export async function GET() {
 
   const now = Date.now();
 
-  const sessions = (data ?? []).map((user) => {
+  // Only manage students (exclude admin and instructor roles)
+  const filteredUsers = (data ?? []).filter(
+    (user) => user.role !== "admin" && user.role !== "instructor"
+  );
+
+  const sessions = filteredUsers.map((user) => {
     let status: "active" | "idle" | "offline" = "offline";
 
     if (user.current_session_id && user.session_last_seen_at) {

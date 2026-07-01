@@ -368,22 +368,13 @@ export function AdminDashboard() {
       title="Dashboard"
       description="Real-time KPIs, revenue trends, and operational overview."
       actions={
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <Badge
-            variant="secondary"
-            className="w-fit rounded-full px-3 py-1 text-xs font-medium"
-          >
-            <span className="mr-1.5 inline-block size-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Live sync enabled
-          </Badge>
-          <Button
-            variant="outline"
-            className="rounded-lg border-border/60 bg-background/80"
-          >
-            Export report
-          </Button>
-          <Button className="rounded-lg shadow-sm">Open analytics</Button>
-        </div>
+        <Badge
+          variant="secondary"
+          className="w-fit rounded-full px-3 py-1 text-xs font-medium"
+        >
+          <span className="mr-1.5 inline-block size-1.5 animate-pulse rounded-full bg-emerald-500" />
+          Live sync enabled
+        </Badge>
       }
     >
       {/* ── KPI CARDS ── */}

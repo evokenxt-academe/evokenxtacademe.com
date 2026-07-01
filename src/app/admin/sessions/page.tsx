@@ -179,7 +179,6 @@ async function bulkTerminateSessions(
 export default function AdminSessionsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = React.useState("");
-  const [roleFilter, setRoleFilter] = React.useState<string>("all");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = React.useState<{
@@ -231,14 +230,13 @@ export default function AdminSessionsPage() {
         !search ||
         s.name?.toLowerCase().includes(search.toLowerCase()) ||
         s.email?.toLowerCase().includes(search.toLowerCase());
-      const matchesRole = roleFilter === "all" || s.role === roleFilter;
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "has_session" && s.hasSession) ||
         s.status === statusFilter;
-      return matchesSearch && matchesRole && matchesStatus;
+      return matchesSearch && matchesStatus;
     });
-  }, [sessions, search, roleFilter, statusFilter]);
+  }, [sessions, search, statusFilter]);
 
   // ── Stats ──
   const stats = React.useMemo(() => {
@@ -341,29 +339,29 @@ export default function AdminSessionsPage() {
       {/* ── Stats Cards ── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatsCard
-          title="Total Users"
+          title="Total Students"
           value={stats.total}
-          icon={<IconUsers className="size-4" />}
+          icon={<IconUsers className="size-4 text-sky-500" />}
           loading={isLoading}
         />
         <StatsCard
-          title="Active Now"
+          title="Active Students"
           value={stats.active}
           icon={<IconCircleFilled className="size-3 text-emerald-500" />}
           loading={isLoading}
           valueClass="text-emerald-600 dark:text-emerald-400"
         />
         <StatsCard
-          title="Idle"
+          title="Idle Students"
           value={stats.idle}
-          icon={<IconClock className="size-4 text-amber-500" />}
+          icon={<IconClock className="size-4 text-amber-500 animate-pulse" />}
           loading={isLoading}
           valueClass="text-amber-600 dark:text-amber-400"
         />
         <StatsCard
-          title="Sessions Active"
+          title="Active Sessions"
           value={stats.withSession}
-          icon={<IconDeviceDesktop className="size-4" />}
+          icon={<IconDeviceDesktop className="size-4 text-indigo-500" />}
           loading={isLoading}
         />
       </div>
@@ -380,17 +378,7 @@ export default function AdminSessionsPage() {
               className="pl-9"
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-full sm:w-[150px]">
-              <SelectValue placeholder="Role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="student">Student</SelectItem>
-              <SelectItem value="instructor">Instructor</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Role Filter dropdown removed since only student sessions are managed */}
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[170px]">
               <SelectValue placeholder="Status" />
@@ -411,9 +399,9 @@ export default function AdminSessionsPage() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base">User Sessions</CardTitle>
+              <CardTitle className="text-base font-semibold">Student Sessions</CardTitle>
               <CardDescription>
-                {filtered.length} user{filtered.length !== 1 ? "s" : ""} shown
+                {filtered.length} student{filtered.length !== 1 ? "s" : ""} shown
                 {isFetching && !isLoading ? " · Refreshing…" : ""}
               </CardDescription>
             </div>
@@ -442,9 +430,9 @@ export default function AdminSessionsPage() {
               <IconShieldCheck className="size-10 opacity-40" />
               <p className="text-sm font-medium">No sessions found</p>
               <p className="text-xs">
-                {search || roleFilter !== "all" || statusFilter !== "all"
+                {search || statusFilter !== "all"
                   ? "Try adjusting your filters"
-                  : "No users registered yet"}
+                  : "No students registered yet"}
               </p>
             </div>
           ) : (
@@ -453,8 +441,7 @@ export default function AdminSessionsPage() {
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-10 pl-4"></TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead className="hidden sm:table-cell">Role</TableHead>
+                    <TableHead>Student</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="hidden md:table-cell">Last Seen</TableHead>
                     <TableHead className="w-24 text-right pr-4">Action</TableHead>
@@ -652,18 +639,7 @@ function SessionRow({
         </div>
       </TableCell>
 
-      {/* Role */}
-      <TableCell className="hidden sm:table-cell">
-        <Badge
-          variant="outline"
-          className={cn(
-            "text-[10px] font-medium capitalize",
-            ROLE_STYLES[session.role] ?? ROLE_STYLES.student
-          )}
-        >
-          {session.role}
-        </Badge>
-      </TableCell>
+      {/* Role column removed for student-only session table */}
 
       {/* Status */}
       <TableCell>
