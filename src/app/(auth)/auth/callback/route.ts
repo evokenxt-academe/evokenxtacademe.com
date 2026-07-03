@@ -86,7 +86,7 @@ export async function GET(request: Request) {
       // Also persist tokens in dedicated youtube_tokens table for reliability.
       // This fixes the bug where provider_token / provider_refresh_token are lost
       // after the Supabase session expires or on subsequent logins without "consent" prompt.
-      if ((session.provider_refresh_token || session.provider_token) && session.user?.email === 'amarbiradar147@gmail.com') {
+      if ((session.provider_refresh_token || session.provider_token) && session.user?.email === 'evokenxtacademe@gmail.com') {
         try {
           await adminClient
             .from('youtube_tokens')

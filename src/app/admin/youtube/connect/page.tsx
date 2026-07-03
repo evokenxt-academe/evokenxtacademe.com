@@ -55,12 +55,7 @@ type EncoderSettings = {
 
 export default function YouTubeConnectPage() {
   const router = useRouter();
-  const [from, setFrom] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return new URLSearchParams(window.location.search).get("from");
-    }
-    return null;
-  });
+  const [from, setFrom] = useState<string | null>(null);
   const [status, setStatus] = useState<YtStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -349,7 +344,7 @@ export default function YouTubeConnectPage() {
                 </div>
 
                 <Button asChild size="lg" variant="destructive">
-                  <Link
+                  <a
                     href={
                       from
                         ? `/api/youtube/oauth/authorize?state=${encodeURIComponent(from)}`
@@ -359,7 +354,7 @@ export default function YouTubeConnectPage() {
                   >
                     <IconBrandYoutube className="size-4" />
                     Connect YouTube Channel
-                  </Link>
+                  </a>
                 </Button>
               </div>
             )}
