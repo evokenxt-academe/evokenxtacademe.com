@@ -14,7 +14,7 @@ export async function DELETE(req: NextRequest) {
   try {
     // Get admin user
     const { data: users } = await supabase.auth.admin.listUsers();
-    const adminUser = users?.users?.find(u => u.email === 'amarbiradar147@gmail.com');
+    const adminUser = users?.users?.find(u => u.email === 'evokenxtacademe@gmail.com');
 
     if (!adminUser) {
       return NextResponse.json(

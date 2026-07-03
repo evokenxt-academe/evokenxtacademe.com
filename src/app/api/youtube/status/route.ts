@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   try {
     // Get admin user
     const { data: users } = await supabase.auth.admin.listUsers();
-    const adminUser = users?.users?.find(u => u.email === 'amarbiradar147@gmail.com');
+    const adminUser = users?.users?.find(u => u.email === 'evokenxtacademe@gmail.com');
 
     if (!adminUser) {
       return NextResponse.json({ connected: false, reason: 'admin_not_found' });
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     // Check for token
     const { data: token, error } = await supabase
       .from('youtube_tokens')
-      .select('user_id, expires_at, scopes, updated_at')
+      .select('user_id, expires_at, refresh_token, scopes, updated_at')
       .eq('user_id', adminUser.id)
       .maybeSingle();
 
@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
     }
 
     const expiresAt = new Date(token.expires_at);
-    const isExpired = expiresAt < new Date();
+    const isAccessTokenExpired = expiresAt < new Date();
+    const hasRefreshToken = !!token.refresh_token;
 
     // Check if the token has the required youtube scopes for broadcast access
     const scopes = typeof token.scopes === 'string'
@@ -50,20 +51,24 @@ export async function GET(req: NextRequest) {
     const hasForceSsl = scopeList.some(s => s.includes('youtube.force-ssl'));
     const hasRequiredScopes = hasFullScope && hasForceSsl;
 
-    // Try to get channel info if connected
+    // Account is connected if we have a refresh token and required scopes
+    // (access token auto-refreshes via getAccessToken when needed)
+    const isConnected = hasRefreshToken && hasRequiredScopes;
+
+    // Try to get channel info if connected (getAccessToken auto-refreshes expired tokens)
     let channelInfo: any = null;
-    if (!isExpired && hasRequiredScopes) {
+    if (isConnected) {
       try {
         channelInfo = await getChannelInfo();
       } catch (e) {
         console.error('Error fetching channel info directly:', e);
-        // Channel info is optional
+        // Channel info is optional — don't mark as disconnected
       }
     }
 
     return NextResponse.json({
-      connected: !isExpired,
-      expired: isExpired,
+      connected: isConnected,
+      expired: isAccessTokenExpired && !hasRefreshToken,
       needsReauth: !hasRequiredScopes,
       scopes,
       lastUpdated: token.updated_at,

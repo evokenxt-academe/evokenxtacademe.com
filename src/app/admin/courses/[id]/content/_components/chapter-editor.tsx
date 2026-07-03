@@ -136,7 +136,28 @@ export function ChapterEditor({ chapter, onUpdate, onDelete }: ChapterEditorProp
       );
       onUpdate();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Sync failed");
+      const message = err instanceof Error ? err.message : "Sync failed";
+      // Detect YouTube auth-related errors and guide user to connect
+      if (
+        message.includes("connect your YouTube") ||
+        message.includes("Admin user not found") ||
+        message.includes("token not found") ||
+        message.includes("refresh token") ||
+        message.includes("reconnect")
+      ) {
+        toast.error("YouTube account not connected", {
+          description: "Please connect your YouTube account first to sync playlists.",
+          action: {
+            label: "Connect YouTube",
+            onClick: () => {
+              window.location.href = `/admin/youtube/connect?from=${encodeURIComponent(window.location.pathname)}`;
+            },
+          },
+          duration: 8000,
+        });
+      } else {
+        toast.error(message);
+      }
     } finally {
       setSyncing(false);
     }
