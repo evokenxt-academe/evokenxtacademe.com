@@ -4,19 +4,17 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { findAdminUser } from './admin-user';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-const ADMIN_EMAIL = process.env.YOUTUBE_ADMIN_EMAIL || 'evokenxtacademe@gmail.com';
-
 async function resolveUserId(userId?: string): Promise<string> {
   if (userId) return userId;
 
-  const { data: users } = await supabase.auth.admin.listUsers();
-  const adminUser = users?.users?.find((u) => u.email === ADMIN_EMAIL);
+  const adminUser = await findAdminUser(supabase);
   if (!adminUser) {
     throw new Error('Admin user not found. Please connect your YouTube account.');
   }
@@ -92,8 +90,7 @@ export async function getAccessTokenForUser(userId?: string): Promise<string> {
 }
 
 /** @deprecated Use getAccessTokenForUser */
-export async function getAccessToken(email: string = ADMIN_EMAIL): Promise<string> {
-  const { data: users } = await supabase.auth.admin.listUsers();
-  const adminUser = users?.users?.find((u) => u.email === email);
+export async function getAccessToken(): Promise<string> {
+  const adminUser = await findAdminUser(supabase);
   return getAccessTokenForUser(adminUser?.id);
 }

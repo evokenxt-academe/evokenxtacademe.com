@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getChannelInfo } from '@/lib/youtube/api';
+import { findAdminUser } from '@/lib/youtube/admin-user';
 
 export async function GET(req: NextRequest) {
   const supabase = createClient(
@@ -14,9 +15,8 @@ export async function GET(req: NextRequest) {
   );
 
   try {
-    // Get admin user
-    const { data: users } = await supabase.auth.admin.listUsers();
-    const adminUser = users?.users?.find(u => u.email === 'evokenxtacademe@gmail.com');
+    // Get admin user (paginated to handle large user tables)
+    const adminUser = await findAdminUser(supabase);
 
     if (!adminUser) {
       return NextResponse.json({ connected: false, reason: 'admin_not_found' });
