@@ -1,7 +1,7 @@
-# Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-07-01)
+# Graph Report - C:\Users\vishw\Desktop\evokeeduglobal  (2026-07-03)
 
 ## Corpus Check
-- 749 files · ~608,377 words
+- 749 files · ~608,590 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -2972,11 +2972,11 @@ Nodes (1): Vercel Logo
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Select()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 40`, `Community 14`, `Community 18`, `Community 19`, `Community 23`?**
-  _High betweenness centrality (0.125) - this node is a cross-community bridge._
+  _High betweenness centrality (0.122) - this node is a cross-community bridge._
 - **Why does `POST()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 32`, `Community 4`, `Community 5`, `Community 6`, `Community 10`, `Community 23`?**
-  _High betweenness centrality (0.045) - this node is a cross-community bridge._
+  _High betweenness centrality (0.065) - this node is a cross-community bridge._
 - **Why does `String()` connect `Community 4` to `Community 1`, `Community 3`, `Community 5`, `Community 6`, `Community 12`, `Community 15`, `Community 21`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.052) - this node is a cross-community bridge._
 - **Are the 229 inferred relationships involving `Select()` (e.g. with `run()` and `run()`) actually correct?**
   _`Select()` has 229 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 37 inferred relationships involving `POST()` (e.g. with `requireAdmin()` and `syncChapterFromPlaylist()`) actually correct?**

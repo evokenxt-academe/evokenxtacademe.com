@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getRequestOrigin } from '@/lib/youtube/oauth-helper';
+import { findAdminUser } from '@/lib/youtube/admin-user';
 
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
@@ -79,9 +80,8 @@ export async function GET(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Get admin user
-    const { data: users } = await supabase.auth.admin.listUsers();
-    const adminUser = users?.users?.find(u => u.email === 'evokenxtacademe@gmail.com');
+    // Get admin user (paginated to handle large user tables)
+    const adminUser = await findAdminUser(supabase);
 
     if (!adminUser) {
       console.error('Admin user not found');

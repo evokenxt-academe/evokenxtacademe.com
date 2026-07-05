@@ -46,11 +46,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No broadcasts found on YouTube', count: 0 });
     }
 
-    // Get the admin user ID (Amar Biradar)
+    // Get the admin user ID
+    const adminEmail = process.env.YOUTUBE_ADMIN_EMAIL || 'evokenxtacademe@gmail.com';
     const { data: adminUser } = await supabase
       .from('users')
       .select('id')
-      .eq('email', 'evokenxtacademe@gmail.com')
+      .eq('email', adminEmail)
       .single();
 
     if (!adminUser) {
