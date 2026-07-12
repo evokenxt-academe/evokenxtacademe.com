@@ -98,6 +98,7 @@ export interface AttemptResultDetail {
   durationSec: number | null;
   review: Array<{
     questionId: string;
+    type: string;
     question: string;
     explanation: string | null;
     marks: number;
@@ -105,6 +106,13 @@ export interface AttemptResultDetail {
     selectedOptionText: string | null;
     correctOptionId: string | null;
     correctOptionText: string | null;
+    numericalAnswer: number | null;
+    blankAnswer: string | null;
+    textAnswer: string | null;
+    marksAwarded: number | null;
+    numericalCorrectAnswer: number | null;
+    numericalTolerance: number | null;
+    blankCorrectAnswer: string | null;
     isCorrect: boolean;
   }>;
 }

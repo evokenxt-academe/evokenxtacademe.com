@@ -1,14 +1,22 @@
-'use client';
-import Link from 'next/link';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Undo2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+"use client";
+import { Suspense } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Undo2 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+
+export default function DebuggerPage() {
+  return (
+    <Suspense>
+      <DebuggerContent />
+    </Suspense>
+  );
+}
 
 function DebuggerContent() {
-  const callbackUrl = useSearchParams().get('callbackUrl') || '/';
+  const callbackUrl = useSearchParams().get("callbackUrl") || "/";
   return (
     <main className="relative min-h-dvh overflow-hidden">
       <div className="pointer-events-none absolute inset-0 opacity-40" />
@@ -71,13 +79,5 @@ function DebuggerContent() {
         </Card>
       </section>
     </main>
-  );
-}
-
-export default function DebuggerPage() {
-  return (
-    <Suspense>
-      <DebuggerContent />
-    </Suspense>
   );
 }

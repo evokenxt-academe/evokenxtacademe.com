@@ -7,6 +7,104 @@ import { PWAProvider } from "@/context/PWAContext";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { PWAInstallTrigger } from "@/components/pwa/PWAInstallTrigger";
 
+function DevtoolsGuard() {
+  const [devtoolsOpen, setDevtoolsOpen] = React.useState(false);
+  const pathRef = React.useRef<string>('');
+
+  const redirectToDebugger = React.useCallback(() => {
+    if (
+      window.location.pathname.startsWith(
+        `/debugger?callbackUrl=${pathRef.current}`,
+      )
+    ) {
+      return;
+    }
+
+    window.location.replace(`/debugger?callbackUrl=${pathRef.current}`);
+  }, []);
+
+  React.useEffect(() => {
+    pathRef.current = window.location.pathname;
+
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!event.key) return;
+      const key = event.key.toLowerCase();
+      const isModifierCombo = event.ctrlKey || event.metaKey;
+      const isAltModifierCombo = event.altKey && isModifierCombo;
+      const isInspectShortcut =
+        event.key === 'F12' ||
+        (isModifierCombo && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+        (isAltModifierCombo && ['i', 'j', 'c'].includes(key)) ||
+        (isModifierCombo && key === 'u') ||
+        event.key === 'ContextMenu' ||
+        (event.shiftKey && event.key === 'F10');
+
+      if (isInspectShortcut) {
+        event.preventDefault();
+        event.stopPropagation();
+        redirectToDebugger();
+      }
+    };
+
+    // Heuristic: large outer vs inner size gap usually means DevTools is docked open.
+    const detectDevtools = () => {
+      const widthDiff = window.outerWidth - window.innerWidth;
+      const heightDiff = window.outerHeight - window.innerHeight;
+      const threshold = 150;
+      const isLikelyOpen = widthDiff > threshold || heightDiff > threshold;
+      setDevtoolsOpen(isLikelyOpen);
+
+      if (isLikelyOpen) {
+        redirectToDebugger();
+      }
+    };
+
+    window.addEventListener('contextmenu', handleContextMenu);
+    window.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('resize', detectDevtools);
+    detectDevtools();
+
+    const intervalId = window.setInterval(detectDevtools, 1000);
+
+    return () => {
+      window.removeEventListener('contextmenu', handleContextMenu);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('resize', detectDevtools);
+      window.clearInterval(intervalId);
+    };
+  }, [redirectToDebugger]);
+
+  if (!devtoolsOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 2147483647,
+        background: '#0b0b0b',
+        color: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '1.1rem',
+        textAlign: 'center',
+        padding: '1.5rem',
+      }}
+      aria-live="assertive"
+    >
+      Inspect tools are disabled on this page.
+    </div>
+  );
+}
+
 // Workaround for next-themes injecting a script tag that React 19 complains about
 // This is a known false-positive warning during development.
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
@@ -151,6 +249,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           {/* <DevtoolsGuard /> */}
           {children}
           <InstallBanner />
+          <DevtoolsGuard/>
           <React.Suspense fallback={null}>
             <PWAInstallTrigger />
           </React.Suspense>
