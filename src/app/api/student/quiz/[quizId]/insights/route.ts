@@ -4,6 +4,42 @@ import { createClient } from "@/utils/supabase/server";
 
 export const dynamic = "force-dynamic";
 
+async function resolveUserRole(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userId: string,
+  email?: string,
+) {
+  const byId = await adminClient
+    .from("users")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (byId.error) {
+    return null;
+  }
+
+  if (byId.data?.role) {
+    return byId.data.role;
+  }
+
+  if (!email) {
+    return null;
+  }
+
+  const byEmail = await adminClient
+    .from("users")
+    .select("role")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (byEmail.error) {
+    return null;
+  }
+
+  return byEmail.data?.role ?? null;
+}
+
 type AttemptRow = {
   id: string;
   user_id: string;
@@ -26,18 +62,15 @@ type QuizAccessRow = {
   total_marks: number | null;
   passing_marks: number | null;
   time_limit_sec: number | null;
-  section:
-  | {
+  course_id: string | null;
+  course: {
+    id: string;
+    name: string | null;
+  } | null;
+  chapter: {
     id: string;
     title: string | null;
-    course:
-    | {
-      id: string;
-      name: string | null;
-    }
-    | null;
-  }
-  | null;
+  } | null;
 };
 
 function toNumber(value: unknown): number {
@@ -85,36 +118,45 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: quizRow, error: quizError } = await adminClient
+  const role = await resolveUserRole(adminClient, user.id, user.email ?? undefined);
+  const isAdmin = role === "admin" || role === "instructor";
+
+  let query = adminClient
     .from("quizzes")
     .select(
-      "id, title, description, total_marks, passing_marks, time_limit_sec, section:sections(id, title, course:courses(id, name:title))",
+      "id, title, description, total_marks, passing_marks, time_limit_sec, course_id, course:courses(id, name:title), chapter:chapters(id, title)",
     )
-    .eq("id", quizId)
-    .eq("is_published", true)
-    .maybeSingle();
+    .eq("id", quizId);
+
+  if (!isAdmin) {
+    query = query.eq("is_published", true);
+  }
+
+  const { data: quizRow, error: quizError } = await query.maybeSingle();
 
   if (quizError || !quizRow) {
     return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
   }
 
   const quiz = quizRow as any as QuizAccessRow;
-  const courseId = quiz.section?.course?.id ?? null;
+  const courseId = quiz.course_id;
 
   if (!courseId) {
     return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
   }
 
-  const { data: enrollment } = await adminClient
-    .from("enrollments")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("course_id", courseId)
-    .eq("status", "active")
-    .maybeSingle();
+  if (!isAdmin) {
+    const { data: enrollment } = await adminClient
+      .from("enrollments")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("course_id", courseId)
+      .eq("status", "active")
+      .maybeSingle();
 
-  if (!enrollment) {
-    return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+    if (!enrollment) {
+      return NextResponse.json({ error: "Quiz not found." }, { status: 404 });
+    }
   }
 
   const { data: quizQuestions, error: questionCountError } = await adminClient
@@ -264,8 +306,8 @@ export async function GET(
       quizId: quiz.id,
       title: quiz.title,
       description: quiz.description,
-      courseName: quiz.section?.course?.name ?? "",
-      sectionTitle: quiz.section?.title ?? "",
+      courseName: quiz.course?.name ?? "",
+      sectionTitle: quiz.chapter?.title ?? "",
       totalMarks: toNumber(quiz.total_marks),
       passingMarks: toNumber(quiz.passing_marks),
       timeLimitSec: quiz.time_limit_sec,

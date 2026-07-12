@@ -121,16 +121,30 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
   const scorePercent = result.totalMarks > 0 ? Math.round((result.score / result.totalMarks) * 100) : 0;
   const rank = result.rank;
 
+  // Helper to check if a question was answered
+  const isAnswered = (q: any) => {
+    if (q.type === "numerical") {
+      return q.numericalAnswer !== null && q.numericalAnswer !== undefined;
+    }
+    if (q.type === "fill_blank") {
+      return typeof q.blankAnswer === "string" && q.blankAnswer.trim().length > 0;
+    }
+    if (q.type === "subjective") {
+      return typeof q.textAnswer === "string" && q.textAnswer.trim().length > 0;
+    }
+    return Boolean(q.selectedOptionId);
+  };
+
   // Filter calculations for review tab
-  const correctReviewCount = result.review.filter((q) => q.selectedOptionId && q.isCorrect).length;
-  const incorrectReviewCount = result.review.filter((q) => q.selectedOptionId && !q.isCorrect).length;
-  const unansweredReviewCount = result.review.filter((q) => !q.selectedOptionId).length;
+  const correctReviewCount = result.review.filter((q) => isAnswered(q) && q.isCorrect).length;
+  const incorrectReviewCount = result.review.filter((q) => isAnswered(q) && !q.isCorrect).length;
+  const unansweredReviewCount = result.review.filter((q) => !isAnswered(q)).length;
   const totalReviewCount = result.review.length;
 
   const filteredReview = result.review.filter((q) => {
-    if (reviewFilter === "correct") return q.selectedOptionId && q.isCorrect;
-    if (reviewFilter === "incorrect") return q.selectedOptionId && !q.isCorrect;
-    if (reviewFilter === "unanswered") return !q.selectedOptionId;
+    if (reviewFilter === "correct") return isAnswered(q) && q.isCorrect;
+    if (reviewFilter === "incorrect") return isAnswered(q) && !q.isCorrect;
+    if (reviewFilter === "unanswered") return !isAnswered(q);
     return true;
   });
 
@@ -409,122 +423,167 @@ export function ResultPage({ attemptId }: { attemptId: string }) {
 
           <div className="space-y-5">
             {filteredReview.length > 0 ? (
-              filteredReview.map((item, index) => (
-                <Card
-                  key={item.questionId}
-                  className={cn(
-                    "overflow-hidden border-l-4 transition-all duration-200 shadow-sm hover:shadow-md",
-                    !item.selectedOptionId
-                      ? "border-l-zinc-400 dark:border-l-zinc-600"
-                      : item.isCorrect
-                      ? "border-l-emerald-500 dark:border-l-emerald-600"
-                      : "border-l-rose-500 dark:border-l-rose-600"
-                  )}
-                >
-                  <CardContent className="p-6 space-y-5">
-                    {/* Question header info */}
-                    <div className="flex items-start justify-between gap-4">
-                      <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-                        Question {index + 1}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-muted-foreground bg-muted/60 border border-border/40 px-2 py-0.5 rounded-md">
-                          {item.marks} mark{item.marks !== 1 && "s"}
+              filteredReview.map((item, index) => {
+                const answered = item.type === "numerical" ? (item.numericalAnswer !== null && item.numericalAnswer !== undefined) :
+                                 item.type === "fill_blank" ? (typeof item.blankAnswer === "string" && item.blankAnswer.trim().length > 0) :
+                                 item.type === "subjective" ? (typeof item.textAnswer === "string" && item.textAnswer.trim().length > 0) :
+                                 Boolean(item.selectedOptionId);
+
+                const borderAndBadgeClass = !answered
+                  ? "border-l-zinc-400 dark:border-l-zinc-600"
+                  : item.isCorrect
+                  ? "border-l-emerald-500 dark:border-l-emerald-600"
+                  : "border-l-rose-500 dark:border-l-rose-600";
+
+                const badgeText = !answered ? "Unanswered" : item.isCorrect ? "Correct" : "Incorrect";
+
+                const badgeVariantClass = !answered
+                  ? "text-zinc-500 bg-zinc-500/10"
+                  : item.isCorrect
+                  ? "text-emerald-500 bg-emerald-500/10"
+                  : "text-rose-500 bg-rose-500/10";
+
+                let studentAnswerText: React.ReactNode = "";
+                if (!answered) {
+                  studentAnswerText = (
+                    <>
+                      <IconHelpCircle className="mt-0.5 size-4 text-zinc-400 shrink-0" />
+                      <span className="text-sm font-medium text-zinc-500 italic">Not Answered</span>
+                    </>
+                  );
+                } else {
+                  let text = "";
+                  if (item.type === "numerical") {
+                    text = String(item.numericalAnswer);
+                  } else if (item.type === "fill_blank") {
+                    text = item.blankAnswer ?? "";
+                  } else if (item.type === "subjective") {
+                    text = item.textAnswer ?? "";
+                  } else {
+                    text = item.selectedOptionText ?? "";
+                  }
+
+                  if (item.isCorrect) {
+                    studentAnswerText = (
+                      <>
+                        <IconCircleCheck className="mt-0.5 size-4 text-emerald-500 shrink-0" />
+                        <span className="text-sm font-bold text-foreground leading-tight">{text}</span>
+                      </>
+                    );
+                  } else {
+                    studentAnswerText = (
+                      <>
+                        <IconCircleX className="mt-0.5 size-4 text-rose-500 shrink-0" />
+                        <span className="text-sm font-bold text-rose-600 dark:text-rose-400 leading-tight">{text}</span>
+                      </>
+                    );
+                  }
+                }
+
+                let correctSolutionText = "";
+                if (item.type === "numerical") {
+                  correctSolutionText = String(item.numericalCorrectAnswer);
+                  if (item.numericalTolerance) {
+                    correctSolutionText += ` (± ${item.numericalTolerance})`;
+                  }
+                } else if (item.type === "fill_blank") {
+                  correctSolutionText = item.blankCorrectAnswer ?? "";
+                } else if (item.type === "subjective") {
+                  correctSolutionText = "Subjective answer - will be reviewed manually";
+                } else {
+                  correctSolutionText = item.correctOptionText ?? "Not Available";
+                }
+
+                return (
+                  <Card
+                    key={item.questionId}
+                    className={cn(
+                      "overflow-hidden border-l-4 transition-all duration-200 shadow-sm hover:shadow-md",
+                      borderAndBadgeClass
+                    )}
+                  >
+                    <CardContent className="p-6 space-y-5">
+                      {/* Question header info */}
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+                          Question {index + 1}
                         </span>
-                        <Badge
-                          variant="outline"
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-muted-foreground bg-muted/60 border border-border/40 px-2 py-0.5 rounded-md">
+                            {item.marks} mark{item.marks !== 1 && "s"}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider border-transparent shadow-none rounded-md",
+                              badgeVariantClass
+                            )}
+                          >
+                            {badgeText}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Question text */}
+                      <p className="text-base font-semibold leading-relaxed text-foreground">
+                        {item.question}
+                      </p>
+
+                      {/* Selected and correct answers visual layout */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {/* Student's Selection */}
+                        <div
                           className={cn(
-                            "px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider border-transparent shadow-none rounded-md",
-                            !item.selectedOptionId
-                              ? "text-zinc-500 bg-zinc-500/10"
+                            "rounded-xl border p-4 flex flex-col justify-between min-h-[90px] transition-all",
+                            !answered
+                              ? "border-zinc-200 dark:border-zinc-800 bg-zinc-500/[0.02]"
                               : item.isCorrect
-                              ? "text-emerald-500 bg-emerald-500/10"
-                              : "text-rose-500 bg-rose-500/10"
+                              ? "border-emerald-500/20 bg-emerald-500/[0.02]"
+                              : "border-rose-500/20 bg-rose-500/[0.02]"
                           )}
                         >
-                          {!item.selectedOptionId ? "Unanswered" : item.isCorrect ? "Correct" : "Incorrect"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Question text */}
-                    <p className="text-base font-semibold leading-relaxed text-foreground">
-                      {item.question}
-                    </p>
-
-                    {/* Selected and correct answers visual layout */}
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {/* Student's Selection */}
-                      <div
-                        className={cn(
-                          "rounded-xl border p-4 flex flex-col justify-between min-h-[90px] transition-all",
-                          !item.selectedOptionId
-                            ? "border-zinc-200 dark:border-zinc-800 bg-zinc-500/[0.02]"
-                            : item.isCorrect
-                            ? "border-emerald-500/20 bg-emerald-500/[0.02]"
-                            : "border-rose-500/20 bg-rose-500/[0.02]"
-                        )}
-                      >
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
-                          Your Choice
-                        </span>
-                        <div className="flex items-start gap-2.5">
-                          {!item.selectedOptionId ? (
-                            <>
-                              <IconHelpCircle className="mt-0.5 size-4 text-zinc-400 shrink-0" />
-                              <span className="text-sm font-medium text-zinc-500 italic">Not Answered</span>
-                            </>
-                          ) : item.isCorrect ? (
-                            <>
-                              <IconCircleCheck className="mt-0.5 size-4 text-emerald-500 shrink-0" />
-                              <span className="text-sm font-bold text-foreground leading-tight">
-                                {item.selectedOptionText}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <IconCircleX className="mt-0.5 size-4 text-rose-500 shrink-0" />
-                              <span className="text-sm font-bold text-rose-600 dark:text-rose-400 leading-tight">
-                                {item.selectedOptionText}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Correct Option (only displayed if incorrect or unanswered) */}
-                      {(!item.selectedOptionId || !item.isCorrect) && (
-                        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.02] p-4 flex flex-col justify-between min-h-[90px] transition-all">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
-                            Correct Solution
+                            Your Choice
                           </span>
                           <div className="flex items-start gap-2.5">
-                            <IconCircleCheck className="mt-0.5 size-4 text-emerald-500 shrink-0" />
-                            <span className="text-sm font-bold text-foreground leading-tight">
-                              {item.correctOptionText ?? "Not Available"}
-                            </span>
+                            {studentAnswerText}
                           </div>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Explanation details block */}
-                    {item.explanation && (
-                      <div className="rounded-xl border border-blue-500/10 bg-blue-500/[0.02] p-4 transition-all">
-                        <div className="flex items-center gap-2 mb-2">
-                          <IconInfoCircle className="size-4 text-blue-500" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-blue-500">
-                            Explanation & Insights
-                          </span>
-                        </div>
-                        <p className="text-sm text-foreground/80 leading-relaxed pl-6">
-                          {item.explanation}
-                        </p>
+                        {/* Correct Option (only displayed if incorrect or unanswered) */}
+                        {(!answered || !item.isCorrect) && (
+                          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.02] p-4 flex flex-col justify-between min-h-[90px] transition-all">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+                              Correct Solution
+                            </span>
+                            <div className="flex items-start gap-2.5">
+                              <IconCircleCheck className="mt-0.5 size-4 text-emerald-500 shrink-0" />
+                              <span className="text-sm font-bold text-foreground leading-tight">
+                                {correctSolutionText}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+
+                      {/* Explanation details block */}
+                      {item.explanation && (
+                        <div className="rounded-xl border border-blue-500/10 bg-blue-500/[0.02] p-4 transition-all">
+                          <div className="flex items-center gap-2 mb-2">
+                            <IconInfoCircle className="size-4 text-blue-500" />
+                            <span className="text-xs font-bold uppercase tracking-wider text-blue-500">
+                              Explanation & Insights
+                            </span>
+                          </div>
+                          <p className="text-sm text-foreground/80 leading-relaxed pl-6">
+                            {item.explanation}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
               <div className="rounded-2xl border border-dashed border-border/80 p-12 text-center">
                 <IconHelpCircle className="mx-auto size-10 text-muted-foreground/60 mb-3" />

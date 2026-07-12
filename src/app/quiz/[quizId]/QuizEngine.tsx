@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   IconAlertTriangle,
@@ -137,6 +138,7 @@ export function QuizEngine({
   questions: QuizQuestion[];
   attempts: PreviousAttempt[];
 }) {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("intro");
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -309,6 +311,7 @@ export function QuizEngine({
         const payload = (await res.json()) as SubmitPayload;
         setResult(payload);
         setPhase("result");
+        router.push(`/dashboard/tests/result/${payload.attemptId}`);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Failed to submit quiz");
         setPhase("active");

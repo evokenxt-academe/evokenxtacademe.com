@@ -34,15 +34,32 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify admin role
+  // Verify role (admin or instructor)
   const { data: userRow } = await adminClient
     .from("users")
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!userRow || userRow.role !== "admin") {
+  if (!userRow || (userRow.role !== "admin" && userRow.role !== "instructor")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Fetch quiz metadata to resolve total marks
+  const { data: quiz } = await adminClient
+    .from("quizzes")
+    .select("total_marks")
+    .eq("id", quizId)
+    .maybeSingle();
+
+  let quizTotalMarks = quiz ? toNumber(quiz.total_marks) : 0;
+  if (quizTotalMarks === 0) {
+    const { data: questions } = await adminClient
+      .from("questions")
+      .select("marks")
+      .eq("quiz_id", quizId);
+    
+    quizTotalMarks = (questions ?? []).reduce((sum, q) => sum + toNumber(q.marks), 0);
   }
 
   // Fetch all submitted/timed_out attempts for this quiz
@@ -133,7 +150,7 @@ export async function GET(
     previousScore = data.score;
     
     const userInfo = userMap.get(userId);
-    const totalMarks = data.totalMarks || 1;
+    const totalMarks = data.totalMarks || quizTotalMarks || 1;
     return {
       rank: currentRank,
       userId,
@@ -142,7 +159,7 @@ export async function GET(
       avatar: userInfo?.avatar ?? null,
       initials: getInitials(userInfo?.name ?? null),
       score: data.score,
-      totalMarks: data.totalMarks,
+      totalMarks: totalMarks,
       percentage: Math.round((data.score / totalMarks) * 100),
       durationSec: data.durationSec,
       submittedAt: data.submittedAt,

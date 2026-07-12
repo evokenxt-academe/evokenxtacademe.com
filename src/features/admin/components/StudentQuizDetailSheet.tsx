@@ -241,43 +241,96 @@ export function StudentQuizDetailSheet({
                         {rev.question}
                       </p>
 
-                      {/* Options */}
-                      <div className="space-y-2 mb-4">
-                        {rev.options?.map((opt: any) => {
-                          let optStyle = "border-border bg-background hover:bg-muted/10";
-                          let checkIcon: React.ReactNode = null;
-
-                          if (opt.isSelected) {
-                            if (opt.isCorrect) {
-                              optStyle = "border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 font-medium";
-                              checkIcon = <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />;
-                            } else {
-                              optStyle = "border-rose-500 bg-rose-50/40 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 font-medium";
-                              checkIcon = <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />;
-                            }
-                          } else if (opt.isCorrect) {
-                            // Highlight correct option if student got it wrong or unanswered
-                            optStyle = "border-emerald-400 border-dashed bg-emerald-50/10 dark:bg-emerald-950/5 text-emerald-800 dark:text-emerald-300 font-medium";
-                          }
-
-                          return (
-                            <div
-                              key={opt.id}
-                              className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-colors duration-150 ${optStyle}`}
-                            >
-                              <span className="leading-snug">{opt.text}</span>
-                              <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                                {opt.isCorrect && !opt.isSelected && (
-                                  <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-sm bg-emerald-100/50 dark:bg-emerald-950/30">
-                                    Correct Answer
+                      {/* Options or custom answer input review */}
+                      {rev.type === "numerical" || rev.type === "fill_blank" || rev.type === "subjective" ? (
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          {/* Student Answer */}
+                          <div className={`p-4 rounded-xl border ${
+                            rev.isUnanswered 
+                              ? "border-zinc-200 dark:border-zinc-800 bg-zinc-500/[0.02]"
+                              : rev.isCorrect
+                              ? "border-emerald-500/20 bg-emerald-500/[0.02]"
+                              : "border-rose-500/20 bg-rose-500/[0.02]"
+                          }`}>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+                              Student Answer
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {rev.isUnanswered ? (
+                                <span className="text-sm font-medium text-zinc-500 italic">Not Answered</span>
+                              ) : (
+                                <>
+                                  {rev.isCorrect ? (
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4 text-rose-500 shrink-0" />
+                                  )}
+                                  <span className={`text-sm font-bold leading-none ${rev.isCorrect ? "text-foreground" : "text-rose-600 dark:text-rose-400"}`}>
+                                    {rev.type === "numerical" ? rev.numericalAnswer : rev.type === "fill_blank" ? rev.blankAnswer : rev.textAnswer}
                                   </span>
-                                )}
-                                {checkIcon}
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Correct Solution */}
+                          {(!rev.isCorrect || rev.isUnanswered) && (
+                            <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.02]">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-2">
+                                Correct Solution
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                <span className="text-sm font-bold text-foreground leading-none">
+                                  {rev.type === "numerical" 
+                                    ? `${rev.numericalCorrectAnswer}${rev.numericalTolerance ? ` (± ${rev.numericalTolerance})` : ""}`
+                                    : rev.type === "fill_blank"
+                                    ? rev.blankCorrectAnswer
+                                    : "Subjective assessment review"}
+                                </span>
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
+                          )}
+                        </div>
+                      ) : (
+                        /* Options list for MCQ / True-False etc. */
+                        <div className="space-y-2 mb-4">
+                          {rev.options?.map((opt: any) => {
+                            let optStyle = "border-border bg-background hover:bg-muted/10";
+                            let checkIcon: React.ReactNode = null;
+
+                            if (opt.isSelected) {
+                              if (opt.isCorrect) {
+                                optStyle = "border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 font-medium";
+                                checkIcon = <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />;
+                              } else {
+                                optStyle = "border-rose-500 bg-rose-50/40 dark:bg-rose-950/20 text-rose-900 dark:text-rose-200 font-medium";
+                                checkIcon = <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" />;
+                              }
+                            } else if (opt.isCorrect) {
+                              // Highlight correct option if student got it wrong or unanswered
+                              optStyle = "border-emerald-400 border-dashed bg-emerald-50/10 dark:bg-emerald-950/5 text-emerald-800 dark:text-emerald-300 font-medium";
+                            }
+
+                            return (
+                              <div
+                                key={opt.id}
+                                className={`flex items-center justify-between p-3 rounded-lg border text-sm transition-colors duration-150 ${optStyle}`}
+                              >
+                                <span className="leading-snug">{opt.text}</span>
+                                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                  {opt.isCorrect && !opt.isSelected && (
+                                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-sm bg-emerald-100/50 dark:bg-emerald-950/30">
+                                      Correct Answer
+                                    </span>
+                                  )}
+                                  {checkIcon}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {/* Explanation */}
                       {rev.explanation && (

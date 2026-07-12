@@ -20,9 +20,13 @@ type OptionRow = {
 
 type QuestionRow = {
   id: string;
+  type: string | null;
   question_text: string | null;
   explanation: string | null;
   marks: number | null;
+  blank_placeholder: string | null;
+  numerical_answer: number | null;
+  numerical_tolerance: number | null;
   options: OptionRow[] | null;
 };
 
@@ -105,7 +109,7 @@ export async function GET(
     const { data: questionsData, error: questionsError } = await supabase
       .from("questions")
       .select(
-        "id, question_text, explanation, marks, options:question_options(id, option_text, is_correct)",
+        "id, type, question_text, explanation, marks, blank_placeholder, numerical_answer, numerical_tolerance, options:question_options(id, option_text, is_correct)",
       )
       .eq("quiz_id", quizId)
       .order("position", { ascending: true });
@@ -124,7 +128,7 @@ export async function GET(
     // Fetch student's answers
     const { data: answersData, error: answersError } = await supabase
       .from("quiz_answers")
-      .select("question_id, selected_option_id")
+      .select("question_id, selected_option_id, selected_option_ids, text_answer, blank_answer, numerical_answer, is_correct, marks_awarded")
       .eq("attempt_id", attempt.id);
 
     if (answersError) {
@@ -139,9 +143,9 @@ export async function GET(
     }
 
     const questions = (questionsData ?? []) as QuestionRow[];
-    const answerMap = new Map<string, string | null>();
+    const answerMap = new Map<string, any>();
     for (const answer of answersData ?? []) {
-      answerMap.set(answer.question_id, answer.selected_option_id);
+      answerMap.set(answer.question_id, answer);
     }
 
     let derivedScore = 0;
@@ -150,38 +154,73 @@ export async function GET(
     let unansweredCount = 0;
 
     const review = questions.map((question, index) => {
-      const selectedOptionId = answerMap.get(question.id) ?? null;
+      const answer = answerMap.get(question.id) ?? null;
+      const selectedOptionId = answer?.selected_option_id ?? null;
       const options = question.options ?? [];
       const correctOption = options.find(
         (option) => option.is_correct === true,
       );
-      const isCorrect = Boolean(
-        selectedOptionId &&
-          correctOption?.id &&
-          selectedOptionId === correctOption.id,
-      );
 
-      if (!selectedOptionId) {
+      let isCorrect = false;
+      let isAnswered = false;
+
+      if (answer) {
+        if (typeof answer.is_correct === "boolean") {
+          isCorrect = answer.is_correct;
+        }
+
+        const type = question.type;
+        if (type === "mcq" || type === "true_false" || type === "assertion_reasoning") {
+          isAnswered = Boolean(answer.selected_option_id);
+          if (typeof answer.is_correct !== "boolean") {
+            isCorrect = Boolean(selectedOptionId && correctOption?.id && selectedOptionId === correctOption.id);
+          }
+        } else if (type === "multiple_select") {
+          isAnswered = Array.isArray(answer.selected_option_ids) && answer.selected_option_ids.length > 0;
+        } else if (type === "fill_blank") {
+          isAnswered = typeof answer.blank_answer === "string" && answer.blank_answer.trim().length > 0;
+        } else if (type === "numerical") {
+          isAnswered = answer.numerical_answer !== null && answer.numerical_answer !== undefined;
+        } else if (type === "subjective") {
+          isAnswered = typeof answer.text_answer === "string" && answer.text_answer.trim().length > 0;
+        }
+      }
+
+      if (!isAnswered) {
         unansweredCount += 1;
       } else if (isCorrect) {
         correctCount += 1;
-        derivedScore += toNumber(question.marks);
+        derivedScore += answer ? toNumber(answer.marks_awarded) : toNumber(question.marks);
       } else {
         incorrectCount += 1;
+        derivedScore += answer ? toNumber(answer.marks_awarded) : 0;
       }
 
       return {
         questionNumber: index + 1,
         questionId: question.id,
+        type: question.type ?? "mcq",
         question: question.question_text ?? "Question unavailable",
-        explanation: question.explanation?.trim()
-          ? question.explanation
-          : null,
+        explanation: question.explanation?.trim() ? question.explanation : null,
         marks: toNumber(question.marks),
+        
+        // Option-based answers
         selectedOptionId,
         correctOptionId: correctOption?.id ?? null,
+
+        // Non-option answers
+        numericalAnswer: answer?.numerical_answer ?? null,
+        blankAnswer: answer?.blank_answer ?? null,
+        textAnswer: answer?.text_answer ?? null,
+        marksAwarded: answer ? toNumber(answer.marks_awarded) : 0,
+
+        // Correct answer meta for display
+        numericalCorrectAnswer: question.numerical_answer ?? null,
+        numericalTolerance: question.numerical_tolerance ?? null,
+        blankCorrectAnswer: question.blank_placeholder ?? null,
+
         isCorrect,
-        isUnanswered: !selectedOptionId,
+        isUnanswered: !isAnswered,
         options: options.map((opt) => ({
           id: opt.id,
           text: opt.option_text ?? "",
