@@ -11,6 +11,22 @@ import { X } from "lucide-react";
 const DISMISSED_KEY = "pwa_banner_dismissed";
 const MAX_MOBILE_WIDTH = 400;
 
+const SafariShareIcon = () => (
+  <svg
+    className="h-4 w-4 inline text-emerald-500 mx-1 align-middle"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+    <polyline points="16 6 12 2 8 6" />
+    <line x1="12" y1="2" x2="12" y2="15" />
+  </svg>
+);
+
 /**
  * Mobile-only install banner that appears at the bottom of the screen.
  * Uses shadcn/ui Card, Button, Badge — no custom CSS beyond Tailwind utilities.
@@ -19,6 +35,19 @@ const MAX_MOBILE_WIDTH = 400;
 export function InstallBanner() {
   const { isInstallable, isInstalled, triggerInstall, clearPrompt } = usePWA();
   const [visible, setVisible] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    const checkIOS = () => {
+      const userAgent = window.navigator.userAgent;
+      const isIOSDevice =
+        /iPad|iPhone|iPod/.test(userAgent) ||
+        (window.navigator.platform === "MacIntel" &&
+          window.navigator.maxTouchPoints > 1);
+      setIsIOS(isIOSDevice);
+    };
+    checkIOS();
+  }, []);
 
   useEffect(() => {
     // Guard: desktop / tablet
@@ -30,10 +59,7 @@ export function InstallBanner() {
     // Guard: already dismissed
     if (localStorage.getItem(DISMISSED_KEY) === "true") return;
 
-    // Guard: no install prompt available
-    if (!isInstallable) return;
-
-    // Guard: standalone mode double-check
+    // Standalone mode double-check
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       ("standalone" in navigator &&
@@ -41,8 +67,11 @@ export function InstallBanner() {
           true);
     if (isStandalone) return;
 
+    // Guard: no install prompt available (except on iOS which doesn't support the event)
+    if (!isIOS && !isInstallable) return;
+
     setVisible(true);
-  }, [isInstallable, isInstalled]);
+  }, [isInstallable, isInstalled, isIOS]);
 
   const handleDismiss = useCallback(() => {
     localStorage.setItem(DISMISSED_KEY, "true");
@@ -95,19 +124,27 @@ export function InstallBanner() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground leading-tight">
-              Install for a faster experience
+              {isIOS ? (
+                <span className="flex items-center flex-wrap gap-0.5">
+                  Tap <SafariShareIcon /> then "Add to Home Screen"
+                </span>
+              ) : (
+                "Install for a faster experience"
+              )}
             </p>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-1 shrink-0">
-            <Button
-              size="sm"
-              onClick={handleInstall}
-              className="h-7 text-xs px-3"
-            >
-              Install
-            </Button>
+            {!isIOS && (
+              <Button
+                size="sm"
+                onClick={handleInstall}
+                className="h-7 text-xs px-3"
+              >
+                Install
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

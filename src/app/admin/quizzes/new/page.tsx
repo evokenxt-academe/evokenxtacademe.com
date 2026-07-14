@@ -59,7 +59,13 @@ const QUIZ_TYPE_INFO = [
 
 export default function NewQuizPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-sm text-muted-foreground">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          Loading...
+        </div>
+      }
+    >
       <NewQuizPageContent />
     </Suspense>
   );
@@ -93,6 +99,11 @@ function NewQuizPageContent() {
   const [shuffleOptions, setShuffleOptions] = useState(false);
   const [showAnswersAfter, setShowAnswersAfter] =
     useState<ShowAnswersAfter>("submit");
+
+  // Scheduling states
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledStartsAt, setScheduledStartsAt] = useState("");
+  const [scheduledEndsAt, setScheduledEndsAt] = useState("");
 
   const { data: programs } = usePrograms();
   const { data: levels } = useProgramLevels(programId || undefined);
@@ -160,6 +171,22 @@ function NewQuizPageContent() {
       toast.error("Title and Course are required");
       return;
     }
+    if (scheduleEnabled) {
+      if (!scheduledStartsAt && !scheduledEndsAt) {
+        toast.error(
+          "Please specify at least a start or end time for scheduling",
+        );
+        return;
+      }
+      if (
+        scheduledStartsAt &&
+        scheduledEndsAt &&
+        new Date(scheduledStartsAt) >= new Date(scheduledEndsAt)
+      ) {
+        toast.error("Start time must be before end time");
+        return;
+      }
+    }
     setSaving(true);
     try {
       const supabase = createClient();
@@ -180,6 +207,14 @@ function NewQuizPageContent() {
             max_attempts: maxAttemptsEnabled ? maxAttempts : null,
             show_answers_after: showAnswersAfter,
             is_published: false,
+            scheduled_starts_at:
+              scheduleEnabled && scheduledStartsAt
+                ? new Date(scheduledStartsAt).toISOString()
+                : null,
+            scheduled_ends_at:
+              scheduleEnabled && scheduledEndsAt
+                ? new Date(scheduledEndsAt).toISOString()
+                : null,
           },
         ])
         .select("id")
@@ -196,8 +231,7 @@ function NewQuizPageContent() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-
+    <div className="mx-auto max-w-3xl space-y-6 my-10">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Create New Quiz</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -525,6 +559,61 @@ function NewQuizPageContent() {
                 </SelectContent>
               </Select>
             </div>
+
+            <Separator />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Schedule Test Time</Label>
+                <p className="text-xs text-muted-foreground">
+                  Restrict access to a specific time window
+                </p>
+              </div>
+              <Switch
+                checked={scheduleEnabled}
+                onCheckedChange={setScheduleEnabled}
+              />
+            </div>
+            {scheduleEnabled && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="scheduledStartsAt"
+                    className="text-xs font-semibold"
+                  >
+                    Start Time (Local Time)
+                  </Label>
+                  <Input
+                    id="scheduledStartsAt"
+                    type="datetime-local"
+                    value={scheduledStartsAt}
+                    onChange={(e) => setScheduledStartsAt(e.target.value)}
+                    className="w-full"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Students can start attempting from this time
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="scheduledEndsAt"
+                    className="text-xs font-semibold"
+                  >
+                    End Time / Deadline (Local Time)
+                  </Label>
+                  <Input
+                    id="scheduledEndsAt"
+                    type="datetime-local"
+                    value={scheduledEndsAt}
+                    onChange={(e) => setScheduledEndsAt(e.target.value)}
+                    className="w-full"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Students must submit before this time
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -546,8 +635,8 @@ function NewQuizPageContent() {
                 <dd>
                   {chapterId === "none"
                     ? "All Chapters (course-wide)"
-                    : (chapters ?? []).find((c) => c.id === chapterId)?.title ??
-                      "—"}
+                    : ((chapters ?? []).find((c) => c.id === chapterId)
+                        ?.title ?? "—")}
                 </dd>
               </div>
               <div>
@@ -588,6 +677,45 @@ function NewQuizPageContent() {
                       : "If Passed"}
                 </dd>
               </div>
+              <div className="col-span-2 mt-2 pt-2 border-t">
+                <dt className="text-muted-foreground">Scheduled Access</dt>
+                <dd className="font-medium text-xs mt-1">
+                  {scheduleEnabled ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">
+                          Starts
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {scheduledStartsAt
+                            ? new Date(scheduledStartsAt).toLocaleString(
+                                undefined,
+                                { dateStyle: "medium", timeStyle: "short" },
+                              )
+                            : "Immediately"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">
+                          Ends
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {scheduledEndsAt
+                            ? new Date(scheduledEndsAt).toLocaleString(
+                                undefined,
+                                { dateStyle: "medium", timeStyle: "short" },
+                              )
+                            : "No deadline"}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-normal text-muted-foreground">
+                      Always available (No schedule set)
+                    </span>
+                  )}
+                </dd>
+              </div>
             </dl>
           </CardContent>
         </Card>
@@ -605,7 +733,25 @@ function NewQuizPageContent() {
         </Button>
         {step < 3 ? (
           <Button
-            onClick={() => setStep(step + 1)}
+            onClick={() => {
+              if (step === 2 && scheduleEnabled) {
+                if (!scheduledStartsAt && !scheduledEndsAt) {
+                  toast.error(
+                    "Please specify at least a start or end time for scheduling",
+                  );
+                  return;
+                }
+                if (
+                  scheduledStartsAt &&
+                  scheduledEndsAt &&
+                  new Date(scheduledStartsAt) >= new Date(scheduledEndsAt)
+                ) {
+                  toast.error("Start time must be before end time");
+                  return;
+                }
+              }
+              setStep(step + 1);
+            }}
             disabled={step === 1 && (!title || !courseId)}
           >
             Next

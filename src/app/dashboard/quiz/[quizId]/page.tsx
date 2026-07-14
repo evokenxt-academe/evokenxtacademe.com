@@ -23,7 +23,7 @@ export default async function QuizPage({ params }: Props) {
       `id, title, description, instructions,
        type, total_marks, passing_marks,
        time_limit_sec, shuffle_questions, shuffle_options, max_attempts,
-       show_answers_after,
+       show_answers_after, scheduled_starts_at, scheduled_ends_at,
        course:courses!inner(title, slug, id)`,
     )
     .eq("id", quizId)

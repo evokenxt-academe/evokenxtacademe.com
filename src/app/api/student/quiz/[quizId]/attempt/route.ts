@@ -76,13 +76,27 @@ export async function POST(
 
     const { data: quiz, error: quizError } = await supabase
       .from("quizzes")
-      .select("id, max_attempts, course_id, is_published")
+      .select("id, max_attempts, course_id, is_published, scheduled_starts_at, scheduled_ends_at")
       .eq("id", quizId)
       .eq("is_published", true)
       .maybeSingle();
 
     if (quizError || !quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    const nowMs = Date.now();
+    if (quiz.scheduled_starts_at) {
+      const startsAtMs = new Date(quiz.scheduled_starts_at).getTime();
+      if (nowMs < startsAtMs) {
+        return NextResponse.json({ error: "This quiz is scheduled and has not started yet" }, { status: 403 });
+      }
+    }
+    if (quiz.scheduled_ends_at) {
+      const endsAtMs = new Date(quiz.scheduled_ends_at).getTime();
+      if (nowMs > endsAtMs) {
+        return NextResponse.json({ error: "This quiz has ended and is no longer accepting submissions" }, { status: 403 });
+      }
     }
 
     const { data: enrollment } = await supabase

@@ -21,7 +21,7 @@ export async function getAllQuizzes(
     .select(
       `id, title, description, type, total_marks, passing_marks, time_limit_sec,
        shuffle_questions, shuffle_options, max_attempts, show_answers_after,
-       is_published, created_at,
+       is_published, created_at, scheduled_starts_at, scheduled_ends_at,
        course:courses!inner(
          id, title, slug,
          subject:subjects!inner(

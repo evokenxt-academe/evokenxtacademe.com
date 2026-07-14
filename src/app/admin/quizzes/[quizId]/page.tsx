@@ -22,7 +22,24 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useRouter } from "next/navigation";
 import { Save, Layers, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import type { QuizType, ShowAnswersAfter } from "@/types/quiz";
+
+// Helper function to format ISO date-time string to local datetime-local value (YYYY-MM-DDTHH:MM)
+const formatToLocalDateString = (isoString?: string | null) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "";
+  
+  const pad = (num: number) => String(num).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
 
 const QUIZ_TYPE_INFO = [
   {
@@ -69,6 +86,9 @@ export default function EditQuizPage({
     shuffle_options: false,
     show_answers_after: "submit" as ShowAnswersAfter,
     is_published: false,
+    scheduleEnabled: false,
+    scheduledStartsAt: "",
+    scheduledEndsAt: "",
   });
 
   useEffect(() => {
@@ -85,12 +105,25 @@ export default function EditQuizPage({
         shuffle_options: quiz.shuffle_options,
         show_answers_after: quiz.show_answers_after ?? "submit",
         is_published: quiz.is_published,
+        scheduleEnabled: !!(quiz.scheduled_starts_at || quiz.scheduled_ends_at),
+        scheduledStartsAt: formatToLocalDateString(quiz.scheduled_starts_at),
+        scheduledEndsAt: formatToLocalDateString(quiz.scheduled_ends_at),
       });
     }
   }, [quiz]);
 
   const handleSave = () => {
     if (!quiz) return;
+    if (form.scheduleEnabled) {
+      if (!form.scheduledStartsAt && !form.scheduledEndsAt) {
+        toast.error("Please specify at least a start or end time for scheduling");
+        return;
+      }
+      if (form.scheduledStartsAt && form.scheduledEndsAt && new Date(form.scheduledStartsAt) >= new Date(form.scheduledEndsAt)) {
+        toast.error("Start time must be before end time");
+        return;
+      }
+    }
     const passingMarksVal =
       form.passing_marks !== "" && form.passing_marks !== null
         ? Number(form.passing_marks)
@@ -112,6 +145,8 @@ export default function EditQuizPage({
         shuffle_options: form.shuffle_options,
         show_answers_after: form.show_answers_after,
         is_published: form.is_published,
+        scheduled_starts_at: form.scheduleEnabled && form.scheduledStartsAt ? new Date(form.scheduledStartsAt).toISOString() : null,
+        scheduled_ends_at: form.scheduleEnabled && form.scheduledEndsAt ? new Date(form.scheduledEndsAt).toISOString() : null,
       },
     });
   };
@@ -336,6 +371,47 @@ export default function EditQuizPage({
                   </SelectContent>
                 </Select>
               </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Schedule Test Time</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Restrict access to a specific window
+                  </p>
+                </div>
+                <Switch
+                  checked={form.scheduleEnabled}
+                  onCheckedChange={(c) => setForm({ ...form, scheduleEnabled: c })}
+                />
+              </div>
+              {form.scheduleEnabled && (
+                <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduledStartsAt" className="text-xs font-semibold">Start Time (Local Time)</Label>
+                    <Input
+                      id="scheduledStartsAt"
+                      type="datetime-local"
+                      value={form.scheduledStartsAt}
+                      onChange={(e) => setForm({ ...form, scheduledStartsAt: e.target.value })}
+                      className="w-full text-xs"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Students can start attempting from this time</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduledEndsAt" className="text-xs font-semibold">End Time / Deadline (Local Time)</Label>
+                    <Input
+                      id="scheduledEndsAt"
+                      type="datetime-local"
+                      value={form.scheduledEndsAt}
+                      onChange={(e) => setForm({ ...form, scheduledEndsAt: e.target.value })}
+                      className="w-full text-xs"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Students must submit before this time</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
