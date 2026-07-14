@@ -51,7 +51,18 @@ const pickBoolean = (row: Row, keys: string[], fallback = false) => {
     return fallback;
 };
 
-const pickDate = (row: Row, keys: string[], fallback = new Date().toISOString()) => {
+const pickDate = (row: Row, keys: string[], fallback = new Date().toISOString()): string => {
+    for (const key of keys) {
+        const value = row[key];
+        if (typeof value === "string" && value.trim()) {
+            return value;
+        }
+    }
+
+    return fallback;
+};
+
+const pickNullableDate = (row: Row, keys: string[], fallback: string | null = null): string | null => {
     for (const key of keys) {
         const value = row[key];
         if (typeof value === "string" && value.trim()) {
@@ -125,7 +136,7 @@ export function normalizeEnrollment(
         course: pickString(row, ["course_name", "course"], courseName),
         status: pickString(row, ["status"], "active") as AdminEnrollment["status"],
         enrolledAt: pickDate(row, ["enrolledAt", "enrolled_at", "created_at"]),
-        expiresAt: pickDate(row, ["expiresAt", "expires_at", "valid_until"]),
+        expiresAt: pickNullableDate(row, ["expiresAt", "expires_at", "valid_until"], null),
     };
 }
 

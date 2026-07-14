@@ -109,7 +109,7 @@ export async function GET() {
     const courseDates = courses.map((course) => course.createdAt);
     const activeEnrollmentDates = enrollments
         .filter((enrollment) => enrollment.status === "active")
-        .map((enrollment) => enrollment.expiresAt);
+        .map((enrollment) => enrollment.enrolledAt);
 
     const revenueThisMonth = payments.reduce((sum, payment) => {
         const monthKey = toMonthKey(payment.createdAt);
@@ -137,7 +137,7 @@ export async function GET() {
             id: `enrollment-${enrollment.id}`,
             title: enrollment.status === "active" ? "New enrollment" : "Enrollment updated",
             description: `${enrollment.user} is now ${enrollment.status} in ${enrollment.course}.`,
-            time: enrollment.expiresAt,
+            time: enrollment.enrolledAt,
             tone: enrollment.status === "active" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/10 text-rose-700 dark:text-rose-300",
         })),
         ...liveStreams.slice(0, 1).map((stream) => ({

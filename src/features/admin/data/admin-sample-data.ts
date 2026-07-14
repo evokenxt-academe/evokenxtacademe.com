@@ -36,7 +36,7 @@ export type AdminEnrollment = {
     course: string;
     status: "active" | "expired" | "refunded";
     enrolledAt: string;
-    expiresAt: string;
+    expiresAt: string | null;
 }
 
 export type AdminReview = {
