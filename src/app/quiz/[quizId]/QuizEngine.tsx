@@ -8,6 +8,8 @@ import {
   IconAlertTriangle,
   IconArrowLeft,
   IconArrowRight,
+  IconCalendar,
+  IconCalendarOff,
   IconCheck,
   IconClock,
   IconLoader2,
@@ -38,6 +40,8 @@ export type QuizMeta = {
   max_attempts: number | null;
   show_answers_after: "submit" | "pass" | "never";
   course: { title: string; slug: string; id: string };
+  scheduled_starts_at?: string | null;
+  scheduled_ends_at?: string | null;
 };
 
 export type QuizOption = { id: string; option_text: string; position: number };
@@ -149,6 +153,81 @@ export function QuizEngine({
   const [isStarting, setIsStarting] = useState(false);
   const startedAtRef = useRef<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (phase !== "intro") return;
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  const scheduleStatus = useMemo(() => {
+    if (!quiz.scheduled_starts_at && !quiz.scheduled_ends_at) {
+      return { isAvailable: true, status: "open" as const, label: "" };
+    }
+
+    const startMs = quiz.scheduled_starts_at ? new Date(quiz.scheduled_starts_at).getTime() : null;
+    const endMs = quiz.scheduled_ends_at ? new Date(quiz.scheduled_ends_at).getTime() : null;
+
+    if (startMs && now < startMs) {
+      const diff = startMs - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      let countdownLabel = "";
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        countdownLabel = `${days}d ${hours % 24}h`;
+      } else {
+        countdownLabel = `${hours}h ${mins}m ${secs}s`;
+      }
+
+      return {
+        isAvailable: false,
+        status: "upcoming" as const,
+        label: `Starts in ${countdownLabel}`,
+        startsAtLabel: new Date(quiz.scheduled_starts_at!).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }),
+      };
+    }
+
+    if (endMs && now > endMs) {
+      return {
+        isAvailable: false,
+        status: "ended" as const,
+        label: "Closed / Ended",
+        endsAtLabel: new Date(quiz.scheduled_ends_at!).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }),
+      };
+    }
+
+    // Active
+    let activeLabel = "";
+    if (endMs) {
+      const diff = endMs - now;
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      let remainingLabel = "";
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        remainingLabel = `${days}d ${hours % 24}h`;
+      } else {
+        remainingLabel = `${hours}h ${mins}m ${secs}s`;
+      }
+      activeLabel = `Closes in ${remainingLabel}`;
+    }
+
+    return {
+      isAvailable: true,
+      status: "active" as const,
+      label: activeLabel,
+      endsAtLabel: quiz.scheduled_ends_at ? new Date(quiz.scheduled_ends_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : null,
+    };
+  }, [quiz.scheduled_starts_at, quiz.scheduled_ends_at, now]);
 
   const orderedQuestions = useMemo(() => {
     const base = [...questions].sort((a, b) => a.position - b.position);
@@ -363,6 +442,48 @@ export function QuizEngine({
             <p className="text-sm text-muted-foreground">{quiz.course.title}</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            {scheduleStatus.status === "upcoming" && (
+              <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 animate-in fade-in duration-300">
+                <IconCalendar className="mt-0.5 text-amber-500 size-5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-sm text-amber-700 dark:text-amber-400">Scheduled Assessment</p>
+                  <p className="text-xs text-muted-foreground">
+                    This quiz is scheduled to start on <span className="font-medium text-foreground">{scheduleStatus.startsAtLabel}</span>.
+                  </p>
+                  <p className="text-xs font-mono text-amber-600 dark:text-amber-500 mt-1">
+                    {scheduleStatus.label}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {scheduleStatus.status === "ended" && (
+              <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 animate-in fade-in duration-300">
+                <IconCalendarOff className="mt-0.5 text-destructive size-5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-sm text-destructive">Quiz Closed</p>
+                  <p className="text-xs text-muted-foreground">
+                    The deadline for this assessment was <span className="font-medium text-foreground">{scheduleStatus.endsAtLabel}</span>. Submissions are no longer accepted.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {scheduleStatus.status === "active" && scheduleStatus.endsAtLabel && (
+              <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4 animate-in fade-in duration-300">
+                <IconClock className="mt-0.5 text-primary size-5 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-sm text-primary">Time-Restricted Assessment</p>
+                  <p className="text-xs text-muted-foreground">
+                    Must be completed and submitted before the deadline: <span className="font-medium text-foreground">{scheduleStatus.endsAtLabel}</span>.
+                  </p>
+                  <p className="text-xs font-mono text-primary font-medium mt-1">
+                    {scheduleStatus.label}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {quiz.instructions ? (
               <div className="rounded-lg border bg-muted/30 p-4 text-sm leading-relaxed text-muted-foreground">
                 {quiz.instructions}
@@ -417,7 +538,9 @@ export function QuizEngine({
               <Button
                 onClick={handleStart}
                 disabled={
-                  isStarting || (maxAttempts != null && remaining === 0)
+                  isStarting || 
+                  (maxAttempts != null && remaining === 0) || 
+                  !scheduleStatus.isAvailable
                 }
                 size="lg"
               >
@@ -427,7 +550,11 @@ export function QuizEngine({
                     className="animate-spin"
                   />
                 ) : null}
-                Start Quiz
+                {scheduleStatus.status === "upcoming"
+                  ? "Locked (Upcoming)"
+                  : scheduleStatus.status === "ended"
+                    ? "Closed"
+                    : "Start Quiz"}
               </Button>
             </div>
           </CardContent>

@@ -121,6 +121,8 @@ export interface Quiz {
   is_published: boolean;
   created_at: string;
   updated_at: string;
+  scheduled_starts_at?: string | null;
+  scheduled_ends_at?: string | null;
 }
 
 export interface QuizWithRelations extends Quiz {
@@ -375,6 +377,8 @@ export interface QuizFormData {
   shuffle_options: boolean;
   max_attempts?: number | null;
   show_answers_after: ShowAnswersAfter;
+  scheduled_starts_at?: string | null;
+  scheduled_ends_at?: string | null;
 }
 
 export interface QuestionFormData {
