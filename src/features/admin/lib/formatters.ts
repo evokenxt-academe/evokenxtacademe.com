@@ -10,7 +10,8 @@ export const dateFormatter = new Intl.DateTimeFormat("en-IN", {
     year: "numeric",
 })
 
-export function formatDate(value: string) {
+export function formatDate(value: string | null | undefined) {
+    if (!value) return "Never";
     return dateFormatter.format(new Date(value))
 }
 

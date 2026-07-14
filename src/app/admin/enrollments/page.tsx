@@ -369,7 +369,7 @@ export default function EnrollmentsPage() {
   const [selectedCourseIds, setSelectedCourseIds] = React.useState<Set<string>>(
     new Set(),
   );
-  const [expiryType, setExpiryType] = React.useState<"never" | "custom">(
+  const [expiryType, setExpiryType] = React.useState<"never" | "5years" | "custom">(
     "never",
   );
   const [customExpiry, setCustomExpiry] = React.useState("");
@@ -410,11 +410,20 @@ export default function EnrollmentsPage() {
   };
 
   const handleEnroll = () => {
+    let calculatedExpiry: string | null = null;
+    if (expiryType === "5years") {
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 5);
+      calculatedExpiry = expiryDate.toISOString();
+    } else if (expiryType === "custom") {
+      calculatedExpiry = customExpiry ? new Date(customExpiry).toISOString() : null;
+    }
+
     createEnrollment.mutate(
       {
         userIds: selectedUserIdList,
         courseIds: selectedCourseIdList,
-        expiresAt: expiryType === "never" ? null : customExpiry || null,
+        expiresAt: calculatedExpiry,
       },
       {
         onSuccess: (result) => {
@@ -841,8 +850,8 @@ export default function EnrollmentsPage() {
 
                 <RadioGroup
                   value={expiryType}
-                  onValueChange={(val: "never" | "custom") => setExpiryType(val)}
-                  className="grid gap-3 sm:grid-cols-2"
+                  onValueChange={(val: "never" | "5years" | "custom") => setExpiryType(val)}
+                  className="grid gap-3 sm:grid-cols-3"
                 >
                   <label
                     htmlFor="never"
@@ -860,8 +869,23 @@ export default function EnrollmentsPage() {
                   </label>
 
                   <label
+                    htmlFor="5years"
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/30 ${expiryType === "5years" ? "border-primary/30 bg-primary/5 ring-1 ring-primary/20" : "border-border/70 bg-background"}`}
+                  >
+                    <RadioGroupItem value="5years" id="5years" className="mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="block text-sm font-medium">
+                        5 years access
+                      </span>
+                      <span className="block text-xs leading-relaxed text-muted-foreground">
+                        Access expires in 5 years from today
+                      </span>
+                    </div>
+                  </label>
+
+                  <label
                     htmlFor="custom"
-                    className={`flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start ${expiryType === "custom" ? "border-primary/30 bg-primary/5 ring-1 ring-primary/20" : "border-border/70 bg-background"}`}
+                    className={`flex cursor-pointer flex-col gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/30 ${expiryType === "custom" ? "border-primary/30 bg-primary/5 ring-1 ring-primary/20" : "border-border/70 bg-background"}`}
                   >
                     <div className="flex items-start gap-3">
                       <RadioGroupItem value="custom" id="custom" className="mt-0.5" />
@@ -870,7 +894,7 @@ export default function EnrollmentsPage() {
                           Set expiry date
                         </span>
                         <span className="block text-xs leading-relaxed text-muted-foreground">
-                          Access ends on the chosen date and time
+                          Access ends on chosen date
                         </span>
                       </div>
                     </div>
@@ -879,7 +903,7 @@ export default function EnrollmentsPage() {
                       value={customExpiry}
                       onChange={(e) => setCustomExpiry(e.target.value)}
                       disabled={expiryType !== "custom"}
-                      className="h-10 w-full shrink-0 sm:ml-auto sm:max-w-[220px]"
+                      className="mt-2 h-10 w-full shrink-0"
                       onClick={(e) => e.stopPropagation()}
                     />
                   </label>
