@@ -10,13 +10,10 @@ import { PWAInstallTrigger } from "@/components/pwa/PWAInstallTrigger";
 function DevtoolsGuard() {
   const [devtoolsOpen, setDevtoolsOpen] = React.useState(false);
   const pathRef = React.useRef<string>('');
+  const isMacRef = React.useRef(false);
 
   const redirectToDebugger = React.useCallback(() => {
-    if (
-      window.location.pathname.startsWith(
-        `/debugger?callbackUrl=${pathRef.current}`,
-      )
-    ) {
+    if (window.location.pathname === '/debugger') {
       return;
     }
 
@@ -25,6 +22,10 @@ function DevtoolsGuard() {
 
   React.useEffect(() => {
     pathRef.current = window.location.pathname;
+    // Detect macOS once on mount
+    isMacRef.current =
+      typeof navigator !== 'undefined' &&
+      /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent);
 
     const handleContextMenu = (event: MouseEvent) => {
       event.preventDefault();
@@ -33,15 +34,29 @@ function DevtoolsGuard() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!event.key) return;
       const key = event.key.toLowerCase();
-      const isModifierCombo = event.ctrlKey || event.metaKey;
-      const isAltModifierCombo = event.altKey && isModifierCombo;
+      const isMac = isMacRef.current;
+
+      // On macOS the primary modifier is ⌘ (metaKey); on Windows/Linux it's Ctrl.
+      // We must NOT treat standalone ⌘+<key> combos (copy/paste/undo) as inspect shortcuts.
+      const ctrlOrMeta = isMac ? event.metaKey : event.ctrlKey;
+
       const isInspectShortcut =
+        // F12 — universal DevTools toggle (Windows/Linux; macOS has no default F12 binding)
         event.key === 'F12' ||
-        (isModifierCombo && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
-        (isAltModifierCombo && ['i', 'j', 'c'].includes(key)) ||
-        (isModifierCombo && key === 'u') ||
+        // Ctrl/⌘ + Shift + I/J/C — DevTools panel shortcuts
+        (ctrlOrMeta && event.shiftKey && ['i', 'j', 'c'].includes(key)) ||
+        // Alt + Ctrl/⌘ + I/J/C — alternative DevTools shortcuts (mainly Firefox)
+        (event.altKey && ctrlOrMeta && ['i', 'j', 'c'].includes(key)) ||
+        // Ctrl/⌘ + U — View Source
+        (ctrlOrMeta && !event.shiftKey && !event.altKey && key === 'u') ||
+        // Context menu key (Windows keyboards)
         event.key === 'ContextMenu' ||
-        (event.shiftKey && event.key === 'F10');
+        // Shift+F10 — context menu shortcut
+        (event.shiftKey && event.key === 'F10') ||
+        // macOS-specific: ⌘+⌥+I (Safari/Chrome DevTools toggle)
+        (isMac && event.metaKey && event.altKey && key === 'i') ||
+        // macOS-specific: ⌘+⌥+C (Chrome inspect element)
+        (isMac && event.metaKey && event.altKey && key === 'c');
 
       if (isInspectShortcut) {
         event.preventDefault();
@@ -51,16 +66,30 @@ function DevtoolsGuard() {
     };
 
     // Heuristic: large outer vs inner size gap usually means DevTools is docked open.
+    // On macOS, Safari and the notch/Retina displays can produce larger chrome areas,
+    // so we use a higher threshold and also check both dimensions together.
     const detectDevtools = () => {
-      const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      );
+      const isMobile =
+        /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        );
       if (isMobile) return;
 
       const widthDiff = window.outerWidth - window.innerWidth;
       const heightDiff = window.outerHeight - window.innerHeight;
-      const threshold = 150;
+
+      // macOS needs a much higher threshold because:
+      //  - Safari has a tall toolbar + tab bar (~80-100px)
+      //  - MacBook notch adds ~32px
+      //  - Retina scaling can double reported pixel differences
+      //  - Stage Manager / full-screen transitions cause transient spikes
+      const isMac = isMacRef.current;
+      const threshold = isMac ? 300 : 160;
+
+      // Require at least one dimension to significantly exceed threshold.
+      // Using both dims prevents false positives from tall title bars or wide sidebars.
       const isLikelyOpen = widthDiff > threshold || heightDiff > threshold;
+
       setDevtoolsOpen(isLikelyOpen);
 
       if (isLikelyOpen) {
@@ -71,14 +100,17 @@ function DevtoolsGuard() {
     window.addEventListener('contextmenu', handleContextMenu);
     window.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('resize', detectDevtools);
-    detectDevtools();
+    // Delay initial check to let the browser settle its layout (macOS fullscreen transitions)
+    const initTimeout = window.setTimeout(detectDevtools, 500);
 
-    const intervalId = window.setInterval(detectDevtools, 1000);
+    // Check less frequently to avoid redirect loops on macOS
+    const intervalId = window.setInterval(detectDevtools, 2000);
 
     return () => {
       window.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('resize', detectDevtools);
+      window.clearTimeout(initTimeout);
       window.clearInterval(intervalId);
     };
   }, [redirectToDebugger]);

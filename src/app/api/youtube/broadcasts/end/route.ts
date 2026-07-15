@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { endBroadcast } from '@/lib/youtube/api';
+import { endBroadcast, getBroadcast } from '@/lib/youtube/api';
 import { cleanupStreamEngagement } from '@/lib/live-stream/cleanup-engagement';
 
 export async function POST(req: NextRequest) {
@@ -46,12 +46,43 @@ export async function POST(req: NextRequest) {
     }
 
     // End broadcast
-    await endBroadcast(stream.yt_broadcast_id);
+    try {
+      await endBroadcast(stream.yt_broadcast_id);
+    } catch (error: any) {
+      const msg = error?.message || '';
+      // If the broadcast is already completed (redundant transition), we can log a warning and proceed
+      if (
+        !msg.toLowerCase().includes('redundant transition') &&
+        !msg.toLowerCase().includes('redundanttransition')
+      ) {
+        throw error;
+      }
+      console.warn('Ignoring YouTube redundant transition error (broadcast already ended):', msg);
+    }
 
-    // Calculate duration
-    const startedAt = stream.started_at ? new Date(stream.started_at) : new Date();
-    const endedAt = new Date();
-    const durationSec = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
+    // Calculate duration using actualStartTime and actualEndTime from YouTube!
+    let durationSec = 0;
+    let endedAt = new Date();
+    try {
+      const broadcastDetails = await getBroadcast(stream.yt_broadcast_id);
+      const actualStart = broadcastDetails.snippet?.actualStartTime;
+      const actualEnd = broadcastDetails.snippet?.actualEndTime;
+      
+      if (actualStart && actualEnd) {
+        durationSec = Math.floor((new Date(actualEnd).getTime() - new Date(actualStart).getTime()) / 1000);
+        endedAt = new Date(actualEnd);
+      } else if (actualStart) {
+        durationSec = Math.floor((endedAt.getTime() - new Date(actualStart).getTime()) / 1000);
+      }
+    } catch (e) {
+      console.error('Failed to fetch actual start/end times from YouTube broadcast:', e);
+    }
+
+    if (durationSec <= 0) {
+      // Fallback to local calculation
+      const startedAt = stream.started_at ? new Date(stream.started_at) : new Date();
+      durationSec = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
+    }
 
     // Update stream status in database
     const { error: updateError } = await supabase
