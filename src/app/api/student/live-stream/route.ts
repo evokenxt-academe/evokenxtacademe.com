@@ -110,6 +110,47 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ currentStream: null, messages: [] })
     }
 
+    // Auto-sync/verify live status from YouTube if our DB thinks it's live
+    if (stream.status === "live" && stream.yt_video_id) {
+        try {
+            const { getBroadcast } = await import("@/lib/youtube/api");
+            const broadcast = await getBroadcast(stream.yt_video_id);
+            const lifecycle = broadcast.status?.lifeCycleStatus;
+            
+            if (lifecycle === "complete" || lifecycle === "revoked") {
+                const actualStart = broadcast.snippet?.actualStartTime;
+                const actualEnd = broadcast.snippet?.actualEndTime || new Date().toISOString();
+                let durationSec = 0;
+                if (actualStart && actualEnd) {
+                    durationSec = Math.floor((new Date(actualEnd).getTime() - new Date(actualStart).getTime()) / 1000);
+                } else {
+                    const startedAt = stream.started_at ? new Date(stream.started_at) : new Date();
+                    durationSec = Math.floor((new Date(actualEnd).getTime() - startedAt.getTime()) / 1000);
+                }
+                
+                const adminSupabase = createAdminClient();
+                const { error: updateError } = await adminSupabase
+                    .from("live_streams")
+                    .update({
+                        status: "ended",
+                        ended_at: actualEnd,
+                        duration_sec: durationSec,
+                    })
+                    .eq("id", stream.id);
+                
+                if (!updateError) {
+                    stream.status = "ended";
+                    stream.ended_at = actualEnd;
+                    
+                    const { cleanupStreamEngagement } = await import("@/lib/live-stream/cleanup-engagement");
+                    await cleanupStreamEngagement(stream.id, adminSupabase).catch(console.error);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to verify live stream status with YouTube:", e);
+        }
+    }
+
     // Get chat messages for this stream
     const { data: messages } = await (supabase as any)
         .from("chat_messages")

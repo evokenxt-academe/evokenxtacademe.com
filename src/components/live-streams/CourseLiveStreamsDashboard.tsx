@@ -107,6 +107,14 @@ export function CourseLiveStreamsDashboard({ courseId }: CourseLiveStreamsDashbo
       if (formatted[0]?.courseTitle) {
         setCourseTitle(formatted[0].courseTitle);
       }
+
+      // If any stream is currently live in our DB, trigger a background YouTube sync
+      // to check if it has ended on YouTube, updating the UI reactively via Supabase realtime.
+      const hasLiveStream = formatted.some((s) => s.status === "live");
+      if (hasLiveStream) {
+        fetch("/api/youtube/broadcasts/sync", { method: "POST" })
+          .catch((err) => console.error("Background sync failed:", err));
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to load streams");
@@ -198,7 +206,23 @@ export function CourseLiveStreamsDashboard({ courseId }: CourseLiveStreamsDashbo
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchStreams}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              toast.promise(
+                fetch("/api/youtube/broadcasts/sync", { method: "POST" }),
+                {
+                  loading: "Syncing with YouTube...",
+                  success: () => {
+                    void fetchStreams();
+                    return "Sync complete";
+                  },
+                  error: "Sync failed",
+                }
+              );
+            }}
+          >
             <RefreshCw className="mr-2 size-4" />
             Refresh
           </Button>

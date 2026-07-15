@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       // 2. Check if already in our database
       const { data: existingStream } = await supabase
         .from('live_streams')
-        .select('id, status, yt_video_id, yt_live_chat_id')
+        .select('id, status, yt_video_id, yt_live_chat_id, started_at')
         .eq('yt_broadcast_id', broadcastId)
         .maybeSingle();
 
@@ -105,6 +105,17 @@ export async function POST(req: NextRequest) {
           }
           if (mappedStatus === 'ended' && existingStream.status !== 'ended') {
             updatePayload.ended_at = actualEndTime || new Date().toISOString();
+            
+            // Calculate actual stream duration from YouTube actual start/end times
+            let durationSec = 0;
+            if (actualStartTime && actualEndTime) {
+              durationSec = Math.floor((new Date(actualEndTime).getTime() - new Date(actualStartTime).getTime()) / 1000);
+            } else {
+              const start = actualStartTime || existingStream.started_at || new Date().toISOString();
+              const end = actualEndTime || new Date().toISOString();
+              durationSec = Math.floor((new Date(end).getTime() - new Date(start).getTime()) / 1000);
+            }
+            updatePayload.duration_sec = durationSec;
           }
         }
 

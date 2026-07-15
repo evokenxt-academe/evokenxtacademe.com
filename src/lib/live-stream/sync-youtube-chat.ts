@@ -16,12 +16,54 @@ export async function syncYouTubeLiveChat(streamId: string) {
 
   const { data: stream, error: streamError } = await supabase
     .from("live_streams")
-    .select("yt_live_chat_id")
+    .select("yt_live_chat_id, yt_video_id, status, started_at")
     .eq("id", streamId)
     .single();
 
   if (streamError || !stream?.yt_live_chat_id) {
     throw new Error("Stream or live chat not found");
+  }
+
+  // Auto-sync/verify live status from YouTube if our DB thinks it's live
+  if (stream.status === "live" && stream.yt_video_id) {
+    try {
+      const { getBroadcast } = await import("@/lib/youtube/api");
+      const broadcast = await getBroadcast(stream.yt_video_id);
+      const lifecycle = broadcast.status?.lifeCycleStatus;
+
+      if (lifecycle === "complete" || lifecycle === "revoked") {
+        const actualStart = broadcast.snippet?.actualStartTime;
+        const actualEnd = broadcast.snippet?.actualEndTime || new Date().toISOString();
+        let durationSec = 0;
+        if (actualStart && actualEnd) {
+          durationSec = Math.floor((new Date(actualEnd).getTime() - new Date(actualStart).getTime()) / 1000);
+        } else {
+          const startedAt = stream.started_at ? new Date(stream.started_at) : new Date();
+          durationSec = Math.floor((new Date(actualEnd).getTime() - startedAt.getTime()) / 1000);
+        }
+
+        await supabase
+          .from("live_streams")
+          .update({
+            status: "ended",
+            ended_at: actualEnd,
+            duration_sec: durationSec,
+          })
+          .eq("id", streamId);
+
+        const { cleanupStreamEngagement } = await import("@/lib/live-stream/cleanup-engagement");
+        await cleanupStreamEngagement(streamId, supabase).catch(console.error);
+
+        return {
+          success: true,
+          messagesSync: 0,
+          inserted: 0,
+          ended: true,
+        };
+      }
+    } catch (e) {
+      console.error("Failed to verify live stream status in chat sync:", e);
+    }
   }
 
   const { messages, nextPageToken } = await fetchLiveChatMessages(
