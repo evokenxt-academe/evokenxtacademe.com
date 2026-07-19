@@ -203,9 +203,9 @@ export function ScheduleStreamDialog({
       } else {
         const data = await broadcastRes.json().catch(() => ({}));
         if (data.embedDisabled) {
-          toast.warning(
-            "Stream created, but YouTube embedding is disabled. Please enable 'Allow embedding' in YouTube Studio.",
-            { duration: 8000 }
+          toast.info(
+            "Stream created. Embedding will be enabled automatically in the Control Room.",
+            { duration: 6000 },
           );
         }
       }

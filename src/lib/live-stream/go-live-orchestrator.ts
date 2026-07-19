@@ -21,6 +21,22 @@ export async function ensureYouTubeBroadcast(streamId: string): Promise<{
   if (!rtmpUrl || !streamKey) {
     throw new Error("YouTube broadcast created but RTMP credentials are missing");
   }
+
+  if (data.embedDisabled) {
+    const embedRes = await fetch("/api/youtube/broadcasts/enable-embed", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ streamId }),
+    }).catch(() => null);
+
+    if (embedRes?.ok) {
+      const embedData = await embedRes.json().catch(() => ({}));
+      if (embedData.success && !embedData.embedDisabled) {
+        return { rtmpUrl, streamKey };
+      }
+    }
+  }
+
   return { rtmpUrl, streamKey };
 }
 

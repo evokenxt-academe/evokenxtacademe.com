@@ -493,22 +493,21 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
             };
 
             // First attempt immediately on ready (soft — no seek disruption)
-            const immediate1080p = tryEnforce1080p(false);
+            tryEnforce1080p(false);
 
-            // For live streams, YouTube often doesn't populate quality levels
-            // until a few seconds after onReady. Schedule retries to catch this.
-            if (!immediate1080p || isLiveRef.current) {
-              for (const delay of [800, 1800, 3500, 6000]) {
-                window.setTimeout(() => {
-                  if (!mountedRef.current || !playerRef.current) return;
-                  // Only re-enforce if we don't have a user-overridden quality locked
-                  const current = preferredQualityRef.current;
-                  const isAlready1080p = current === "hd1080" || current === "highres";
-                  if (!isAlready1080p) {
-                    tryEnforce1080p(delay >= 1800);
-                  }
-                }, delay);
-              }
+            // YouTube often ignores the initial quality suggestion or does not populate
+            // quality levels immediately. Schedule retries to lock 1080p quality,
+            // using micro-seeks to force re-buffering at the target level.
+            for (const delay of [800, 1800, 3500, 6000]) {
+              window.setTimeout(() => {
+                if (!mountedRef.current || !playerRef.current) return;
+                // Only re-enforce if we don't have a user-overridden quality locked
+                const current = preferredQualityRef.current;
+                const isAlready1080p = current === "hd1080" || current === "highres";
+                if (!isAlready1080p) {
+                  tryEnforce1080p(delay >= 1800);
+                }
+              }, delay);
             }
 
             const attemptId = ++autoplayAttemptRef.current;

@@ -212,10 +212,7 @@ export function YtcnPlayer({
         "relative w-full bg-black select-none overflow-hidden",
         state.isFullscreen && !finalControlsVisible && "cursor-none",
         state.isFullscreen
-          ? cn(
-              "fixed inset-0 z-[9999] w-screen h-screen bg-black",
-              isTouchDevice && "ytcn-mobile-fullscreen-rotate"
-            )
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
           : "aspect-video rounded-none sm:rounded-lg group",
         className
       )}
@@ -606,6 +603,7 @@ export function YtcnPlayer({
             onVolumeChange={controls.setVolume}
             onToggleMute={controls.toggleMute}
             onSpeedChange={controls.setSpeed}
+            onQualityChange={controls.setQuality}
             onToggleFullscreen={controls.toggleFullscreen}
             onSeekToLive={controls.seekToLive}
             visible={finalControlsVisible}
@@ -631,20 +629,7 @@ export function YtcnPlayer({
         </div>
       )}
 
-      {/* Mobile live: expand to landscape fullscreen */}
-      {mobileLiveMode && isTouchDevice && state.phase === "ready" && !state.isFullscreen ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            enterMobileLiveFullscreen();
-          }}
-          className="absolute top-3 right-3 z-40 flex size-10 items-center justify-center rounded-full bg-black/65 text-white shadow-lg ring-1 ring-white/15 backdrop-blur-sm touch-manipulation active:scale-95"
-          aria-label="Enter fullscreen"
-        >
-          <IconMaximize className="size-5" />
-        </button>
-      ) : null}
+
 
       {/* Mobile live fullscreen: tap to exit when controls are hidden */}
       {mobileLiveMode && isTouchDevice && state.isFullscreen && !finalControlsVisible ? (

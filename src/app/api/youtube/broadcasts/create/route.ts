@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createLiveBroadcast } from '@/lib/youtube/api';
+import { createLiveBroadcast, enableBroadcastEmbedding } from '@/lib/youtube/api';
 import { requireAdmin } from '@/features/admin/lib/admin-route';
 
 export async function POST(req: NextRequest) {
@@ -32,6 +32,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (stream.yt_broadcast_id) {
+      let embedDisabled = false;
+
+      const embedResult = await enableBroadcastEmbedding(stream.yt_broadcast_id, {
+        maxAttempts: 6,
+        delayMs: 2_000,
+      });
+      embedDisabled = Boolean(embedResult.embedDisabled);
+      await supabase
+        .from('live_streams')
+        .update({ enable_embed: embedResult.enabled && !embedDisabled })
+        .eq('id', streamId);
+
       return NextResponse.json({
         success: true,
         broadcastId: stream.yt_broadcast_id,
@@ -40,6 +52,7 @@ export async function POST(req: NextRequest) {
         rtmpUrl: stream.yt_rtmp_url,
         streamKey: stream.yt_stream_key,
         alreadyExists: true,
+        embedDisabled,
       });
     }
 
@@ -80,7 +93,7 @@ export async function POST(req: NextRequest) {
         yt_rtmp_url: rtmpUrl,
         yt_stream_key: streamKey,
         yt_live_chat_id: liveChatId ?? null,
-        ...(embedDisabled ? { enable_embed: false } : {}),
+        enable_embed: !embedDisabled,
       })
       .eq('id', streamId);
 

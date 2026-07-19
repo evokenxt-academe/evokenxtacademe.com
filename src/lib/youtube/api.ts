@@ -25,6 +25,13 @@ interface LiveBroadcast {
     enableDvr: boolean;
     enableEmbed: boolean;
     boundStreamId?: string;
+    enableAutoStart?: boolean;
+    enableAutoStop?: boolean;
+    recordFromStart?: boolean;
+    monitorStream?: {
+      enableMonitorStream: boolean;
+      broadcastStreamDelayMs: number;
+    };
   };
 }
 
@@ -89,9 +96,8 @@ export async function createLiveBroadcast(
       },
       contentDetails: {
         enableDvr: options.enableDvr !== false,
-        // Only set enableEmbed if it is explicitly false.
-        // Setting it to true requires AdSense linking and will fail with invalidEmbedSetting for non-monetized channels,
-        // but omitting it allows YouTube to default to true (enabled) anyway.
+        // Omit enableEmbed when enabled — YouTube defaults to true.
+        // Explicit enableEmbed: true triggers invalidEmbedSetting on some channels.
         ...(options.enableEmbed === false ? { enableEmbed: false } : {}),
         enableAutoStart: true,
         enableAutoStop: true,
@@ -105,53 +111,10 @@ export async function createLiveBroadcast(
     const error = await broadcastRes.json();
     const reason = error.error?.errors?.[0]?.reason || '';
     const msg = error.error?.message || 'Failed to create broadcast';
-
-    // If embedding is not allowed, retry with enableEmbed: false
-    if (reason === 'invalidEmbedSetting' && options.enableEmbed !== false) {
-      console.warn('YouTube live broadcast creation failed with invalidEmbedSetting. Retrying with enableEmbed: false...');
-      embedDisabled = true;
-      broadcastRes = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,status,contentDetails`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          snippet: {
-            title,
-            description,
-            scheduledStartTime,
-          },
-          status: {
-            privacyStatus: options.privacy || 'unlisted',
-            selfDeclaredMadeForKids: false,
-          },
-          contentDetails: {
-            enableDvr: options.enableDvr !== false,
-            enableEmbed: false,
-            enableAutoStart: true,
-            enableAutoStop: true,
-            recordFromStart: true,
-            enableMonitorStream: false,
-          },
-        }),
-      });
-
-      if (!broadcastRes.ok) {
-        const retryError = await broadcastRes.json();
-        const retryReason = retryError.error?.errors?.[0]?.reason || '';
-        const retryMsg = retryError.error?.message || 'Failed to create broadcast';
-        const err = new Error(`Failed to create broadcast: ${retryMsg}`);
-        (err as any).reason = retryReason;
-        (err as any).statusCode = broadcastRes.status;
-        throw err;
-      }
-    } else {
-      const err = new Error(`Failed to create broadcast: ${msg}`);
-      (err as any).reason = reason;
-      (err as any).statusCode = broadcastRes.status;
-      throw err;
-    }
+    const err = new Error(`Failed to create broadcast: ${msg}`);
+    (err as any).reason = reason;
+    (err as any).statusCode = broadcastRes.status;
+    throw err;
   }
 
   const broadcast: LiveBroadcast = await broadcastRes.json();
@@ -223,6 +186,16 @@ export async function createLiveBroadcast(
     liveChatId = item?.snippet?.liveChatId;
   }
 
+  if (options.enableEmbed !== false) {
+    const embedResult = await enableBroadcastEmbedding(broadcast.id, {
+      maxAttempts: 4,
+      delayMs: 1_500,
+    });
+    if (embedResult.embedDisabled) {
+      embedDisabled = true;
+    }
+  }
+
   return {
     broadcastId: broadcast.id,
     streamId: stream.id,
@@ -268,6 +241,215 @@ export async function getBroadcast(broadcastId: string): Promise<LiveBroadcast> 
   }
 
   return broadcast;
+}
+
+const NON_UPDATABLE_EMBED_STATUSES = new Set([
+  'testing',
+  'testStarting',
+  'live',
+  'liveStarting',
+]);
+
+type VideoStatus = {
+  embeddable?: boolean;
+  privacyStatus?: string;
+  selfDeclaredMadeForKids?: boolean;
+  license?: string;
+  publicStatsViewable?: boolean;
+};
+
+type EmbedAttemptResult = {
+  enabled: boolean;
+  embedDisabled?: boolean;
+  retryable?: boolean;
+};
+
+/**
+ * Enable "Allow embedding" on a live broadcast via the YouTube API.
+ * Uses videos.update (same as YouTube Studio checkbox) as the primary method.
+ */
+export async function enableBroadcastEmbedding(
+  broadcastId: string,
+  options: { maxAttempts?: number; delayMs?: number } = {},
+): Promise<{ enabled: boolean; embedDisabled?: boolean }> {
+  const maxAttempts = options.maxAttempts ?? 6;
+  const delayMs = options.delayMs ?? 2_000;
+  let lastResult: EmbedAttemptResult = { enabled: false, retryable: true };
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    lastResult = await attemptEnableBroadcastEmbedding(broadcastId);
+    if (lastResult.enabled || lastResult.embedDisabled) {
+      return lastResult;
+    }
+
+    if (!lastResult.retryable || attempt === maxAttempts - 1) {
+      break;
+    }
+
+    await sleep(delayMs);
+  }
+
+  if (lastResult.embedDisabled) {
+    return { enabled: false, embedDisabled: true };
+  }
+
+  return { enabled: false };
+}
+
+async function attemptEnableBroadcastEmbedding(
+  broadcastId: string,
+): Promise<EmbedAttemptResult> {
+  const videoResult = await enableVideoEmbedding(broadcastId);
+  if (videoResult.enabled) {
+    return { enabled: true };
+  }
+  if (videoResult.embedDisabled) {
+    return videoResult;
+  }
+
+  const broadcast = await getBroadcast(broadcastId);
+
+  if (
+    broadcast.contentDetails.enableEmbed &&
+    isVideoEmbeddable(await getVideoStatus(broadcastId))
+  ) {
+    return { enabled: true };
+  }
+
+  if (NON_UPDATABLE_EMBED_STATUSES.has(broadcast.status.lifeCycleStatus)) {
+    return videoResult;
+  }
+
+  const accessToken = await getAccessToken();
+  const monitor = broadcast.contentDetails.monitorStream;
+
+  const res = await fetch(`${YOUTUBE_API}/liveBroadcasts?part=snippet,contentDetails`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      id: broadcastId,
+      snippet: {
+        title: broadcast.snippet.title,
+        description: broadcast.snippet.description ?? '',
+        scheduledStartTime: broadcast.snippet.scheduledStartTime,
+      },
+      contentDetails: {
+        enableEmbed: true,
+        enableDvr: broadcast.contentDetails.enableDvr,
+        enableAutoStart: broadcast.contentDetails.enableAutoStart ?? true,
+        enableAutoStop: broadcast.contentDetails.enableAutoStop ?? true,
+        recordFromStart: broadcast.contentDetails.recordFromStart ?? true,
+        enableMonitorStream: monitor?.enableMonitorStream ?? false,
+        broadcastStreamDelayMs: monitor?.broadcastStreamDelayMs ?? 0,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    const reason = error.error?.errors?.[0]?.reason || '';
+    if (reason === 'invalidEmbedSetting') {
+      console.warn(`YouTube channel does not allow embedding for broadcast ${broadcastId}`);
+      return { enabled: false, embedDisabled: true };
+    }
+
+    console.warn(
+      `liveBroadcasts.update enableEmbed failed for ${broadcastId}, trying videos.update:`,
+      error.error?.message,
+    );
+    return videoResult.retryable ? videoResult : { enabled: false, retryable: true };
+  }
+
+  const retryVideo = await enableVideoEmbedding(broadcastId);
+  if (retryVideo.enabled) {
+    return { enabled: true };
+  }
+  if (retryVideo.embedDisabled) {
+    return retryVideo;
+  }
+
+  const updated = await getBroadcast(broadcastId);
+  if (updated.contentDetails.enableEmbed) {
+    return { enabled: true };
+  }
+
+  return { enabled: false, retryable: true };
+}
+
+async function getVideoStatus(videoId: string): Promise<VideoStatus | null> {
+  const accessToken = await getAccessToken();
+  const res = await fetch(`${YOUTUBE_API}/videos?id=${videoId}&part=status`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.items?.[0]?.status ?? null;
+}
+
+function isVideoEmbeddable(status: { embeddable?: boolean } | null): boolean {
+  return status?.embeddable === true;
+}
+
+/**
+ * Set embeddable on the linked video (same id as the broadcast) — mirrors YouTube Studio "Allow embedding".
+ */
+async function enableVideoEmbedding(
+  videoId: string,
+): Promise<EmbedAttemptResult> {
+  const accessToken = await getAccessToken();
+  const status = await getVideoStatus(videoId);
+
+  if (!status) {
+    return { enabled: false, retryable: true };
+  }
+
+  if (status.embeddable === true) {
+    return { enabled: true };
+  }
+
+  const res = await fetch(`${YOUTUBE_API}/videos?part=status`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      id: videoId,
+      status: {
+        embeddable: true,
+        privacyStatus: status.privacyStatus ?? 'unlisted',
+        selfDeclaredMadeForKids: status.selfDeclaredMadeForKids ?? false,
+        ...(status.license ? { license: status.license } : {}),
+        ...(status.publicStatsViewable !== undefined
+          ? { publicStatsViewable: status.publicStatsViewable }
+          : {}),
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    const reason = error.error?.errors?.[0]?.reason || '';
+    if (
+      reason === 'invalidEmbedSetting' ||
+      reason === 'forbiddenEmbedSetting' ||
+      reason === 'forbidden'
+    ) {
+      return { enabled: false, embedDisabled: true };
+    }
+    console.warn(`videos.update embeddable failed for ${videoId}:`, error.error?.message);
+    return { enabled: false, retryable: true };
+  }
+
+  const verified = await getVideoStatus(videoId);
+  if (verified?.embeddable === true) {
+    return { enabled: true };
+  }
+
+  return { enabled: false, retryable: true };
 }
 
 /**
@@ -381,19 +563,46 @@ export async function transitionToLive(broadcastId: string): Promise<void> {
   }
 }
 
+async function finalizeBroadcastEmbedding(
+  broadcastId: string,
+  embedDisabled?: boolean,
+): Promise<boolean | undefined> {
+  const embedResult = await enableBroadcastEmbedding(broadcastId, {
+    maxAttempts: 5,
+    delayMs: 2_000,
+  });
+
+  if (embedResult.enabled) return undefined;
+  if (embedResult.embedDisabled) return true;
+  return embedDisabled ? true : undefined;
+}
+
 /**
  * Wait for encoder readiness, then transition (or detect auto-start).
  */
 export async function goLiveBroadcast(
   broadcastId: string,
   youtubeStreamId: string,
-): Promise<void> {
+  options: { enableEmbed?: boolean } = {},
+): Promise<{ embedDisabled?: boolean }> {
+  let embedDisabled: boolean | undefined;
+
+  if (options.enableEmbed !== false) {
+    const embedResult = await enableBroadcastEmbedding(broadcastId, {
+      maxAttempts: 4,
+      delayMs: 1_500,
+    });
+    if (embedResult.embedDisabled) {
+      embedDisabled = true;
+    }
+  }
+
   await ensureBroadcastScheduleNow(broadcastId);
 
   let lifecycle = await waitForEncoderSignal(broadcastId, youtubeStreamId);
 
   if (lifecycle === 'live' || lifecycle === 'liveStarting') {
-    return;
+    return { embedDisabled: await finalizeBroadcastEmbedding(broadcastId, embedDisabled) };
   }
 
   const maxAttempts = 12;
@@ -401,13 +610,13 @@ export async function goLiveBroadcast(
     lifecycle = (await getBroadcast(broadcastId)).status.lifeCycleStatus;
 
     if (lifecycle === 'live' || lifecycle === 'liveStarting') {
-      return;
+      return { embedDisabled: await finalizeBroadcastEmbedding(broadcastId, embedDisabled) };
     }
 
     if (lifecycle === 'ready' || lifecycle === 'testing' || lifecycle === 'testStarting') {
       try {
         await transitionToLive(broadcastId);
-        return;
+        return { embedDisabled: await finalizeBroadcastEmbedding(broadcastId, embedDisabled) };
       } catch (err) {
         const message = err instanceof Error ? err.message : '';
         const lower = message.toLowerCase();
@@ -419,7 +628,7 @@ export async function goLiveBroadcast(
           lower.includes('redundant') ||
           lower.includes('already')
         ) {
-          return;
+          return { embedDisabled: await finalizeBroadcastEmbedding(broadcastId, embedDisabled) };
         }
 
         if (attempt < maxAttempts - 1) {
