@@ -21,6 +21,7 @@ export interface YtcnControlsProps {
   onVolumeChange: (vol: number) => void;
   onToggleMute: () => void;
   onSpeedChange: (rate: PlaybackSpeed) => void;
+  onQualityChange: (quality: string) => void;
   onToggleFullscreen: () => void;
   onSeekToLive?: () => void;
   visible: boolean;
@@ -37,6 +38,7 @@ export function YtcnControls({
   onVolumeChange,
   onToggleMute,
   onSpeedChange,
+  onQualityChange,
   onToggleFullscreen,
   visible,
   containerRef,

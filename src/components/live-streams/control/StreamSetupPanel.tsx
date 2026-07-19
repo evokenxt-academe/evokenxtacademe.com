@@ -26,7 +26,6 @@ import {
 import { toast } from "sonner";
 import type { EncoderSettings, ObsConnectionStatus } from "@/lib/obs/obs-client";
 import type { LiveStreamRow, PipelineStepStatus } from "@/types/live-stream";
-import { buildYoutubeStudioEditUrl } from "@/features/live-stream/lib";
 import { cn } from "@/lib/utils";
 
 type Step = {
@@ -101,11 +100,14 @@ export function StreamSetupPanel({
   const [password, setPassword] = useState(obsSettings.obs_password);
   const [savingPassword, setSavingPassword] = useState(false);
   const [troubleshootOpen, setTroubleshootOpen] = useState(false);
+  const [enablingEmbed, setEnablingEmbed] = useState(false);
+  const [embedEnableFailed, setEmbedEnableFailed] = useState(false);
+  const embedAttempted = useRef(false);
+  const embedRetryCount = useRef(0);
   const autoAttempted = useRef(false);
 
   const showPasswordForm = needsPasswordSetup(obsError, obsSettings);
   const hasIssue = Boolean(obsError || ytError || showPasswordForm);
-  const studioEditUrl = buildYoutubeStudioEditUrl(stream.yt_video_id);
 
   useEffect(() => {
     setPassword(obsSettings.obs_password);
@@ -138,8 +140,8 @@ export function StreamSetupPanel({
         if (!silent) {
           if (data.embedDisabled) {
             toast.warning(
-              "YouTube broadcast ready, but embedding is disabled. Enable it in YouTube Studio.",
-              { duration: 8000 }
+              "YouTube broadcast ready. Enabling embedding automatically…",
+              { duration: 5000 },
             );
           } else {
             toast.success("YouTube broadcast ready");
@@ -169,6 +171,77 @@ export function StreamSetupPanel({
     autoAttempted.current = true;
     void handleCreateBroadcast(true);
   }, [stream.yt_broadcast_id, ytConnected, handleCreateBroadcast]);
+
+  const handleEnableEmbed = useCallback(
+    async (silent = false) => {
+      if (!stream.yt_broadcast_id || enablingEmbed) return false;
+
+      setEnablingEmbed(true);
+      setEmbedEnableFailed(false);
+      try {
+        const res = await fetch("/api/youtube/broadcasts/enable-embed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ streamId: stream.id }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.embedDisabled) {
+          setEmbedEnableFailed(true);
+          if (!silent) {
+            toast.error(data.error ?? "Could not enable embedding via API");
+          }
+          return false;
+        }
+        if (!silent) toast.success("Embedding enabled — students can watch in the LMS");
+        onBroadcastCreated();
+        return true;
+      } catch {
+        setEmbedEnableFailed(true);
+        if (!silent) toast.error("Failed to enable embedding");
+        return false;
+      } finally {
+        setEnablingEmbed(false);
+      }
+    },
+    [stream.id, stream.yt_broadcast_id, enablingEmbed, onBroadcastCreated],
+  );
+
+  useEffect(() => {
+    if (
+      stream.enable_embed !== false ||
+      !stream.yt_broadcast_id ||
+      enablingEmbed ||
+      embedEnableFailed
+    ) {
+      return;
+    }
+
+    if (embedAttempted.current && embedRetryCount.current >= 8) {
+      setEmbedEnableFailed(true);
+      return;
+    }
+
+    embedAttempted.current = true;
+    const retryDelayMs = embedRetryCount.current === 0 ? 0 : 3_000;
+    const timer = window.setTimeout(() => {
+      void handleEnableEmbed(true).then((success) => {
+        if (success) {
+          embedRetryCount.current = 0;
+          return;
+        }
+        embedRetryCount.current += 1;
+        embedAttempted.current = false;
+      });
+    }, retryDelayMs);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    stream.enable_embed,
+    stream.yt_broadcast_id,
+    enablingEmbed,
+    embedEnableFailed,
+    handleEnableEmbed,
+  ]);
 
   const handleSavePassword = async () => {
     if (!password.trim()) return;
@@ -218,39 +291,53 @@ export function StreamSetupPanel({
     <div className="flex flex-col gap-5 rounded-xl border border-border/60 bg-card p-4 sm:p-5">
       {primaryAction}
 
-      {stream.enable_embed === false && stream.yt_broadcast_id && (
+      {(enablingEmbed || (stream.enable_embed === false && stream.yt_broadcast_id)) && (
         <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-950/40 dark:bg-amber-950/10">
           <div className="flex items-start gap-2.5">
-            <AlertCircle className="mt-0.5 size-4 text-amber-600 dark:text-amber-500 shrink-0" />
+            {enablingEmbed ? (
+              <Loader2 className="mt-0.5 size-4 animate-spin text-amber-600 dark:text-amber-500 shrink-0" />
+            ) : (
+              <AlertCircle className="mt-0.5 size-4 text-amber-600 dark:text-amber-500 shrink-0" />
+            )}
             <div className="flex flex-col gap-1">
               <h4 className="text-xs font-semibold text-amber-900 dark:text-amber-400">
-                YouTube Embedding Disabled
+                {enablingEmbed ? "Enabling YouTube Embedding…" : "YouTube Embedding Disabled"}
               </h4>
               <p className="text-[11px] leading-relaxed text-amber-700/90 dark:text-amber-500/90">
-                YouTube has disabled video embedding for this stream. To play this live stream directly inside the LMS, you must manually enable embedding in YouTube Studio:
+                {enablingEmbed
+                  ? "Automatically enabling Allow embedding via the YouTube API. This may take a few seconds."
+                  : embedEnableFailed
+                    ? "Automatic embedding failed. Your YouTube channel may need the Embed live streams feature enabled at youtube.com/features."
+                    : "Checking embedding settings with YouTube…"}
               </p>
             </div>
           </div>
-          <div className="flex flex-col gap-1.5 rounded-md bg-white/60 p-3 text-[11px] border border-amber-100/50 dark:bg-zinc-900/50 dark:border-zinc-800/40">
-            <div>
-              1. Open your live stream in{" "}
+          {!enablingEmbed && embedEnableFailed && (
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-amber-200 text-amber-900 hover:bg-amber-100 dark:border-amber-900 dark:text-amber-400"
+                onClick={() => {
+                  embedAttempted.current = false;
+                  embedRetryCount.current = 0;
+                  setEmbedEnableFailed(false);
+                  void handleEnableEmbed(false);
+                }}
+              >
+                <RefreshCw className="mr-2 size-3.5" />
+                Retry Enable Embedding
+              </Button>
               <a
-                href={studioEditUrl ?? "https://studio.youtube.com"}
+                href="https://www.youtube.com/features"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 inline-flex items-center gap-0.5"
+                className="text-center text-[10px] text-amber-600 underline dark:text-amber-500"
               >
-                YouTube Studio <ExternalLink className="size-3" />
+                Check YouTube channel features
               </a>
             </div>
-            <div>2. Click **Edit** (pencil icon) on the top right.</div>
-            <div>3. Scroll down, click **SHOW MORE**, and scroll to the **License** section.</div>
-            <div>4. Check the box for **Allow embedding**.</div>
-            <div>5. Click **Save** in YouTube Studio.</div>
-          </div>
-          <p className="text-[10px] text-amber-600/80 dark:text-amber-500/80 italic">
-            * Note: Once enabled in YouTube Studio, the player will start working for students immediately.
-          </p>
+          )}
         </div>
       )}
 

@@ -55,7 +55,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await goLiveBroadcast(stream.yt_broadcast_id, stream.yt_stream_id);
+    const { embedDisabled } = await goLiveBroadcast(stream.yt_broadcast_id, stream.yt_stream_id, {
+      enableEmbed: stream.enable_embed !== false,
+    });
 
     // Update stream status in database
     const { error: updateError } = await supabase
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
       .update({
         status: 'live',
         started_at: new Date().toISOString(),
+        ...(embedDisabled ? { enable_embed: false } : stream.enable_embed !== false ? { enable_embed: true } : {}),
       })
       .eq('id', streamId);
 
