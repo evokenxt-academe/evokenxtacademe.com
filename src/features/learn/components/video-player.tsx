@@ -25,6 +25,7 @@ import {
 
 import { extractYouTubeId } from "../hooks";
 import type { FlatLecture } from "../types";
+import { useFullscreen } from "@/components/ytcn/hooks/ytcn/use-fullscreen";
 
 /* ================================================================ */
 /*  Constants & Types                                               */
@@ -428,33 +429,14 @@ export function VideoPlayer({
   }, [onTimeUpdate]);
 
   /* ---- Fullscreen handling ---- */
-  const [isFallbackFullscreen, setIsFallbackFullscreen] = useState(false);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setState((prev) => ({
-        ...prev,
-        isFullscreen: !!document.fullscreenElement || !!(document as any).webkitFullscreenElement,
-      }));
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isFallbackFullscreen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isFallbackFullscreen]);
+    setState((prev) => ({
+      ...prev,
+      isFullscreen,
+    }));
+  }, [isFullscreen]);
 
   /* ---- Keyboard shortcuts ---- */
   useEffect(() => {
@@ -576,30 +558,7 @@ export function VideoPlayer({
     } catch { }
   }, []);
 
-  const toggleFullscreen = useCallback(() => {
-    if (!containerRef.current) return;
-    try {
-      if (document.fullscreenElement || (document as any).webkitFullscreenElement || isFallbackFullscreen) {
-        if (isFallbackFullscreen) {
-          setIsFallbackFullscreen(false);
-        } else if (document.fullscreenElement) {
-          document.exitFullscreen();
-        } else if ((document as any).webkitFullscreenElement) {
-          (document as any).webkitExitFullscreen();
-        }
-      } else {
-        if (containerRef.current.requestFullscreen) {
-          containerRef.current.requestFullscreen().catch(() => setIsFallbackFullscreen(true));
-        } else if ((containerRef.current as any).webkitRequestFullscreen) {
-          (containerRef.current as any).webkitRequestFullscreen();
-        } else {
-          setIsFallbackFullscreen(true);
-        }
-      }
-    } catch {
-      setIsFallbackFullscreen(!isFallbackFullscreen);
-    }
-  }, [isFallbackFullscreen]);
+
 
   const seekTo = useCallback(
     (fraction: number) => {
@@ -695,7 +654,7 @@ export function VideoPlayer({
     state.duration > 0 ? (state.currentTime / state.duration) * 100 : 0;
   const buffered = state.loadedFraction * 100;
 
-  const activeFullscreen = state.isFullscreen || isFallbackFullscreen;
+  const activeFullscreen = state.isFullscreen;
 
   /* ---- Empty states ---- */
   if (!lecture) {
@@ -725,7 +684,7 @@ export function VideoPlayer({
       className={cn(
         "relative w-full bg-black select-none group overflow-hidden",
         activeFullscreen
-          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black [&[data-ytcn-mobile-landscape]]:static [&[data-ytcn-mobile-landscape]]:inset-auto [&[data-ytcn-mobile-landscape]]:w-auto [&[data-ytcn-mobile-landscape]]:h-auto"
           : "aspect-video rounded-lg border shadow-lg",
       )}
     >

@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
 import {
   IconPlayerPlay,
@@ -19,6 +20,7 @@ import {
   IconMaximize,
   IconMinimize,
 } from "@tabler/icons-react";
+import { useFullscreen } from "@/components/ytcn/hooks/ytcn/use-fullscreen";
 
 interface RecordingVideoPlayerProps {
   videoUrl: string;
@@ -45,7 +47,7 @@ export function RecordingVideoPlayer({
   const [volume, setVolume] = React.useState(100);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [videoDuration, setVideoDuration] = React.useState(duration || 0);
-  const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef);
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Format time helper
@@ -121,21 +123,7 @@ export function RecordingVideoPlayer({
     }
   };
 
-  // Fullscreen
-  const toggleFullscreen = () => {
-    if (containerRef.current) {
-      if (!isFullscreen) {
-        containerRef.current.requestFullscreen().catch(() => {
-          setIsFullscreen(true);
-        });
-      } else {
-        document.exitFullscreen().catch(() => {
-          setIsFullscreen(false);
-        });
-      }
-      setIsFullscreen(!isFullscreen);
-    }
-  };
+
 
   return (
     <Card className="overflow-hidden border-border/70 shadow-sm">
@@ -159,7 +147,10 @@ export function RecordingVideoPlayer({
 
       <CardContent className="p-0" ref={containerRef}>
         {/* ── Video Container ──────────────────────────────── */}
-        <div className="group relative flex aspect-video items-center justify-center overflow-hidden bg-black">
+        <div className={cn(
+          "group relative flex aspect-video items-center justify-center overflow-hidden bg-black",
+          isFullscreen && "fixed inset-0 z-[9999] w-screen h-screen bg-black [&[data-ytcn-mobile-landscape]]:static [&[data-ytcn-mobile-landscape]]:inset-auto [&[data-ytcn-mobile-landscape]]:w-auto [&[data-ytcn-mobile-landscape]]:h-auto"
+        )}>
           {/* Video element */}
           <video
             ref={videoRef}

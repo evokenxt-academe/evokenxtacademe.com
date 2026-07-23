@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useYtcnPlayer } from "@/components/ytcn/hooks/ytcn/use-ytcn-player";
 import { useKeyboardShortcuts } from "@/components/ytcn/hooks/ytcn/use-keyboard-shortcuts";
 import { useThumbnail } from "@/components/ytcn/hooks/ytcn/use-thumbnail";
+import { useFullscreen } from "@/components/ytcn/hooks/ytcn/use-fullscreen";
 import type {
   YtcnPlayerOptions,
   KeyboardBindings,
@@ -212,7 +213,7 @@ export function YtcnPlayer({
         "relative w-full bg-black select-none overflow-hidden",
         state.isFullscreen && !finalControlsVisible && "cursor-none",
         state.isFullscreen
-          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black [&[data-ytcn-mobile-landscape]]:static [&[data-ytcn-mobile-landscape]]:inset-auto [&[data-ytcn-mobile-landscape]]:w-auto [&[data-ytcn-mobile-landscape]]:h-auto"
           : "aspect-video rounded-none sm:rounded-lg group",
         className
       )}
