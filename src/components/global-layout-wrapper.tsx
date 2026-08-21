@@ -28,8 +28,7 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
     !pathname?.startsWith("/my-courses") &&
     !pathname?.startsWith("/learn") &&
     !pathname?.startsWith("/courses") &&
-    !pathname?.startsWith("/offline") &&
-    !pathname?.startsWith("/debugger");
+    !pathname?.startsWith("/offline");
 
   useEffect(() => {
     setMounted(true);
@@ -45,12 +44,12 @@ export function GlobalLayoutWrapper({ children }: { children: ReactNode }) {
       setIsMobileOrPWA(true);
 
       const supabase = createClient() as any;
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
-        if (session) {
+      supabase.auth.getUser().then(async ({ data: { user } }: any) => {
+        if (user) {
           const { data: profile } = await supabase
             .from("users")
             .select("role")
-            .eq("id", session.user.id)
+            .eq("id", user.id)
             .maybeSingle();
 
           if (profile?.role === "admin" || profile?.role === "instructor") {

@@ -24,11 +24,14 @@ export const metadata: Metadata = {
   description:
     "Master your ACCA qualification with expert-led courses, structured study materials, and a 95% pass rate. Study online, learn at your pace, succeed globally.",
   manifest: "/manifest.json",
-  applicationName: "Evokenxt",
+  applicationName: "EvokeNxt",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Evokenxt",
+    title: "EvokeNxt",
+  },
+  formatDetection: {
+    telephone: false,
   },
   other: {
     "mobile-web-app-capable": "yes",
@@ -37,6 +40,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#5CC593",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -58,8 +62,13 @@ export default function RootLayout({
       )}
     >
       <head>
-        {/* PWA & Apple Touch Icons */}
+        {/* Apple Touch Icons — iOS uses these for home screen / dock */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/icons/icon-192x192.png"
+        />
         <link
           rel="apple-touch-icon"
           sizes="192x192"
@@ -84,3 +93,4 @@ export default function RootLayout({
     </html>
   );
 }
+

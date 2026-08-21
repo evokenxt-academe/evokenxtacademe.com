@@ -5,13 +5,28 @@ import {
     HEARTBEAT_INTERVAL_MS,
     LMS_HEARTBEAT_COOKIE,
     LMS_SESSION_COOKIE,
-    isSingleSessionEnforced,
+    buildSessionCookieOptions,
 } from "./lib/auth/single-session";
 
 const AUTH_EXEMPT_PATHS = new Set([
     "/auth/session-expired",
     "/auth/active-session",
 ]);
+
+/**
+ * Helper to copy all cookies from the Supabase response to a redirect response
+ * so refreshed auth tokens are never dropped during navigation.
+ */
+function createRedirectWithCookies(
+    redirectUrl: URL | string,
+    supabaseResponse: NextResponse
+): NextResponse {
+    const response = NextResponse.redirect(redirectUrl);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
+}
 
 export async function proxy(req: NextRequest) {
     const { supabase, supabaseResponse } = createClient(req);
@@ -21,24 +36,44 @@ export async function proxy(req: NextRequest) {
 
     const path = req.nextUrl.pathname;
 
-    // Enforce single active session check for all authenticated users
+    // Session maintenance for authenticated users
     if (user && !AUTH_EXEMPT_PATHS.has(path)) {
         const cookieSessionId = req.cookies.get(LMS_SESSION_COOKIE)?.value;
 
+        // Fetch DB user record
         const { data: dbUser } = await supabase
             .from("users")
             .select("current_session_id, role")
             .eq("id", user.id)
-            .single();
+            .maybeSingle();
 
-        const enforceSingleSession = isSingleSessionEnforced(dbUser?.role);
+        // Keep session persistent: if cookie is missing or DB session is unset, ensure it's synced
+        if (!cookieSessionId && dbUser?.current_session_id) {
+            supabaseResponse.cookies.set(
+                LMS_SESSION_COOKIE,
+                dbUser.current_session_id,
+                buildSessionCookieOptions()
+            );
+        } else if (!dbUser?.current_session_id) {
+            const newSessionId = crypto.randomUUID();
+            try {
+                const adminClient = createAdminClient();
+                await adminClient
+                    .from("users")
+                    .update({
+                        current_session_id: newSessionId,
+                        session_last_seen_at: new Date().toISOString(),
+                    })
+                    .eq("id", user.id);
 
-        if (enforceSingleSession && (!dbUser?.current_session_id || cookieSessionId !== dbUser.current_session_id)) {
-            const expiredUrl = new URL("/auth/session-expired", req.url);
-            const response = NextResponse.redirect(expiredUrl);
-            response.cookies.delete(LMS_SESSION_COOKIE);
-            response.cookies.delete(LMS_HEARTBEAT_COOKIE);
-            return response;
+                supabaseResponse.cookies.set(
+                    LMS_SESSION_COOKIE,
+                    newSessionId,
+                    buildSessionCookieOptions()
+                );
+            } catch (err) {
+                console.error("Failed to sync session ID:", err);
+            }
         }
 
         // Heartbeat: keep session_last_seen_at fresh
@@ -58,7 +93,7 @@ export async function proxy(req: NextRequest) {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === "production",
                     sameSite: "lax",
-                    maxAge: 60 * 60,
+                    maxAge: 60 * 60 * 24 * 365,
                 });
             } catch (err) {
                 console.error("Session heartbeat update failed:", err);
@@ -83,21 +118,21 @@ export async function proxy(req: NextRequest) {
     if (!user && isProtectedRoute) {
         const redirectUrl = new URL("/auth/login", req.url);
         redirectUrl.searchParams.set("redirectUrl", path);
-        return NextResponse.redirect(redirectUrl);
+        return createRedirectWithCookies(redirectUrl, supabaseResponse);
     }
 
     // Redirect based on role if authenticated and trying to access auth routes or landing page
     if (user && (isAuthRoute || isLandingPage)) {
         const { data: dbUser } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+            .from("users")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
 
-        if (dbUser?.role === 'admin' || dbUser?.role === 'instructor') {
-            return NextResponse.redirect(new URL("/admin", req.url));
+        if (dbUser?.role === "admin" || dbUser?.role === "instructor") {
+            return createRedirectWithCookies(new URL("/admin", req.url), supabaseResponse);
         } else {
-            return NextResponse.redirect(new URL("/dashboard", req.url));
+            return createRedirectWithCookies(new URL("/dashboard", req.url), supabaseResponse);
         }
     }
 

@@ -16,17 +16,27 @@ export const createClient = (request: NextRequest) => {
         supabaseUrl!,
         supabaseKey!,
         {
+            cookieOptions: {
+                maxAge: 60 * 60 * 24 * 365, // 1 year permanent session
+                sameSite: "lax",
+                path: "/",
+            },
             cookies: {
                 getAll() {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
                     supabaseResponse = NextResponse.next({
                         request,
                     })
                     cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
+                        supabaseResponse.cookies.set(name, value, {
+                            ...options,
+                            maxAge: 60 * 60 * 24 * 365,
+                            sameSite: "lax",
+                            path: "/",
+                        })
                     )
                 },
             },

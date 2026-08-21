@@ -56,12 +56,12 @@ export function LoginCard() {
   React.useEffect(() => {
     const checkSessionAndRedirect = async () => {
       const supabase = createClient() as any;
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
         const { data: profile } = await supabase
           .from("users")
           .select("role")
-          .eq("id", session.user.id)
+          .eq("id", user.id)
           .maybeSingle();
 
         if (profile?.role === "admin" || profile?.role === "instructor") {
@@ -136,14 +136,14 @@ export function LoginCard() {
           window.removeEventListener("message", handleMessage);
           popup.close();
 
-          // Successfully logged in! Retrieve session and redirect
+          // Successfully logged in! Retrieve user and redirect
           const supabase = createClient() as any;
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
             const { data: profile } = await supabase
               .from("users")
               .select("role")
-              .eq("id", session.user.id)
+              .eq("id", user.id)
               .maybeSingle();
 
             if (profile?.role === "admin" || profile?.role === "instructor") {

@@ -8,6 +8,11 @@ export const createClient = async () => {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            cookieOptions: {
+                maxAge: 60 * 60 * 24 * 365, // 1 year permanent session
+                sameSite: "lax",
+                path: "/",
+            },
             cookies: {
                 getAll() {
                     return cookieStore.getAll();
@@ -15,7 +20,10 @@ export const createClient = async () => {
                 setAll(cookiesToSet) {
                     try {
                         cookiesToSet.forEach(({ name, value, options }) =>
-                            cookieStore.set(name, value, options)
+                            cookieStore.set(name, value, {
+                                ...options,
+                                maxAge: 60 * 60 * 24 * 365,
+                            })
                         );
                     } catch {
                         // Called from Server Component — safe to ignore
