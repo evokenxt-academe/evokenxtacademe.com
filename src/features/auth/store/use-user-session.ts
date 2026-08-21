@@ -23,10 +23,9 @@ export const useUserSession = create<UserSessionStore>((set) => ({
         set({ isLoading: true });
         const supabase = createClient() as any;
 
-        const { data: { session }, error } = await supabase.auth.getSession();
-        const user = session?.user;
+        const { data: { user }, error } = await supabase.auth.getUser();
 
-        if (error && error.message !== "Auth session missing!") {
+        if (error && error.message !== "Auth session missing!" && !error.message.includes("missing")) {
             console.log("Supabase Auth Error:", error.message);
         }
 
@@ -37,15 +36,14 @@ export const useUserSession = create<UserSessionStore>((set) => ({
                 .from('users')
                 .select('*')
                 .eq('id', user.id)
-                .maybeSingle()
-            
+                .maybeSingle();
 
             if (profileError) {
                 console.log("Error fetching user profile:", profileError.message);
             }
 
             userProfile = {
-                id: profile?.id,
+                id: profile?.id || user.id,
                 avatar: profile?.avatar || user.user_metadata?.avatar_url || '',
                 name: profile?.name || user.user_metadata?.full_name || '',
                 email: profile?.email || user.email || '',

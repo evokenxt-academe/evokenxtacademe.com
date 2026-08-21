@@ -32,8 +32,17 @@ interface PWAContextValue {
   deferredPrompt: BeforeInstallPromptEvent | null;
   /** Whether the app is already installed / running in standalone mode */
   isInstalled: boolean;
-  /** Whether the install prompt is available */
+  /** Whether the native install prompt is available (Chromium browsers only) */
   isInstallable: boolean;
+  /** Whether the device is iOS (iPhone/iPad) — requires manual "Add to Home Screen" */
+  isAppleDevice: boolean;
+  /** Whether the device is macOS Safari — requires manual "Add to Dock" */
+  isMacOSSafari: boolean;
+  /**
+   * Whether the user can install the PWA (either natively via prompt or manually on Apple).
+   * `true` on Chromium when prompt is available, or on iOS/macOS Safari when not already installed.
+   */
+  canInstall: boolean;
   /** Programmatically trigger the native install prompt */
   triggerInstall: () => Promise<boolean>;
   /** Dismiss the deferred prompt without installing */
@@ -42,11 +51,40 @@ interface PWAContextValue {
 
 const PWAContext = createContext<PWAContextValue | null>(null);
 
+/**
+ * Detect if the current device is iOS (iPhone, iPad, iPod).
+ * Includes iPadOS detection (reports as "MacIntel" with touch support).
+ */
+function detectIsIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
+ * Detect if the current browser is Safari on macOS (desktop).
+ * Excludes Chrome/Edge/etc. on macOS and iPadOS.
+ */
+function detectIsMacOSSafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent.toLowerCase();
+  const isMacDesktop =
+    /macintosh|mac os x/i.test(ua) && navigator.maxTouchPoints <= 1;
+  const isSafari = /safari/.test(ua) && !/chrome|chromium|crios|edg/.test(ua);
+  return isMacDesktop && isSafari;
+}
+
 export function PWAProvider({ children }: { children: ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
+
+  const isAppleDevice = useMemo(() => detectIsIOS(), []);
+  const isMacOSSafari = useMemo(() => detectIsMacOSSafari(), []);
 
   // Keep ref in sync for stable callbacks
   useEffect(() => {
@@ -58,9 +96,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/firebase-messaging-sw.js", { scope: "/" })
-        .then((reg) => {
-          console.log("[PWA] Service worker registered successfully:", reg.scope);
-        })
         .catch((err) => {
           console.error("[PWA] Service worker registration failed:", err);
         });
@@ -129,10 +164,15 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       deferredPrompt,
       isInstalled,
       isInstallable: deferredPrompt !== null && !isInstalled,
+      isAppleDevice,
+      isMacOSSafari,
+      canInstall:
+        (!isInstalled && deferredPrompt !== null) ||
+        (!isInstalled && (isAppleDevice || isMacOSSafari)),
       triggerInstall,
       clearPrompt,
     }),
-    [deferredPrompt, isInstalled, triggerInstall, clearPrompt]
+    [deferredPrompt, isInstalled, isAppleDevice, isMacOSSafari, triggerInstall, clearPrompt]
   );
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;

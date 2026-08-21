@@ -8,5 +8,12 @@ export const createClient = () =>
     createBrowserClient<Database>(
         supabaseUrl!,
         supabaseKey!,
+        {
+            cookieOptions: {
+                maxAge: 60 * 60 * 24 * 365, // 1 year permanent session
+                sameSite: "lax",
+                path: "/",
+            },
+        }
     );
 

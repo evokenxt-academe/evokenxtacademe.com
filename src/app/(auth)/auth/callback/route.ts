@@ -37,25 +37,6 @@ export async function GET(request: Request) {
         await autoEnrollUserInAllCourses(session.user.id, userRole)
       }
 
-      const enforceSingleSession = isSingleSessionEnforced(userRole)
-
-      if (enforceSingleSession) {
-        const sessionCount = await countSupabaseAuthSessions(session.user.id)
-        const blocked = hasActiveSessionElsewhere(
-          existingProfile,
-          sessionCount,
-        )
-
-        if (blocked) {
-          await supabase.auth.signOut({ scope: 'local' })
-
-          const blockedUrl = new URL('/auth/active-session', origin)
-          const response = NextResponse.redirect(blockedUrl.toString())
-          response.cookies.delete(LMS_SESSION_COOKIE)
-          return response
-        }
-      }
-
       const newSessionId = crypto.randomUUID()
 
       try {
