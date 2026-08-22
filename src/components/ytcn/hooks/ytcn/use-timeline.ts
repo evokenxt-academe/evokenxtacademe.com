@@ -43,21 +43,29 @@ export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimeline
   const [hoverFraction, setHoverFraction] = useState(0);
 
   const getTimeFromPosition = useCallback(
-    (clientX: number): number => {
+    (clientX: number, clientY?: number): number => {
       const bar = barRef.current;
       if (!bar || duration <= 0) return 0;
       const rect = bar.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const isRotated = bar.closest('[data-ytcn-mobile-landscape="rotated"]') !== null;
+      const ratio =
+        isRotated && clientY !== undefined
+          ? Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+          : Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       return ratio * duration;
     },
     [duration]
   );
 
   const getFractionFromPosition = useCallback(
-    (clientX: number): number => {
+    (clientX: number, clientY?: number): number => {
       const bar = barRef.current;
       if (!bar) return 0;
       const rect = bar.getBoundingClientRect();
+      const isRotated = bar.closest('[data-ytcn-mobile-landscape="rotated"]') !== null;
+      if (isRotated && clientY !== undefined) {
+        return Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+      }
       return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     },
     []
@@ -67,8 +75,8 @@ export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimeline
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const time = getTimeFromPosition(e.clientX);
-      const fraction = getFractionFromPosition(e.clientX);
+      const time = getTimeFromPosition(e.clientX, e.clientY);
+      const fraction = getFractionFromPosition(e.clientX, e.clientY);
       setHoverFraction(fraction);
       onSeek(time);
       if (!clickOnly) {
@@ -80,8 +88,8 @@ export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimeline
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      const time = getTimeFromPosition(e.clientX);
-      const fraction = getFractionFromPosition(e.clientX);
+      const time = getTimeFromPosition(e.clientX, e.clientY);
+      const fraction = getFractionFromPosition(e.clientX, e.clientY);
       setHoverTime(time);
       setHoverFraction(fraction);
       if (isDragging) {
@@ -102,8 +110,8 @@ export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimeline
       e.stopPropagation();
       const touch = e.touches[0];
       if (!touch) return;
-      const time = getTimeFromPosition(touch.clientX);
-      const fraction = getFractionFromPosition(touch.clientX);
+      const time = getTimeFromPosition(touch.clientX, touch.clientY);
+      const fraction = getFractionFromPosition(touch.clientX, touch.clientY);
       setHoverFraction(fraction);
       onSeek(time);
       if (!clickOnly) {
@@ -120,8 +128,8 @@ export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimeline
       e.stopPropagation();
       const touch = e.touches[0];
       if (!touch) return;
-      const time = getTimeFromPosition(touch.clientX);
-      const fraction = getFractionFromPosition(touch.clientX);
+      const time = getTimeFromPosition(touch.clientX, touch.clientY);
+      const fraction = getFractionFromPosition(touch.clientX, touch.clientY);
       setHoverTime(time);
       setHoverFraction(fraction);
       if (isDragging) {
@@ -145,8 +153,8 @@ export function useTimeline({ duration, onSeek, clickOnly = false }: UseTimeline
     if (!isDragging) return;
 
     const handleMove = (e: MouseEvent) => {
-      const time = getTimeFromPosition(e.clientX);
-      const fraction = getFractionFromPosition(e.clientX);
+      const time = getTimeFromPosition(e.clientX, e.clientY);
+      const fraction = getFractionFromPosition(e.clientX, e.clientY);
       setHoverTime(time);
       setHoverFraction(fraction);
       onSeek(time);

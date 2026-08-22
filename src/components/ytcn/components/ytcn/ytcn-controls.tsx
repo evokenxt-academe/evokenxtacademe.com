@@ -55,12 +55,13 @@ export function YtcnControls({
       onTouchStart={onInteraction}
       className={cn(
         "absolute inset-x-0 bottom-0 z-30 flex flex-col transition-opacity duration-300",
+        state.isFullscreen && "pb-[max(0.5rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]",
         state.isFullscreen || isTouchDevice
           ? visible ? "opacity-100" : "opacity-0 pointer-events-none"
           : "opacity-0 group-hover:opacity-100",
       )}
     >
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
 
       <div className="relative z-10 px-3 pt-2">
         {liveOnly ? (
@@ -77,7 +78,7 @@ export function YtcnControls({
         )}
       </div>
 
-      <div className="relative z-10 flex items-center gap-1 px-3 pb-2.5 pt-1.5">
+      <div className="relative z-10 flex items-center gap-1 px-3 pb-2.5 pt-1">
         <div className="flex items-center gap-1">
           {!liveOnly ? (
             <button

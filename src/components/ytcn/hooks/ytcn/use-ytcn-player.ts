@@ -270,7 +270,9 @@ export function useYtcnPlayer(options: YtcnPlayerOptions): UseYtcnPlayerReturn {
   }, [state.volume, state.isMuted, state.playbackRate, state.phase]);
 
   // ── Fullscreen ──
-  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef, {
+    isPlaying: state.isPlaying,
+  });
 
   useEffect(() => {
     if (!mountedRef.current) return;
