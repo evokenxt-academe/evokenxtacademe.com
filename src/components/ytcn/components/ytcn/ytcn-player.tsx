@@ -213,7 +213,7 @@ export function YtcnPlayer({
         "relative w-full bg-black select-none overflow-hidden",
         state.isFullscreen && !finalControlsVisible && "cursor-none",
         state.isFullscreen
-          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black [&[data-ytcn-mobile-landscape]]:static [&[data-ytcn-mobile-landscape]]:inset-auto [&[data-ytcn-mobile-landscape]]:w-auto [&[data-ytcn-mobile-landscape]]:h-auto"
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
           : "aspect-video rounded-none sm:rounded-lg group",
         className
       )}
@@ -455,10 +455,20 @@ export function YtcnPlayer({
               }
 
               const now = Date.now();
-              const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+              const containerEl = (e.currentTarget as HTMLDivElement);
+              const rect = containerEl.getBoundingClientRect();
               const touch = e.changedTouches[0];
-              const x = touch.clientX - rect.left;
-              const zone = x < rect.width * 0.33 ? "left" : x > rect.width * 0.66 ? "right" : "center";
+              const isRotatedMode = containerRef.current?.getAttribute("data-ytcn-mobile-landscape") === "rotated";
+
+              let zone: "left" | "right" | "center" = "center";
+              if (isRotatedMode) {
+                // In 90deg rotated mode, the video horizontal axis corresponds to the screen's vertical axis
+                const relY = touch.clientY - rect.top;
+                zone = relY < rect.height * 0.33 ? "left" : relY > rect.height * 0.66 ? "right" : "center";
+              } else {
+                const relX = touch.clientX - rect.left;
+                zone = relX < rect.width * 0.33 ? "left" : relX > rect.width * 0.66 ? "right" : "center";
+              }
               const isDoubleTap = now - lastTouchTs < 280;
 
               setLastTouchTs(now);

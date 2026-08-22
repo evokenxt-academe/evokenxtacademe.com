@@ -47,7 +47,9 @@ export function RecordingVideoPlayer({
   const [volume, setVolume] = React.useState(100);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [videoDuration, setVideoDuration] = React.useState(duration || 0);
-  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef, {
+    isPlaying,
+  });
   const [isLoading, setIsLoading] = React.useState(true);
 
   // Format time helper
@@ -149,7 +151,7 @@ export function RecordingVideoPlayer({
         {/* ── Video Container ──────────────────────────────── */}
         <div className={cn(
           "group relative flex aspect-video items-center justify-center overflow-hidden bg-black",
-          isFullscreen && "fixed inset-0 z-[9999] w-screen h-screen bg-black [&[data-ytcn-mobile-landscape]]:static [&[data-ytcn-mobile-landscape]]:inset-auto [&[data-ytcn-mobile-landscape]]:w-auto [&[data-ytcn-mobile-landscape]]:h-auto"
+          isFullscreen && "fixed inset-0 z-[9999] w-screen h-screen bg-black"
         )}>
           {/* Video element */}
           <video

@@ -1,23 +1,41 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useMobileLandscape } from "./use-mobile-landscape";
+import {
+  useMobileLandscape,
+  tryOrientationLock,
+  tryOrientationUnlock,
+  isLandscape,
+  detectTouchDevice,
+  detectIOS,
+} from "./use-mobile-landscape";
 
 /* ================================================================ */
 /*  Types                                                            */
 /* ================================================================ */
 
+export interface UseFullscreenOptions {
+  /** Video playing state — used to automatically enter landscape fullscreen on physical rotation */
+  isPlaying?: boolean;
+  /** Whether auto-rotation is enabled when turning device to landscape (default: true) */
+  autoOrientation?: boolean;
+  /** Callback fired whenever fullscreen state changes */
+  onFullscreenChange?: (isFullscreen: boolean) => void;
+}
+
 export interface UseFullscreenReturn {
-  /** Whether the container is currently in fullscreen */
+  /** Whether the container is currently in fullscreen mode (native or CSS landscape) */
   isFullscreen: boolean;
-  /** True when mobile landscape CSS rotation is active */
+  /** True when mobile landscape CSS rotation or native fixed layout is active */
   isMobileLandscape: boolean;
+  /** True when the screen is physically in landscape orientation */
+  isLandscapeOrientation: boolean;
   /** Toggle between fullscreen and normal mode */
   toggle: () => void;
   /** Enter fullscreen */
-  enter: () => void;
+  enter: () => Promise<void>;
   /** Exit fullscreen */
-  exit: () => void;
+  exit: () => Promise<void>;
 }
 
 /* ================================================================ */
@@ -25,142 +43,189 @@ export interface UseFullscreenReturn {
 /* ================================================================ */
 
 /**
- * useFullscreen — Abstracts the Fullscreen API for a given container ref.
+ * useFullscreen — Production-ready Fullscreen & Orientation hook.
  *
- * Listens for `fullscreenchange` events on `document` rather than the
- * element itself, because the event bubbles and the spec guarantees it
- * fires on `document`. This avoids issues with vendor-prefixed events
- * on older browsers.
- *
- * On mobile/touch devices where the native Fullscreen API is unavailable
- * (e.g. iOS Safari, iOS PWA), this hook automatically activates a
- * CSS rotation-based landscape fullscreen via `useMobileLandscape`.
+ * Capabilities:
+ * - Desktop: Standard W3C Fullscreen API
+ * - Android Chrome / PWA: Native Fullscreen + Hardware `screen.orientation.lock("landscape")`
+ * - iOS Safari / iOS PWA: Dynamic CSS Landscape Pseudo-Fullscreen (safe-area aware, 90° portrait rotation)
+ * - Auto-rotation: Automatically expands to horizontal fullscreen when phone is rotated horizontally while playing
  */
 export function useFullscreen(
-  containerRef: React.RefObject<HTMLDivElement | null>
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  options: UseFullscreenOptions = {}
 ): UseFullscreenReturn {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isFallbackFullscreen, setIsFallbackFullscreen] = useState(false);
-  const mounted = useRef(true);
+  const { isPlaying = false, autoOrientation = true, onFullscreenChange } = options;
 
-  // Mobile landscape hook — provides iOS-compatible landscape fullscreen
+  const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
+  const mountedRef = useRef(true);
+  const autoEnteredRef = useRef(false);
+  const isPlayingRef = useRef(isPlaying);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
   const {
     isMobileLandscape,
     isTouchDevice,
+    isLandscapeOrientation,
     enterMobileLandscape,
     exitMobileLandscape,
+    updateOrientation,
   } = useMobileLandscape(containerRef);
 
-  useEffect(() => {
-    mounted.current = true;
+  // Combined fullscreen state
+  const isFullscreen = isNativeFullscreen || isMobileLandscape;
 
-    const handleChange = (): void => {
-      if (mounted.current) {
-        setIsFullscreen(
-          !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
-        );
+  // Notify consumer of fullscreen changes
+  useEffect(() => {
+    onFullscreenChange?.(isFullscreen);
+  }, [isFullscreen, onFullscreenChange]);
+
+  // Sync native fullscreen state
+  useEffect(() => {
+    mountedRef.current = true;
+
+    const handleFullscreenChange = (): void => {
+      if (!mountedRef.current) return;
+      const isNowNative = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement
+      );
+      setIsNativeFullscreen(isNowNative);
+
+      if (isNowNative) {
+        // When entering native fullscreen on touch devices (Android), lock to landscape
+        tryOrientationLock("landscape").catch(() => {});
+      } else {
+        // When exiting native fullscreen, unlock orientation
+        tryOrientationUnlock();
       }
     };
 
-    document.addEventListener("fullscreenchange", handleChange);
-    document.addEventListener("webkitfullscreenchange", handleChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
     return () => {
-      mounted.current = false;
-      document.removeEventListener("fullscreenchange", handleChange);
-      document.removeEventListener("webkitfullscreenchange", handleChange);
+      mountedRef.current = false;
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
     };
   }, []);
 
-  const enter = useCallback((): void => {
-    try {
-      const container = containerRef.current;
-      if (!container) return;
+  const enter = useCallback(async (): Promise<void> => {
+    const container = containerRef.current;
+    if (!container) return;
 
-      // On touch devices, use mobile landscape mode (CSS rotation)
-      // This handles iOS Safari/PWA where requestFullscreen on <div> is unsupported
-      if (isTouchDevice) {
-        enterMobileLandscape();
+    // iOS Safari / iOS PWA: Native requestFullscreen on <div> is not supported.
+    // Use dynamic CSS landscape pseudo-fullscreen.
+    if (detectIOS()) {
+      await enterMobileLandscape();
+      return;
+    }
+
+    // Android / Desktop: Try native Fullscreen API first
+    if (container.requestFullscreen) {
+      try {
+        await container.requestFullscreen();
+        // After native fullscreen request, lock orientation to landscape
+        await tryOrientationLock("landscape");
         return;
+      } catch {
+        // Fallback to mobile landscape CSS
+        await enterMobileLandscape();
       }
-
-      // Desktop: use native Fullscreen API
-      if (container.requestFullscreen) {
-        container.requestFullscreen().catch(() => {
-          // Fallback: try mobile landscape even on "desktop" if fullscreen fails
-          enterMobileLandscape();
-        });
-      } else if ((container as any).webkitRequestFullscreen) {
+    } else if ((container as any).webkitRequestFullscreen) {
+      try {
         (container as any).webkitRequestFullscreen();
-      } else {
-        enterMobileLandscape();
+        await tryOrientationLock("landscape");
+        return;
+      } catch {
+        await enterMobileLandscape();
       }
-    } catch {
-      enterMobileLandscape();
+    } else {
+      await enterMobileLandscape();
     }
-  }, [containerRef, isTouchDevice, enterMobileLandscape]);
+  }, [containerRef, enterMobileLandscape]);
 
-  const exit = useCallback((): void => {
-    // If mobile landscape is active, exit that
+  const exit = useCallback(async (): Promise<void> => {
+    autoEnteredRef.current = false;
+
+    // Exit CSS mobile landscape if active
     if (isMobileLandscape) {
-      exitMobileLandscape();
-      return;
+      await exitMobileLandscape();
     }
 
-    // If CSS fallback fullscreen is active, exit that
-    if (isFallbackFullscreen) {
-      setIsFallbackFullscreen(false);
-      return;
-    }
-
-    // Exit native fullscreen
+    // Exit native fullscreen if active
     try {
       if (document.fullscreenElement) {
-        document.exitFullscreen();
+        await document.exitFullscreen();
       } else if ((document as any).webkitFullscreenElement) {
         (document as any).webkitExitFullscreen();
       }
     } catch {
-      /* exit can throw if not in fullscreen */
+      /* ignore exit errors */
     }
-  }, [isMobileLandscape, isFallbackFullscreen, exitMobileLandscape]);
+
+    tryOrientationUnlock();
+  }, [isMobileLandscape, exitMobileLandscape]);
 
   const toggle = useCallback((): void => {
-    const isCurrentlyFullscreen =
-      !!document.fullscreenElement ||
-      !!(document as any).webkitFullscreenElement ||
-      isFallbackFullscreen ||
-      isMobileLandscape;
-
-    if (isCurrentlyFullscreen) {
-      exit();
+    if (isFullscreen) {
+      void exit();
     } else {
-      enter();
+      void enter();
     }
-  }, [enter, exit, isFallbackFullscreen, isMobileLandscape]);
+  }, [isFullscreen, enter, exit]);
 
-  // Combined fullscreen state: native fullscreen OR CSS fallback OR mobile landscape
-  const activeFullscreen = isFullscreen || isFallbackFullscreen || isMobileLandscape;
-
-  // Add body class for fallback to hide scrollbars
+  // Intelligent physical phone rotation handling
   useEffect(() => {
-    if (isFallbackFullscreen) {
-      document.body.style.overflow = "hidden";
-    } else if (!isMobileLandscape) {
-      // Only restore if mobile landscape isn't managing body overflow
-      document.body.style.overflow = "";
-    }
-    return () => {
-      if (!isMobileLandscape) {
-        document.body.style.overflow = "";
+    if (!autoOrientation || !detectTouchDevice()) return;
+
+    let previousLandscape = isLandscape();
+
+    const handleRotation = () => {
+      const currentLandscape = isLandscape();
+      if (currentLandscape === previousLandscape) return;
+      previousLandscape = currentLandscape;
+
+      if (currentLandscape) {
+        // Phone rotated horizontally (Landscape)
+        if (isPlayingRef.current && !isFullscreen) {
+          autoEnteredRef.current = true;
+          void enter();
+        } else if (isMobileLandscape) {
+          updateOrientation();
+        }
+      } else {
+        // Phone rotated back to vertical (Portrait)
+        if (autoEnteredRef.current || isFullscreen) {
+          autoEnteredRef.current = false;
+          void exit();
+        }
       }
     };
-  }, [isFallbackFullscreen, isMobileLandscape]);
+
+    window.addEventListener("orientationchange", handleRotation);
+    window.addEventListener("resize", handleRotation);
+    const media = window.matchMedia("(orientation: landscape)");
+    media.addEventListener?.("change", handleRotation);
+
+    return () => {
+      window.removeEventListener("orientationchange", handleRotation);
+      window.removeEventListener("resize", handleRotation);
+      media.removeEventListener?.("change", handleRotation);
+    };
+  }, [autoOrientation, isFullscreen, isMobileLandscape, enter, exit, updateOrientation]);
 
   return {
-    isFullscreen: activeFullscreen,
+    isFullscreen,
     isMobileLandscape,
+    isLandscapeOrientation,
     toggle,
     enter,
     exit,
   };
 }
+

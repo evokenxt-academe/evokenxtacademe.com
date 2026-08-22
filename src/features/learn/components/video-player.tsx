@@ -429,7 +429,9 @@ export function VideoPlayer({
   }, [onTimeUpdate]);
 
   /* ---- Fullscreen handling ---- */
-  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef);
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen(containerRef, {
+    isPlaying: state.isPlaying,
+  });
 
   useEffect(() => {
     setState((prev) => ({
@@ -684,7 +686,7 @@ export function VideoPlayer({
       className={cn(
         "relative w-full bg-black select-none group overflow-hidden",
         activeFullscreen
-          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black [&[data-ytcn-mobile-landscape]]:static [&[data-ytcn-mobile-landscape]]:inset-auto [&[data-ytcn-mobile-landscape]]:w-auto [&[data-ytcn-mobile-landscape]]:h-auto"
+          ? "fixed inset-0 z-[9999] w-screen h-screen bg-black"
           : "aspect-video rounded-lg border shadow-lg",
       )}
     >
