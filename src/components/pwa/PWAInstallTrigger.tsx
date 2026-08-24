@@ -44,23 +44,10 @@ const SafariShareIcon = () => (
  */
 export function PWAInstallTrigger() {
   const [open, setOpen] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { isInstallable, isInstalled, triggerInstall } = usePWA();
-
-  useEffect(() => {
-    const checkIOS = () => {
-      const userAgent = window.navigator.userAgent;
-      const isIOSDevice =
-        /iPad|iPhone|iPod/.test(userAgent) ||
-        (window.navigator.platform === "MacIntel" &&
-          window.navigator.maxTouchPoints > 1);
-      setIsIOS(isIOSDevice);
-    };
-    checkIOS();
-  }, []);
+  const { isInstallable, isInstalled, isIOS, triggerInstall, triggerIOSPrompt } = usePWA();
 
   const cleanupUrl = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -91,10 +78,16 @@ export function PWAInstallTrigger() {
       return;
     }
 
-    if (isInstallable || isIOS) {
+    if (isIOS) {
+      cleanupUrl();
+      triggerIOSPrompt();
+      return;
+    }
+
+    if (isInstallable) {
       setOpen(true);
     }
-  }, [searchParams, isInstallable, isInstalled, getIsStandalone, cleanupUrl, isIOS]);
+  }, [searchParams, isInstallable, isInstalled, isIOS, getIsStandalone, cleanupUrl, triggerIOSPrompt]);
 
   const handleClose = () => {
     setOpen(false);
