@@ -36,6 +36,10 @@ interface PWAContextValue {
   isInstallable: boolean;
   /** Whether the device is iOS (iPhone/iPad) — requires manual "Add to Home Screen" */
   isAppleDevice: boolean;
+  /** Alias for isAppleDevice */
+  isIOS: boolean;
+  /** Whether the current browser is Safari on iOS */
+  isIOSSafari: boolean;
   /** Whether the device is macOS Safari — requires manual "Add to Dock" */
   isMacOSSafari: boolean;
   /**
@@ -45,6 +49,11 @@ interface PWAContextValue {
   canInstall: boolean;
   /** Programmatically trigger the native install prompt */
   triggerInstall: () => Promise<boolean>;
+  /** Programmatically trigger the iOS install overlay */
+  triggerIOSPrompt: () => void;
+  /** State for showing/hiding the iOS install overlay */
+  showIOSOverlay: boolean;
+  setShowIOSOverlay: (show: boolean) => void;
   /** Dismiss the deferred prompt without installing */
   clearPrompt: () => void;
 }
@@ -65,6 +74,22 @@ function detectIsIOS(): boolean {
 }
 
 /**
+ * Detect if current browser is native Safari on iOS (as opposed to Chrome/CriOS, Firefox, or in-app webview).
+ */
+function detectIsIOSSafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (!isIOS) return false;
+
+  const isOtherBrowser = /crios|fxios|edgios|optios|fban|fbav|instagram|threads/i.test(ua);
+  const isSafari = /safari/i.test(ua);
+  return isSafari && !isOtherBrowser;
+}
+
+/**
  * Detect if the current browser is Safari on macOS (desktop).
  * Excludes Chrome/Edge/etc. on macOS and iPadOS.
  */
@@ -81,9 +106,11 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showIOSOverlay, setShowIOSOverlay] = useState(false);
   const promptRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   const isAppleDevice = useMemo(() => detectIsIOS(), []);
+  const isIOSSafari = useMemo(() => detectIsIOSSafari(), []);
   const isMacOSSafari = useMemo(() => detectIsMacOSSafari(), []);
 
   // Keep ref in sync for stable callbacks
@@ -122,6 +149,7 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
+      setShowIOSOverlay(false);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -137,10 +165,15 @@ export function PWAProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Trigger the native browser install prompt.
+   * Trigger the native browser install prompt (Chromium) or iOS overlay (Apple).
    * Returns `true` if the user accepted, `false` otherwise.
    */
   const triggerInstall = useCallback(async (): Promise<boolean> => {
+    if (isAppleDevice) {
+      setShowIOSOverlay(true);
+      return true;
+    }
+
     const prompt = promptRef.current;
     if (!prompt) return false;
 
@@ -153,10 +186,15 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     setDeferredPrompt(null);
 
     return accepted;
+  }, [isAppleDevice]);
+
+  const triggerIOSPrompt = useCallback(() => {
+    setShowIOSOverlay(true);
   }, []);
 
   const clearPrompt = useCallback(() => {
     setDeferredPrompt(null);
+    setShowIOSOverlay(false);
   }, []);
 
   const value = useMemo<PWAContextValue>(
@@ -165,14 +203,29 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       isInstalled,
       isInstallable: deferredPrompt !== null && !isInstalled,
       isAppleDevice,
+      isIOS: isAppleDevice,
+      isIOSSafari,
       isMacOSSafari,
       canInstall:
         (!isInstalled && deferredPrompt !== null) ||
         (!isInstalled && (isAppleDevice || isMacOSSafari)),
       triggerInstall,
+      triggerIOSPrompt,
+      showIOSOverlay,
+      setShowIOSOverlay,
       clearPrompt,
     }),
-    [deferredPrompt, isInstalled, isAppleDevice, isMacOSSafari, triggerInstall, clearPrompt]
+    [
+      deferredPrompt,
+      isInstalled,
+      isAppleDevice,
+      isIOSSafari,
+      isMacOSSafari,
+      triggerInstall,
+      triggerIOSPrompt,
+      showIOSOverlay,
+      clearPrompt,
+    ]
   );
 
   return <PWAContext.Provider value={value}>{children}</PWAContext.Provider>;
