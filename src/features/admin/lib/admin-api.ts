@@ -130,6 +130,11 @@ export const adminApi = {
         adminFetch<{ success: boolean }>(`/api/admin/enrollments/${enrollmentId}`, {
             method: "DELETE",
         }),
+    updateEnrollment: (enrollmentId: string, payload: { expiresAt?: string | null; status?: "active" | "expired" | "refunded" }) =>
+        adminFetch<{ success: boolean }>(`/api/admin/enrollments/${enrollmentId}`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+        }),
     getReviews: () => adminFetch<{ reviews: AdminReview[] }>("/api/admin/reviews"),
     getLiveStreams: () =>
         adminFetch<{ liveStreams: AdminLiveStream[] }>("/api/admin/live-streams"),

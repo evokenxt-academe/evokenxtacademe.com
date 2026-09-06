@@ -51,12 +51,26 @@ export async function GET() {
     const userMap = createLookupMap(users);
     const courseMap = createLookupMap(courses);
 
-    const enrollments = (enrollmentsResult.data ?? []).map((row) => {
-        const record = row as Record<string, unknown>;
-        const userName = userMap.get(String(record.user_id))?.name;
-        const courseName = courseMap.get(String(record.course_id))?.name;
-        return normalizeEnrollment(record, userName, courseName);
-    });
+    const enrollments = (enrollmentsResult.data ?? [])
+        .map((row) => {
+            const record = row as Record<string, unknown>;
+            const userEntry = userMap.get(String(record.user_id));
+            const courseEntry = courseMap.get(String(record.course_id));
+            return normalizeEnrollment(
+                record,
+                userEntry?.name,
+                courseEntry?.name,
+                userEntry?.email,
+                userEntry?.avatar,
+                courseEntry?.slug,
+                userEntry?.role,
+            );
+        })
+        .filter(
+            (enrollment) =>
+                enrollment.userRole !== "admin" &&
+                enrollment.userRole !== "instructor",
+        );
 
     return NextResponse.json({ enrollments, users, courses });
 }
