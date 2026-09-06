@@ -33,7 +33,11 @@ export type AdminEnrollment = {
     userId: string;
     courseId: string;
     user: string;
+    userEmail?: string;
+    userAvatar?: string;
+    userRole?: "student" | "instructor" | "admin";
     course: string;
+    courseSlug?: string;
     status: "active" | "expired" | "refunded";
     enrolledAt: string;
     expiresAt: string | null;
