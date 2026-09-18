@@ -5,7 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { IconBrandWhatsapp } from "@tabler/icons-react";
 
 const words = ["succeed", "excel", "qualify", "grow"];
 
@@ -226,9 +227,16 @@ export function HeroSection() {
                 variant="outline"
                 size="lg"
                 className="rounded-none h-12 px-8 text-base font-semibold border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white"
+                asChild
               >
-                <Play className="mr-2 size-5 fill-current" />
-                Watch Demo
+                <a
+                  href="https://wa.me/919653365799"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <IconBrandWhatsapp className="mr-2 size-5 text-[#25D366]" />
+                  Contact Us
+                </a>
               </Button>
             </div>
           </div>

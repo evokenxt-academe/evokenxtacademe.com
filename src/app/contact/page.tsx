@@ -10,16 +10,11 @@ import {
   ArrowRight,
   Headphones,
   Send,
-  GraduationCap,
-  BookOpen,
-  Users,
-  Zap,
 } from "lucide-react";
 import {
+  IconBrandFacebook,
   IconBrandInstagram,
-  IconBrandLinkedin,
   IconBrandYoutube,
-  IconBrandX,
 } from "@tabler/icons-react";
 
 import { Input } from "@/components/ui/input";
@@ -126,14 +121,14 @@ export default function ContactPage() {
                   {
                     icon: Mail,
                     label: "Email",
-                    value: "support@evokeeduglobal.com",
-                    href: "mailto:support@evokeeduglobal.com",
+                    value: "support@evokenxtacademe.com",
+                    href: "mailto:support@evokenxtacademe.com",
                   },
                   {
                     icon: Phone,
                     label: "Phone",
-                    value: "+91 98765 43210",
-                    href: "tel:+919876543210",
+                    value: "+91 96533 65799",
+                    href: "tel:+919653365799",
                   },
                   {
                     icon: MapPin,
@@ -172,32 +167,6 @@ export default function ContactPage() {
               </CardContent>
             </Card>
 
-            {/* Quick Links */}
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-base">Quick Help</CardTitle>
-                <CardDescription className="text-xs">
-                  Common topics students ask about.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-2.5">
-                {[
-                  { icon: GraduationCap, label: "Enrollment" },
-                  { icon: BookOpen, label: "Courses" },
-                  { icon: Users, label: "Live Classes" },
-                  { icon: Zap, label: "Mock Tests" },
-                ].map(({ icon: Icon, label }) => (
-                  <div
-                    key={label}
-                    className="flex items-center gap-2.5 rounded-lg border border-border p-3 hover:border-primary/30 hover:bg-primary/[0.03] transition-all cursor-pointer group"
-                  >
-                    <Icon className="size-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <span className="text-xs font-semibold">{label}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
             {/* Social */}
             <Card>
               <CardHeader className="pb-3">
@@ -206,10 +175,21 @@ export default function ContactPage() {
               <CardContent>
                 <div className="flex items-center gap-2">
                   {[
-                    { icon: IconBrandInstagram, href: "#", label: "Instagram" },
-                    { icon: IconBrandLinkedin, href: "#", label: "LinkedIn" },
-                    { icon: IconBrandX, href: "#", label: "Twitter" },
-                    { icon: IconBrandYoutube, href: "#", label: "YouTube" },
+                    {
+                      icon: IconBrandFacebook,
+                      href: "https://www.facebook.com/profile.php?id=61579211965653",
+                      label: "Facebook",
+                    },
+                    {
+                      icon: IconBrandInstagram,
+                      href: "https://www.instagram.com/evokenxt_academe/",
+                      label: "Instagram",
+                    },
+                    {
+                      icon: IconBrandYoutube,
+                      href: "https://www.youtube.com/@evokenxtacademe",
+                      label: "YouTube",
+                    },
                   ].map(({ icon: Icon, href, label }) => (
                     <a
                       key={label}
@@ -392,7 +372,7 @@ export default function ContactPage() {
               asChild
             >
               <a
-                href="https://maps.google.com/?q=Mumbai,Maharashtra,India"
+                href="https://www.google.com/maps/search/?api=1&query=Best+ACCA%2C+CFA%2C+CMA+USA%2C+FRM+Class+%7C+EvokeNxt+Academe"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -402,12 +382,13 @@ export default function ContactPage() {
           </div>
           <div className="rounded-xl overflow-hidden border border-border h-[280px] md:h-[360px]">
             <iframe
-              title="Evoke EduGlobal Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d241317.11609823277!2d72.74109995709657!3d19.08219783948915!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c6306644edc1%3A0x5da4ed8f8d648c69!2sMumbai%2C%20Maharashtra%2C%20India!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-              className="w-full h-full border-0 grayscale hover:grayscale-0 transition-all duration-700"
+              title="EvokeNxt Academe Location"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3766.014588580747!2d72.85603377521059!3d19.281731781965693!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b1a34a991ed5%3A0xa33490741cc83664!2sBest%20ACCA%2C%20CFA%2C%20CMA%20USA%2C%20FRM%20Class%20%7C%20EvokeNxt%20Academe!5e0!3m2!1sen!2sin!4v1789743183934!5m2!1sen!2sin"
+              className="w-full h-full border-0"
+              style={{ border: 0 }}
               allowFullScreen
               loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
+              referrerPolicy="strict-origin-when-cross-origin"
             />
           </div>
         </div>

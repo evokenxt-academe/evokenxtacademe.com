@@ -33,9 +33,9 @@
     {
       "label": "next-env.d.ts",
       "file_type": "code",
-      "source_file": "next-env.d.ts",
+      "source_file": "C:\\Users\\vishw\\Desktop\\evokeeduglobal\\next-env.d.ts",
       "source_location": "L1",
-      "id": "next_env_d_ts",
+      "id": "c_users_vishw_desktop_evokeeduglobal_next_env_d_ts",
       "community": 310,
       "norm_label": "next-env.d.ts"
     },
@@ -3751,7 +3751,7 @@
       "label": "handleSubmit()",
       "file_type": "code",
       "source_file": "C:\\Users\\vishw\\Desktop\\evokeeduglobal\\src\\app\\contact\\page.tsx",
-      "source_location": "L48",
+      "source_location": "L43",
       "id": "page_handlesubmit",
       "community": 181,
       "norm_label": "handlesubmit()"
@@ -5866,7 +5866,7 @@
       "label": "BlurWord()",
       "file_type": "code",
       "source_file": "C:\\Users\\vishw\\Desktop\\evokeeduglobal\\src\\components\\hero-section.tsx",
-      "source_location": "L12",
+      "source_location": "L13",
       "id": "hero_section_blurword",
       "community": 211,
       "norm_label": "blurword()"
@@ -28947,7 +28947,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "C:\\Users\\vishw\\Desktop\\evokeeduglobal\\src\\app\\contact\\page.tsx",
-      "source_location": "L48",
+      "source_location": "L43",
       "weight": 1.0,
       "_src": "c_users_vishw_desktop_evokeeduglobal_src_app_contact_page_tsx",
       "_tgt": "page_handlesubmit",
@@ -31167,7 +31167,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "C:\\Users\\vishw\\Desktop\\evokeeduglobal\\src\\components\\hero-section.tsx",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "_src": "c_users_vishw_desktop_evokeeduglobal_src_components_hero_section_tsx",
       "_tgt": "hero_section_blurword",
